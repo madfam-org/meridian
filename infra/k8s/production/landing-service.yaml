@@ -1,0 +1,20 @@
+# Service for the public explainer. The selector must match the pod labels in
+# landing-deployment.yaml exactly; a stale selector resolves to no endpoints and
+# meridian.madfam.io returns a tunnel error while every pod reports healthy.
+apiVersion: v1
+kind: Service
+metadata:
+  name: meridian-landing
+  namespace: meridian
+  labels:
+    app: meridian-landing
+    app.kubernetes.io/part-of: madfam-platform
+spec:
+  type: ClusterIP
+  selector:
+    app: meridian-landing
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

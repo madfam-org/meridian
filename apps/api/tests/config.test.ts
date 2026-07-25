@@ -6,7 +6,7 @@ import { TEST_ENV } from './harness.js';
 describe('configuration', () => {
   it('accepts a complete environment', () => {
     const config = loadConfig(TEST_ENV);
-    expect(config.PORT).toBe(6100);
+    expect(config.PORT).toBe(8000);
     expect(config.NODE_ENV).toBe('test');
     expect(config.CORS_ALLOWED_ORIGINS).toEqual([
       'https://app.meridian.test',

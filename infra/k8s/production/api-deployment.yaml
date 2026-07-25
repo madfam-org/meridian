@@ -34,7 +34,7 @@ spec:
           image: ghcr.io/madfam-org/meridian-api:main
           ports:
             - name: http
-              containerPort: 6100
+              containerPort: 8000
           env:
             # Pinned here as well as in enclii.yaml so the production posture
             # does not depend on what the Secret happens to carry.
@@ -43,15 +43,27 @@ spec:
             - name: NODE_ENV
               value: production
             - name: PORT
-              value: "6100"
+              value: "8000"
             - name: HOST
               value: 0.0.0.0
             - name: JANUA_URL
               value: "https://auth.madfam.io"
             - name: JANUA_JWKS_URL
               value: "https://auth.madfam.io/.well-known/jwks.json"
+            # CORS allow-list, explicit and never a wildcard: these responses
+            # carry an applicant's own documents. `meridian.madfam.io` is absent
+            # on purpose — that host is the landing site now, and it makes no
+            # API call.
+            #
+            # CORS_ALLOWED_ORIGINS is the name apps/api/src/config.ts reads, and
+            # it is required; the API refuses to start without it rather than
+            # falling back to something permissive. The MERIDIAN_*_ORIGIN pair
+            # are the per-surface names SECURITY.md documents. All three carry
+            # the same fact and have to move together.
+            - name: CORS_ALLOWED_ORIGINS
+              value: "https://meridian-app.madfam.io,https://meridian-admin.madfam.io"
             - name: MERIDIAN_WEB_ORIGIN
-              value: "https://meridian.madfam.io"
+              value: "https://meridian-app.madfam.io"
             - name: MERIDIAN_ADMIN_ORIGIN
               value: "https://meridian-admin.madfam.io"
             # The only secret this service reads. Referenced by name; the value

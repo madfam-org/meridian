@@ -1,0 +1,41 @@
+.pair {
+  display: block;
+}
+
+.primary {
+  display: block;
+}
+
+.secondary {
+  display: block;
+  font-size: 0.82em;
+  font-weight: 450;
+  letter-spacing: 0;
+  color: var(--fg-muted);
+}
+
+.inline {
+  display: inline;
+}
+
+.sep {
+  margin: 0 0.4em;
+  color: var(--fg-subtle);
+}
+
+.inlineSecondary {
+  color: var(--fg-muted);
+}
+
+.prose > p {
+  margin-bottom: var(--space-3);
+}
+
+.prose > p:last-child {
+  margin-bottom: 0;
+}
+
+.proseSecondary {
+  color: var(--fg-muted);
+  font-size: 0.9375rem;
+}

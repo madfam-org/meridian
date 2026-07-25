@@ -17,16 +17,20 @@ Last updated: 2026-07-25.
 
 ## Status in one paragraph
 
-Measured 2026-07-25 14:43 America/Mexico_City, during the initial build —
-re-verify rather than trusting it. Six libraries under `packages/` are mature
-and pass **901 tests across 32 files**. The three applications under `apps/`
-landed in the same session and are substantial but unfinished: **no application
-has any tests**, and `apps/api` has **no `src/main.ts`**, so nothing composes it
-into a running process. The three policy guard scripts exist and pass; CI exists
-(`policy` · `typecheck` · `test` · `build`); deployment configuration exists
-(`enclii.yaml`, three Dockerfiles, `infra/k8s/production/`). **Nothing is
-deployed. No pathway has been counsel-reviewed**, so `recommend()` ranks
-nothing. No government-system capability is `available`.
+Measured 2026-07-25 17:50 America/Mexico_City, during the initial build —
+re-verify rather than trusting it. Six libraries under `packages/` are mature and
+pass **913 tests across 32 files**. `apps/api` is a running Fastify service:
+`src/main.ts` is its composition root, it has **108 tests across 7 files**, and
+its image builds and starts (it reaches environment validation and names the
+variables it needs). **The three Next.js applications — `apps/landing`,
+`apps/web`, `apps/admin` — have no tests**, which is the largest gap in the
+repository. Repo total: **1021 tests across 39 files**; `pnpm typecheck` 16/16
+and `pnpm build` 10/10 green. The three policy guard scripts exist and pass; CI
+exists (`policy` · `typecheck` · `test` · `build`); deployment configuration
+exists (`enclii.yaml` with five documents, four Dockerfiles,
+`infra/k8s/production/`). **Nothing is deployed. No pathway has been
+counsel-reviewed**, so `recommend()` ranks nothing. No government-system
+capability is `available`.
 
 ## The three invariants
 
@@ -50,11 +54,14 @@ nothing. No government-system capability is `available`.
   Every test fixture is synthetic.
 - Never store, proxy or transit a government credential. Structurally refused.
 - Relative imports end in `.js`. Type-only imports use `import type`.
+- Workspace packages are consumed as **emitted JavaScript** from `dist/`, not as
+  TypeScript source. Build before you typecheck or test across a boundary; turbo
+  does this for you (`typecheck` and `test` both depend on `^build`).
 
 ## Verification
 
 ```bash
-cd packages/<name>
+cd packages/<name>        # or apps/api
 pnpm exec tsc --noEmit
 pnpm exec vitest run
 ```
@@ -77,22 +84,29 @@ the same worktree.
 
 ## Packages
 
-| Package | Role |
-|---|---|
-| `@meridian/core` | civil dates, disclosure boundary, citations, tenancy, matter |
-| `@meridian/mrtd` | ICAO Doc 9303 MRZ. Depends on nothing. |
-| `@meridian/presence` | Schengen 90/180, tax day counts, continuous residence, work hours |
-| `@meridian/pathways` | declarative rules engine + pathway catalog (8, all unreviewed) |
-| `@meridian/documents` | legalisation, translation, freshness, checklists, gaps |
-| `@meridian/govtech` | government adapters, capability board, credential refusal |
+Each builds with `tsc -p tsconfig.build.json`; `exports` resolves to
+`./dist/index.js`.
+
+| Package | Role | Tests |
+|---|---|---|
+| `@meridian/core` | civil dates, disclosure boundary, citations, tenancy, matter | 60 |
+| `@meridian/mrtd` | ICAO Doc 9303 MRZ. Depends on nothing. | 111 |
+| `@meridian/presence` | Schengen 90/180, tax day counts, continuous residence, work hours | 147 |
+| `@meridian/pathways` | declarative rules engine (22 operations) + catalog (8, all unreviewed) | 139 |
+| `@meridian/documents` | legalisation, translation, freshness, checklists, gaps | 146 |
+| `@meridian/govtech` | government adapters, capability board, credential refusal | 310 |
 
 ## Applications
 
-| App | Role |
-|---|---|
-| `apps/api` | Fastify. auth (JWKS RS256) · disclosure gate + route registry + leak detector · repository ports with structural tenant scoping · append-only audit · Prisma schema. No `main.ts`, no tests. |
-| `apps/web` | applicant portal, Next.js 15, port 6101. No tests. |
-| `apps/admin` | firm console, Next.js 15, port 6102. No tests. |
+| App | Role | Tests |
+|---|---|---|
+| `apps/api` | Fastify. `src/main.ts` composition root · auth (JWKS RS256) · disclosure gate + route registry + leak detector · repository ports with structural tenant scoping · append-only audit · Prisma schema (10 models, 15 enums) · 41 routes across 11 modules. Image builds and runs. | 108 |
+| `apps/landing` | public marketing site, Next.js 15, local dev port 3000. Bilingual EN/ES; catalog figures counted from `@meridian/pathways` at build time. Deployed as `meridian-landing` on meridian.madfam.io. | none |
+| `apps/web` | applicant portal, Next.js 15, local dev port 3001. Deployed as `meridian-app` on meridian-app.madfam.io — the package and directory keep the `web` name. | none |
+| `apps/admin` | firm console, Next.js 15, local dev port 3002. Deployed as `meridian-admin`. | none |
+
+The API's 108 tests all run against the in-memory repository adapter; the Prisma
+adapter is covered by `tsc` and nothing else, and no migration has been generated.
 
 ## Documentation
 
@@ -100,7 +114,7 @@ the same worktree.
 - `docs/ARCHITECTURE.md` — module map, data flow, where the disclosure gate sits
 - `docs/REGULATORY_POSTURE.md` — tenancy model, IRPA s.91, the Spanish position
 - `docs/LEGAL_CATALOG_REVIEW.md` — the counsel review protocol
-- `docs/adr/0001`-`0006` — architecture decision records
+- `docs/adr/README.md` and `docs/adr/0001`-`0006` — architecture decision records
 - `SECURITY.md` — Article 9 data sensitivity, what we do not store
 - `CONTRIBUTING.md`, `CHANGELOG.md`
 
@@ -109,6 +123,12 @@ the same worktree.
 Auth via **Janua** (OIDC, RS256 JWKS, `alg: none` rejected). Billing via
 **Dhanam**. Every LLM call via **Selva** at `/v1` — never a provider directly.
 Compliance timestamping via **Karafiel**. Deploys via **Enclii**.
+
+Container ports are framework defaults (3000 for the three Next apps, 8000 for
+the API) and Meridian claims **no port block**. In production the number has no
+effect — pods have their own network namespaces and the tunnel routes by
+hostname. `ECOSYSTEM.md` has the full argument and the two cases where it does
+matter; do not restate it elsewhere.
 
 ## Production operations
 

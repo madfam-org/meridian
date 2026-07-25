@@ -22,6 +22,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 COPY apps/admin/package.json ./apps/admin/
+COPY apps/landing/package.json ./apps/landing/
 COPY packages/core/package.json ./packages/core/
 COPY packages/mrtd/package.json ./packages/mrtd/
 COPY packages/presence/package.json ./packages/presence/
@@ -86,9 +87,9 @@ COPY --from=build --chown=meridian:meridian /app/apps/web/public ./apps/web/publ
 USER meridian
 
 ENV NODE_ENV=production
-ENV PORT=6101
+ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-EXPOSE 6101
+EXPOSE 3000
 
 CMD ["node", "apps/web/server.js"]

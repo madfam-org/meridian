@@ -45,11 +45,21 @@ because s.91 of Canada's IRPA and Spain's reserved-activity rules make an
 unlicensed recommendation to a consumer an offence rather than a feature. See
 [docs/REGULATORY_POSTURE.md](docs/REGULATORY_POSTURE.md).
 
+Four deployables come out of the monorepo: the API (`apps/api`), the applicant
+portal (`apps/web`), the firm console (`apps/admin`) and a public marketing site
+(`apps/landing`). The landing site is worth one line here because it inverts the
+usual arrangement: it imports `@meridian/core` and `@meridian/pathways` and counts
+its published figures — pathways shipped, pathways a lawyer has signed off,
+distinct sources cited, how many of those are administrative practice — from the
+same catalog the engine evaluates, at build time, as at one fixed civil date. A
+marketing page is the one place in a codebase where a number has no compiler, no
+test and no reviewer behind it, so this one has the catalog behind it instead.
+
 **Pillar**: Mobility
 **Type**: service (TypeScript monorepo — pnpm + turbo, Node 22, ESM)
-**Status**: **pre-deploy.** Six libraries build and test clean; the three
-applications landed during the initial build session and have no tests yet;
-nothing is deployed; no pathway has been counsel-reviewed. See
+**Status**: **pre-deploy.** Six libraries and the API build and test clean —
+39 test files, 1021 tests, measured 2026-07-25; the three Next.js applications
+have no tests; nothing is deployed; no pathway has been counsel-reviewed. See
 [README.md](README.md) for the measured status section.
 **Repo visibility**: PUBLIC — `github.com/madfam-org/meridian`, AGPL-3.0-only.
 
@@ -60,14 +70,39 @@ No namespace, DNS record, or tunnel route exists for Meridian as of 2026-07-25.
 
 | Service | Public domain | Container port | State |
 |---|---|---|---|
-| `meridian-api` | meridian-api.madfam.io | 6100 | not deployed; source written, no server entry point yet |
-| `meridian-web` | meridian.madfam.io | 6101 | not deployed; source written |
-| `meridian-admin` | meridian-admin.madfam.io | 6102 | not deployed; source written |
+| `meridian-landing` | meridian.madfam.io | 3000 | not deployed; builds |
+| `meridian-app` | meridian-app.madfam.io | 3000 | not deployed; builds |
+| `meridian-admin` | meridian-admin.madfam.io | 3000 | not deployed; builds |
+| `meridian-api` | meridian-api.madfam.io | 8000 | not deployed; builds and runs |
 
 **Kubernetes namespace**: `meridian` (not created)
-**Port block**: 6100-6199, claimed from the reserved 6000-6999 range
-(`solarpunk-foundry/docs/PORT_ALLOCATION.md`)
-**Registry**: `ghcr.io/madfam-org/meridian/*`
+**Registry**: two path shapes coexist, both under `ghcr.io/madfam-org/`. The
+first three images predate the landing split and use `meridian-api`,
+`meridian-web`, `meridian-admin`; the landing image uses the nested
+`meridian/landing`, the form Avala and Enclii already publish under. Renaming the
+older three would orphan their GHCR packages and reset three pinned digests for
+images whose bytes did not change, so they stay as they are. Both shapes are
+listed in `infra/k8s/production/kustomization.yaml`.
+
+**On those container ports.** They are framework defaults — 3000 for Next.js,
+8000 for the API — and they are deliberately unremarkable. In production the
+number has **no effect**: every pod has its own network namespace and Cloudflare
+Tunnel routes by hostname to a K8s Service, so three of these can all listen on
+3000 and never see each other. The number matters for exactly two things. First,
+internal consistency within one service: the container port must agree with its
+Service `targetPort`, its probes, and the `ports:` in its generated
+NetworkPolicy, or the CNI drops traffic silently. Meridian resolves this by
+naming the port `http` everywhere, so the four places agree by construction
+rather than by vigilance. Second, local development, where four apps on one
+laptop need four distinct ports: the three Next `dev` scripts pass `--port 3000`,
+`3001` and `3002` respectively, and the API takes its port from `PORT`, which has
+no default for the reason given under *Key environment variables*. 8000 is the
+value `enclii.yaml` and `Dockerfile.api` set.
+
+Meridian claims **no port block**. `solarpunk-foundry/docs/PORT_ALLOCATION.md`
+records that the ecosystem's 4xxx/5xxx block scheme is aspirational and that
+almost no service follows it; adding a block claim to a scheme that is not in
+use would be documentation of something untrue.
 **Cluster**: bare-metal k3s (see topology section below).
 
 Domains follow the flat `pravara-mes` pattern (`mes.madfam.io` /
@@ -75,6 +110,37 @@ Domains follow the flat `pravara-mes` pattern (`mes.madfam.io` /
 covers only one subdomain level. **No apex domain purchase is proposed** —
 "meridian" is heavily contested in the .com/.io space and the platform does not
 need it to operate.
+
+### The landing / app split, and what it renamed
+
+`meridian.madfam.io` is the **landing site**, not the product. It is the
+explainer a person reads before trusting the platform with a passport number;
+`meridian-app.madfam.io` is the portal they sign in to. Avala runs the same split
+(`avala.studio` marketing, `app.avala.studio` application), as does Pravara MES.
+The portal is `meridian-app.madfam.io` rather than `app.meridian.madfam.io` for
+the SSL reason above: Avala can nest one level because it owns its own apex
+domain, and Meridian does not.
+
+Three names moved and three deliberately did not:
+
+| Moved | Stayed |
+|---|---|
+| Enclii service `meridian-web` → `meridian-app` | Workspace package `@meridian/web` |
+| K8s Deployment / Service `meridian-web` → `meridian-app` | Source directory `apps/web`, and `Dockerfile.web` |
+| Public hostname → `meridian-app.madfam.io` | Janua `client_id` — still `meridian-web` |
+
+The workspace name and directory stayed because renaming them would touch every
+import in the repository to change a hostname. The Janua `client_id` stayed
+because it is an **external registration**, not a label this repo owns: changing
+it before the new client exists in Janua fails every sign-in with an
+unknown-client error. Rename it in the change that registers it, not before —
+there is a comment saying so in `infra/k8s/production/web-deployment.yaml` and
+another in `enclii.yaml`.
+
+The file names under `infra/k8s/production/` follow the source directory
+(`web-*.yaml`) while the workload names inside them follow the public surface
+(`meridian-app`). That is stated in `kustomization.yaml` so the mismatch reads as
+a decision rather than an oversight.
 
 ### Upstream dependencies (this repo consumes)
 
@@ -86,7 +152,7 @@ need it to operate.
 | **Compliance** | **Karafiel** | NOM-151 timestamping. The natural home for Meridian's immutable audit trail: what was released to whom, under which classification, on which citation, at which point in time. |
 | **Legal corpus** | **Tezca** | Mexican-law oracle, informational only. Relevant to the origin side of the MX corridors. |
 | **Deploy** | **Enclii** | PaaS control plane. `enclii onboard --repo madfam-org/meridian`. |
-| **Data** | Postgres | Matters, applicants, presence ledgers, documents, audit trail. Prisma is the client; `apps/api/prisma/schema.prisma` defines 10 models and 15 enums. No migration has been applied anywhere. |
+| **Data** | Postgres | Matters, applicants, presence ledgers, documents, audit trail. Prisma is the client; `apps/api/prisma/schema.prisma` defines 10 models and 15 enums. No migration has been **generated**, let alone applied — `apps/api/prisma/` holds a schema and nothing else, and `prisma generate` runs only inside `Dockerfile.api`. |
 
 ### Downstream consumers (this repo is consumed by)
 
@@ -108,13 +174,49 @@ neither side has implemented.
 Names only. Values live in the approved secret store and are seeded through
 Enclii; never in this repo, in an issue, in a commit message, or in agent chat.
 
-- `DATABASE_URL` — Postgres
-- `JANUA_JWKS_URI` — auth; RS256 verification
-- `JANUA_ISSUER`, `JANUA_AUDIENCE` — token validation
-- `DHANAM_WEBHOOK_SECRET` — billing events
-- `SELVA_BASE_URL`, `SELVA_API_KEY` — inference routing
-- `KARAFIEL_BASE_URL` — timestamping the audit trail
-- `MERIDIAN_PUBLIC_URL` — canonical origin, for CORS allowlisting
+The list is split by whether code reads the name **today**, because a
+configuration document that mixes what is wired with what is intended teaches an
+operator to set variables that do nothing.
+
+**Read by `apps/api/src/config.ts`, required, no default.** An empty environment
+produces one error naming all seven and exits 78 without printing a value:
+
+- `DATABASE_URL` — Postgres. Carries a password; validated for shape only and
+  never logged or echoed into an error.
+- `JANUA_JWKS_URL` — JWKS endpoint; RS256 verification.
+- `JANUA_ISSUER`, `JANUA_AUDIENCE` — expected `iss` and `aud`. Both required:
+  without `aud`, a token minted for a neighbouring service in the same realm
+  would authenticate here.
+- `CORS_ALLOWED_ORIGINS` — comma-separated allowlist. A wildcard is rejected at
+  load rather than at use.
+- `PORT` — deliberately has no default. A service that picks its own port binds
+  one nobody is routing to, and the failure looks like a network problem for the
+  first hour.
+- `NODE_ENV` — `development` | `test` | `production`.
+
+`Dockerfile.api` sets `NODE_ENV` and `PORT`, which is why a bare `docker run` of
+the image names the other five and nothing else.
+
+**Read by `apps/api`, optional, with defaults**: `LOG_LEVEL`, `RATE_LIMIT_MAX`,
+`RATE_LIMIT_WINDOW`, `TRUST_PROXY`.
+
+**Read by `apps/admin`**: `MERIDIAN_ASOF` pins the console's reference date for a
+demonstration instance or a screenshot that must not rot; `MERIDIAN_ADMIN_DATASET`
+selects which sample dataset the console serves, falling back visibly rather than
+failing the render.
+
+**Declared in `enclii.yaml` and the Deployments, read by no application code
+yet**: `MERIDIAN_ENV`, `JANUA_URL`, `MERIDIAN_WEB_ORIGIN`,
+`MERIDIAN_ADMIN_ORIGIN`, and the `NEXT_PUBLIC_*` set (`NEXT_PUBLIC_API_URL`,
+`NEXT_PUBLIC_JANUA_URL`, `NEXT_PUBLIC_JANUA_CLIENT_ID`, `NEXT_PUBLIC_APP_URL`).
+The three Next apps render from data in their own source and call nothing, so
+these document the intended runtime contract ahead of the code that will consume
+it. Next inlines `NEXT_PUBLIC_*` at build time, which is why they are also passed
+as `--build-arg` in `.github/workflows/build-deploy.yml`.
+
+**Named for ecosystem edges not yet built**: `DHANAM_WEBHOOK_SECRET` (billing
+events), `SELVA_BASE_URL` / `SELVA_API_KEY` (inference routing),
+`KARAFIEL_BASE_URL` (timestamping the audit trail). Nothing reads them today.
 
 `packages/govtech` additionally names — and today deliberately leaves unset —
 `MERIDIAN_CLAVE_SP_AGREEMENT_REF`, `MERIDIAN_CLAVE_SP_SIGNING_KEY_REF`,
@@ -225,7 +327,9 @@ Env vars: `ENCLII_API_URL` (default `https://api.enclii.dev`), `ENCLII_TOKEN`
 
 ### Day-to-day for meridian-api
 
-Swap the service name for `meridian-web` or `meridian-admin` as needed.
+Swap the service name for `meridian-app`, `meridian-landing` or `meridian-admin`
+as needed. There is no `meridian-web` service: the applicant portal deploys as
+`meridian-app` even though its source lives in `apps/web`.
 
 ```bash
 # Status + where the pods are running
@@ -338,7 +442,9 @@ privately; the public-safe summary is:
   network policies through Enclii.
 - Register the Janua OIDC client and seed the `JANUA_*` configuration.
 - Provision Postgres and seed `DATABASE_URL` through the approved secret path.
-- Create Cloudflare DNS and tunnel routes for the three hostnames.
+- Create Cloudflare DNS and tunnel routes for the four hostnames —
+  `meridian.madfam.io`, `meridian-app.madfam.io`, `meridian-admin.madfam.io`,
+  `meridian-api.madfam.io`.
 - Add `meridian` to the status-page monitor set.
 - **Counsel review of the pathway catalog.** Blocks all advice-class output.
 - **A licensing decision** on the `madfam_represented` tenant kind.

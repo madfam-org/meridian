@@ -25,7 +25,7 @@
 import { z } from 'zod';
 
 /** The port Meridian's API is assigned in the MADFAM ecosystem. */
-export const MERIDIAN_API_PORT = 6100;
+export const MERIDIAN_API_PORT = 8000;
 
 export type NodeEnv = 'development' | 'test' | 'production';
 

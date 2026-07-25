@@ -20,9 +20,9 @@ Nothing released yet. Meridian has never been deployed and has no users.
 ### Added — 2026-07-25
 
 Initial build of the six domain packages. All six typecheck clean under strict
-settings; **901 tests across 32 files pass.**
+settings; **913 tests across 32 files pass**, and the API adds a further 108 across 7 — 1021 in total, measured 2026-07-25.
 
-**`@meridian/core`** — the shared contract. 51 tests.
+**`@meridian/core`** — the shared contract. 60 tests.
 
 - Civil-date arithmetic with no JavaScript `Date`: branded `IsoDate`, closed and
   inclusive `DateRange`, Hinnant `days_from_civil` / `civil_from_days`,
@@ -53,7 +53,7 @@ settings; **901 tests across 32 files pass.**
   substituting them produces someone else's document number.
 - BAC key seed only. No chip handshake, no PKI chain.
 
-**`@meridian/presence`** — day counting. 146 tests.
+**`@meridian/presence`** — day counting. 147 tests.
 
 - Presence ledger with `PresenceSource`, `PresenceConfidence`, and
   `detectInconsistencies` for conflicting, missing and imputed records.
@@ -71,7 +71,7 @@ settings; **901 tests across 32 files pass.**
 - Every assessment returns the ranges that produced the total, the window, and
   per-record attribution.
 
-**`@meridian/pathways`** — the rules engine. 137 tests.
+**`@meridian/pathways`** — the rules engine. 139 tests.
 
 - Declarative `EvaluatorSpec` language (18 operations) with a **law-free
   evaluator**: no country name, threshold or legal concept in `evaluate.ts`.
@@ -136,11 +136,11 @@ it into a process.
 - `prisma/schema.prisma` — 10 models, 15 enums. No migration generated.
 - `routes/` — health, tenants, applicants, matters, tasks.
 
-**`apps/web`** — applicant portal, Next.js 15 App Router, port 6101. Components
+**`apps/web`** — applicant portal, Next.js 15 App Router, local dev port 3001. Components
 including `DisclosureNotice`, `Citations`, `Bilingual`, `Working`,
 `PhaseTimeline`, `TaskList`. No tests.
 
-**`apps/admin`** — firm console, Next.js 15 App Router, port 6102. Caseload,
+**`apps/admin`** — firm console, Next.js 15 App Router, local dev port 3002. Caseload,
 catalog review, audit trail, integrations board, roster, spec-language rendering.
 No tests.
 

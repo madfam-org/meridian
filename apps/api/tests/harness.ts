@@ -39,7 +39,7 @@ export const TEST_ENV: Readonly<Record<string, string>> = {
   JANUA_JWKS_URL: 'https://janua.test.invalid/realms/meridian/protocol/openid-connect/certs',
   JANUA_ISSUER: ISSUER,
   JANUA_AUDIENCE: AUDIENCE,
-  PORT: '6100',
+  PORT: '8000',
   NODE_ENV: 'test',
   CORS_ALLOWED_ORIGINS: 'https://app.meridian.test,https://admin.meridian.test',
   LOG_LEVEL: 'silent',

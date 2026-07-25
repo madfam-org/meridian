@@ -1,0 +1,106 @@
+# The public explainer — apps/landing, built by Dockerfile.landing, served at
+# meridian.madfam.io.
+#
+# This is the only Meridian surface a person reaches without an account, so it
+# is also the only one that has to be legible to someone deciding whether to
+# hand over a passport number at all. It reads no database, verifies no token
+# and calls no API; everything it needs is in its own bundle. Keep it that way —
+# the moment this pod needs a credential, it stops being the page anyone can
+# safely be sent.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meridian-landing
+  namespace: meridian
+  labels:
+    app: meridian-landing
+    app.kubernetes.io/part-of: madfam-platform
+spec:
+  # Two replicas so a rollout is not a front door that answers nothing. Not a
+  # capacity decision: this site serves static-shaped pages.
+  replicas: 2
+  selector:
+    matchLabels:
+      app: meridian-landing
+  template:
+    metadata:
+      labels:
+        app: meridian-landing
+        app.kubernetes.io/part-of: madfam-platform
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      imagePullSecrets:
+        - name: ghcr-credentials
+      containers:
+        - name: landing
+          # Bootstrap tag. The first push to main replaces this with an
+          # immutable digest through the `images:` block in kustomization.yaml
+          # (.github/workflows/build-deploy.yml).
+          image: ghcr.io/madfam-org/meridian/landing:main
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "3000"
+            - name: HOSTNAME
+              value: 0.0.0.0
+            # The one thing this site needs from outside its own bundle: where
+            # the portal lives, for the sign-in link. Next inlines NEXT_PUBLIC_*
+            # at build time, so this runtime copy must match the --build-arg in
+            # build-deploy.yml — a mismatch sends visitors to the wrong host on
+            # the one click that matters.
+            #
+            # There is deliberately no NEXT_PUBLIC_API_URL and no Janua client
+            # id here. This surface has no session to establish.
+            - name: NEXT_PUBLIC_APP_URL
+              value: "https://meridian-app.madfam.io"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 384Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            # See web-deployment.yaml — Next writes its caches under .next/cache
+            # at runtime, so the root filesystem cannot be sealed without an
+            # emptyDir pinned to a path that moves with the app layout.
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: [ALL]
+          # `/` rather than `/api/health` — see web-deployment.yaml. apps/landing
+          # has no health route, and a probe pointed at an endpoint nobody wrote
+          # is a deployment that never becomes ready. On this app the cost is
+          # low: `/` is the page it exists to serve.
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3

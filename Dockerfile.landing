@@ -1,0 +1,96 @@
+# Meridian Landing — ghcr.io/madfam-org/meridian-landing
+#
+# The marketing site served at meridian.madfam.io. The applicant portal moved to
+# meridian-app.madfam.io when the two were split; this image is not that one.
+#
+# Build context is the repository root because the site imports @meridian/core
+# and @meridian/pathways through the workspace. That is deliberate rather than
+# incidental: the figures this site publishes — how many pathways ship, how many
+# counsel has signed off — are counted from the real catalog at build time, so
+# the image cannot be built without the packages it makes claims about.
+#
+# Requires `output: 'standalone'` in apps/landing/next.config.* — the runner
+# stage copies `.next/standalone`, and the builder asserts it exists so the
+# failure arrives with an explanation rather than as "COPY failed: no source
+# files".
+#
+# Workspace packages are consumed as emitted JavaScript (each builds to dist/ and
+# its exports default condition points there), so no transpilePackages entry is
+# needed here. The build below runs `--filter "@meridian/landing..."`, whose
+# trailing dots build the workspace dependencies first; without their dist/ the
+# catalog import resolves to nothing.
+
+FROM node:22-alpine AS deps
+
+WORKDIR /app
+
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+COPY apps/admin/package.json ./apps/admin/
+COPY apps/landing/package.json ./apps/landing/
+COPY packages/core/package.json ./packages/core/
+COPY packages/mrtd/package.json ./packages/mrtd/
+COPY packages/presence/package.json ./packages/presence/
+COPY packages/pathways/package.json ./packages/pathways/
+COPY packages/documents/package.json ./packages/documents/
+COPY packages/govtech/package.json ./packages/govtech/
+
+RUN pnpm install --frozen-lockfile
+
+
+FROM deps AS build
+
+WORKDIR /app
+
+COPY tsconfig.base.json turbo.json ./
+COPY packages/ ./packages/
+COPY apps/landing/ ./apps/landing/
+
+# No NEXT_PUBLIC_* build arguments. This site calls no API and holds no client
+# configuration: its only outbound links are the repository and the portal, and
+# both are constants in apps/landing/lib/links.ts where a reviewer can see them.
+# A build argument is recorded in the image history and is readable by anyone who
+# can pull the image, and this image is published to a public registry — so the
+# right number of them is zero until something genuinely needs one.
+
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN pnpm --filter "@meridian/landing..." build
+
+RUN set -eu; \
+    if [ ! -d apps/landing/.next/standalone ]; then \
+      echo "next build produced no .next/standalone directory."; \
+      echo "Set output: 'standalone' in apps/landing/next.config.* — the runtime"; \
+      echo "image copies that tree and has no other way to start the server."; \
+      exit 1; \
+    fi; \
+    mkdir -p apps/landing/public
+
+
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+# uid/gid 1001 matches the pod securityContext in
+# infra/k8s/production/landing-deployment.yaml.
+RUN addgroup --system --gid 1001 meridian && \
+    adduser --system --uid 1001 --ingroup meridian meridian
+
+# The standalone tree already carries a pruned production node_modules; static
+# assets and public files are not traced into it and are copied separately.
+COPY --from=build --chown=meridian:meridian /app/apps/landing/.next/standalone ./
+COPY --from=build --chown=meridian:meridian /app/apps/landing/.next/static ./apps/landing/.next/static
+COPY --from=build --chown=meridian:meridian /app/apps/landing/public ./apps/landing/public
+
+USER meridian
+
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+EXPOSE 3000
+
+CMD ["node", "apps/landing/server.js"]

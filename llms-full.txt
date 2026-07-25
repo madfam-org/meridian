@@ -17,10 +17,11 @@ whole tree first.
 ## Canonical instruction order
 
 1. `AGENTS.md` — canonical agent operating instructions.
-2. `packages/core/src/` — the shared contract. All of it, about 900 lines. Its
-   doc comments explain *why* each type is shaped the way it is.
+2. `packages/core/src/` — the shared contract. All of it, about 1,160 lines
+   across nine modules. Its doc comments explain *why* each type is shaped the
+   way it is.
 3. `README.md` — honest status, architecture, quickstart, repository map.
-4. `ECOSYSTEM.md` — ecosystem position and Enclii day-to-day.
+4. `ECOSYSTEM.md` — ecosystem position, domain layout, and Enclii day-to-day.
 5. `docs/` — PRD, architecture, regulatory posture, catalog review, ADRs.
 6. The specific package `src/` you are changing.
 
@@ -54,46 +55,69 @@ engine is jurisdiction-generic; the corridors are data.
 
 ## Verified status — 2026-07-25
 
-Measured, not assumed. Every figure below was produced by running the command
-named.
+Measured at 17:50 America/Mexico_City, not assumed. Every figure below was
+produced by running the command named.
 
 ### Built and passing
 
-`pnpm exec tsc --noEmit` exits clean in all six packages.
-`pnpm exec vitest run` per package:
+`pnpm exec tsc --noEmit` exits clean in all six packages and in `apps/api`.
+Whole-repo through turbo: `pnpm typecheck` 16/16 tasks, `pnpm test` 13/13,
+`pnpm build` 10/10. `pnpm exec vitest run` per project:
 
-| Package | Test files | Tests |
+| Project | Test files | Tests |
 |---|---|---|
-| `@meridian/core` | 2 | 51 |
+| `@meridian/core` | 2 | 60 |
 | `@meridian/mrtd` | 5 | 111 |
-| `@meridian/presence` | 6 | 146 |
-| `@meridian/pathways` | 5 | 137 |
+| `@meridian/presence` | 6 | 147 |
+| `@meridian/pathways` | 5 | 139 |
 | `@meridian/documents` | 6 | 146 |
 | `@meridian/govtech` | 8 | 310 |
-| **Total** | **32** | **901** |
+| *packages subtotal* | *32* | *913* |
+| `@meridian/api` | 7 | 108 |
+| **Total** | **39** | **1021** |
+
+`apps/landing`, `apps/web` and `apps/admin` have **no test files at all**. They
+typecheck and `next build` succeeds; nothing asserts their rendering or their
+state derivation. That is the largest gap in the repository.
 
 ### Present and passing
 
-The three policy guards run clean:
+The three policy guards run clean, and each reports what it examined rather than
+only its verdict:
 
 ```
 check-advice-boundary:       OK — gate and producer anchors verified,
-                             68 application files read, 4 routes examined
-check-no-credential-custody: OK — 206 files scanned, 3 rules,
+                             123 application files read, 16 routes examined
+check-no-credential-custody: OK — 273 files scanned, 3 rules,
                              3 path exemptions, 2 structural anchors verified
-check-pathway-citations:     OK — 8 pathways, 20 citations,
-                             63 criterion references resolved
+check-pathway-citations:     OK — as of 2026-07-25: 4 catalog files, 8 pathways,
+                             20 citations, 64 criterion references resolved
 ```
 
 CI at `.github/workflows/ci.yml` — jobs `policy` (the three guards, before any
-install), `typecheck`, `test`, `build` — plus `build-deploy.yml`. Deployment
-configuration: `enclii.yaml` (four service documents),
-`Dockerfile.{api,web,admin}`, `docker-compose.yml`, `infra/k8s/production/`.
+install), `typecheck`, `test`, `build` — plus `build-deploy.yml`, which builds
+and signs four images. Deployment configuration: `enclii.yaml` (five YAML
+documents: a project-level record plus one Service per deployable),
+`Dockerfile.{api,web,admin,landing}`, `docker-compose.yml` (Postgres only, for
+local development), `infra/k8s/production/` (namespace, four deployment/service
+pairs, kustomization, and a secrets template that is deliberately not a
+kustomize resource).
 
-### Built during this session, unfinished
+### The API, as built
 
-`apps/api` is a real Fastify application:
+`apps/api` is a real Fastify application with a composition root and a suite:
 
+- `src/main.ts` — the only file that reads `process.env`, constructs a database
+  client or binds a socket. Loads the Prisma client through a *variable*
+  specifier so `tsc --noEmit` does not depend on `prisma generate` having run.
+  Shutdown drains in-flight requests before releasing the database, so an audit
+  append in progress is not lost.
+- `src/config.ts` — validates the whole environment once and reports **every**
+  problem in one error. With an empty environment it names seven variables —
+  `DATABASE_URL`, `JANUA_JWKS_URL`, `JANUA_ISSUER`, `JANUA_AUDIENCE`, `PORT`,
+  `NODE_ENV`, `CORS_ALLOWED_ORIGINS` — and exits 78 without printing a value.
+  `Dockerfile.api` sets `NODE_ENV` and `PORT`, so a bare `docker run` of the
+  image names the remaining five.
 - `auth/` — Janua JWKS verification, RS256 checked before **and** during
   verification, issuer and audience both required.
 - `disclosure/` — the gate (re-checks a downgraded value), the envelope, a leak
@@ -104,24 +128,63 @@ configuration: `enclii.yaml` (four service documents),
   tenant id; a repository comes from `forTenant()`), Prisma and memory adapters.
 - `audit/` — append-only: `append` and `list`, nothing else.
 - `prisma/schema.prisma` — 10 models, 15 enums. No migration generated.
-- `routes/` — health, tenants, applicants, matters, tasks.
+- `routes/` — health, tenants, applicants, matters, tasks, presence, documents,
+  pathways, identity, govtech, audit: 41 HTTP routes across 11 modules. The
+  identity route returns an MRZ verdict and persists none of the document.
+- `tests/` — 7 files, 108 tests: token verification against the attacks actually
+  used against JWT APIs, the advice boundary end to end, tenant isolation at the
+  HTTP boundary with a valid token for the wrong tenant, readiness with the
+  dependency down, and the case-file routes at the Schengen 90/91 boundary. All
+  of them run over `InMemoryRepositoryProvider`.
 
-`apps/web` (applicant portal) and `apps/admin` (firm console) are Next.js 15 App
-Router applications with real components and lib modules.
+The image builds and starts: `docker build -f Dockerfile.api` then `docker run`
+reaches configuration validation and exits 78. The build imports every workspace
+package under Node before it will emit an image, which is what catches a package
+whose `exports` resolve to TypeScript — correct in the workspace, fatal in a
+container.
+
+### The applications
+
+`apps/landing` — the public marketing site, Next.js 15 App Router, local dev
+port 3000, deployed as `meridian-landing` on `meridian.madfam.io`. One page plus
+a not-found page, bilingual English/Spanish with each half carrying its own
+`lang` attribute. It imports `@meridian/core` and `@meridian/pathways` and
+computes every published figure from the catalog at build time — pathways
+shipped, pathways counsel-reviewed, routes open, criteria, distinct sources
+cited, how many of those are `discretionary`, how many carry a URL, how many have
+left the freshest staleness band — all as at one fixed civil date declared in
+`lib/catalog-facts.ts`, never from a clock. There are no adoption numbers, no
+processing-time estimates and no success rates, because none of those would be
+true. `output: 'standalone'` is load-bearing: `Dockerfile.landing` copies
+`.next/standalone` and fails the build with an explicit message if it is absent.
+
+`apps/web` (applicant portal, port 3001) and `apps/admin` (firm console, port
+3002) are Next.js 15 App Router applications with real components and lib
+modules, rendering from sample data declared in their own source. `apps/web`
+carries `DisclosureNotice`, `Citations`, `Bilingual`, `Working`, `WorkedExample`,
+`PhaseTimeline` and `TaskList`; `apps/admin` carries caseload, catalog review,
+audit trail, integrations board, roster and spec-language rendering.
+
+None of the three reads an API host from the environment, so none of them calls
+the API yet.
 
 **The gaps, in order of importance:**
 
-1. **No application has any tests.** The disclosure gate's boundary conditions at
-   the HTTP layer are asserted by design and by the guard script, not by a suite.
-2. `apps/api` has **no `src/main.ts`** — nothing composes it into a process.
-3. No contract test suite for the repository ports, which ADR 0006 names as its
-   own main risk.
-4. No migration has been generated or applied anywhere.
+1. **The three Next.js applications have no tests.**
+2. No contract test suite for the repository ports, which ADR 0006 names as its
+   own main risk. The Prisma adapter is covered by `tsc` and nothing else.
+3. No migration has been generated or applied anywhere. `prisma generate` has
+   never been run in this workspace — only inside `Dockerfile.api`.
+4. Nothing has been exercised end to end; no request has travelled from a screen
+   through the service to a database in any environment.
 5. Nothing is deployed. No namespace, DNS record or tunnel route exists.
 
 ### Legal catalog
 
-- 8 pathways: 6 Spain, 2 Canada. **0 counsel-reviewed.**
+- 8 pathways: 6 Spain, 2 Canada. **0 counsel-reviewed.** 7 open on 2026-07-25;
+  the Spanish investor route is recorded as closed, because a person already
+  holding that status still needs an answer.
+- 43 eligibility criteria across the catalog.
 - 20 distinct citations in the pathway catalog; 5 marked `discretionary`; 7
   carry a URL.
 - `@meridian/presence`: 6 citations, 3 `discretionary`.
@@ -136,12 +199,13 @@ system working.**
 
 ### Government integration capability board
 
-15 declared capabilities: 6 `available` (**all local computation**),
-2 `not_provisioned`, 3 `not_implemented`, 4 `refused_by_policy`, 0 `degraded`,
-0 defects. **Zero `government_system` capabilities are `available`**, and every
-remote capability additionally requires an injected transport this repository
-does not ship, so `available` is unreachable from inside the package even with
-every environment variable set.
+15 declared capabilities across three adapters (`es-clave`, `es-dicireg`,
+`ca-ircc`): 6 `available` (**all `local_computation`**), 2 `not_provisioned`,
+3 `not_implemented`, 4 `refused_by_policy`, 0 `degraded`, 0 defects, board
+`consistent: true`. **Zero `government_system` capabilities are `available`**,
+and every remote capability additionally requires an injected transport this
+repository does not ship, so `available` is unreachable from inside the package
+even with every environment variable set.
 
 ---
 
@@ -166,8 +230,17 @@ Use `@meridian/core`: `addDays`, `addMonths` (clamps to month end), `addYears`,
 `DateRange` is **closed and inclusive at both ends**. `rangeLengthDays` is
 `diffDays + 1`. `lookbackWindow(end, 180)` starts at `end - 179`.
 
-Exactly one clock read exists in the repository: `todayUtc()` in
-`@meridian/mrtd`, present so callers can override it. Do not add a second.
+**No package reads a clock.** The one sanctioned read under `packages/` is
+`todayUtc()` in `@meridian/mrtd`, present so callers can override it. Three
+reads exist under `apps/`, each documented at the top of its file:
+`apps/api/src/clock.ts` delegates its civil date to `todayUtc()` and separately
+reads an *instant* for audit stamps only (an audit event needs a moment, not a
+calendar day, because two events on the same day need an order — it must never
+be truncated to ten characters and used as a civil date); and
+`apps/admin/lib/clock.ts` reproduces the same UTC civil-date read once, because
+`@meridian/mrtd` is not a dependency of that app, with `?asOf=` and
+`MERIDIAN_ASOF` overriding it in that order. `apps/web` and `apps/landing` read
+no clock. Do not add a fourth.
 
 → `docs/adr/0001-civil-date-arithmetic.md`
 
@@ -211,6 +284,12 @@ time, and travels in `Disclosable<T>` with the citation ids it rests on.
 a live, unexpired, jurisdiction-matched `AuthorizedRepresentative`, and is
 otherwise **downgraded to `assessment`** with a reason.
 
+`RepresentativeCredential` covers `rcic`, `canadian_lawyer`,
+`canadian_paralegal`, `quebec_notary`, `spanish_abogado`, `spanish_gestor` and
+`other_regulated`. The paralegal limb of IRPA s.91 is a first-class member
+rather than a residual case, because omitting it would wrongly downgrade advice
+a licensed professional is in fact accountable for.
+
 Operative test: **anything that ranks options, orders them, scores them, or says
 what someone should do is `advice`.** A sort order is a recommendation. So is a
 percentage chance of success — and that one would be fabricated besides.
@@ -238,38 +317,72 @@ packages/documents/   language, model, legalisation, translation, freshness,
                       checklist, gaps
 packages/govtech/     capability, adapter, credential-guard, handoff, citations,
                       adapters/{clave,dicireg,ircc}
+                      every package builds to dist/ via tsconfig.build.json
 apps/api/             Fastify — auth/ disclosure/ repositories/ audit/ routes/
                       http/ services.ts config.ts clock.ts request-context.ts
-                      prisma/schema.prisma. NO src/main.ts. NO tests.
-apps/web/             applicant portal, Next.js 15, port 6101. NO tests.
-apps/admin/           firm console, Next.js 15, port 6102. NO tests.
+                      prisma/schema.prisma · src/main.ts. 7 test files, 108 tests.
+apps/landing/         marketing site, Next.js 15, local dev port 3000. NO tests.
+apps/web/             applicant portal, Next.js 15, local dev port 3001. NO tests.
+apps/admin/           firm console, Next.js 15, local dev port 3002. NO tests.
 docs/                 PRD, ARCHITECTURE, REGULATORY_POSTURE,
-                      LEGAL_CATALOG_REVIEW, adr/0001-0006
+                      LEGAL_CATALOG_REVIEW, adr/README + adr/0001-0006
 scripts/              check-advice-boundary · check-no-credential-custody
                       check-pathway-citations   (all three pass)
-infra/k8s/production/ namespace, deployments, services, kustomization,
+infra/k8s/production/ namespace, four deployment/service pairs, kustomization,
                       secrets-template (deliberately not a kustomize resource)
-enclii.yaml           four Enclii service documents
-Dockerfile.{api,web,admin} · docker-compose.yml
+enclii.yaml           five documents: a project record + four Services
+Dockerfile.{api,web,admin,landing} · docker-compose.yml (Postgres only)
 .github/workflows/    ci.yml (policy · typecheck · test · build)
-                      build-deploy.yml
+                      build-deploy.yml (builds and signs four images)
 ```
 
 Dependency direction is one-way with no cycles: `core` ← everything;
 `pathways` ← `documents`; `mrtd` depends on nothing.
+
+The deployed names do not match the directory names, on purpose:
+`apps/web` → service `meridian-app` on `meridian-app.madfam.io`, while the
+workspace package stays `@meridian/web`, the source stays `apps/web`, the image
+stays `meridian-web` and the Janua `client_id` stays `meridian-web`. See
+`ECOSYSTEM.md`, and the comments in `infra/k8s/production/web-deployment.yaml`
+and `kustomization.yaml`, before changing any of them.
 
 ### Boundaries not to cross
 
 - **`packages/core` is the contract.** Changing it changes every package. Do not
   add a helper there while working in a domain package.
 - **The evaluator is law-free.** `packages/pathways/src/evaluate.ts` contains no
-  country name, threshold or legal concept. Adding a jurisdiction is a new file
-  in `src/catalog/`. A legal rule in the evaluator has escaped to a place no
-  reviewing lawyer will look.
+  country name, threshold or legal concept — 22 operations over plain data.
+  Adding a jurisdiction is a new file in `src/catalog/`. A legal rule in the
+  evaluator has escaped to a place no reviewing lawyer will look.
 - **A package's `src/index.ts` is its only public surface.** The `exports` map
-  is `{ ".": "./src/index.ts" }`. Raw engines behind a disclosure wrapper are
-  unreachable from outside on purpose; do not widen it "for testing".
+  has one entry, `"."`, with `types` at `./dist/index.d.ts` and `default` at
+  `./dist/index.js`. Consumers import **emitted JavaScript**, not TypeScript
+  source. Raw engines behind a disclosure wrapper are unreachable from outside on
+  purpose; do not widen it "for testing", and do not point a default condition
+  back at `src/`.
 - **No engine package ever sees a repository or performs I/O.**
+
+### Why the packages emit JavaScript
+
+They did not always. The packages once published `"main": "./src/index.ts"` and
+shipped no build step, which is correct inside the workspace — `tsc` and vitest
+read the sources directly — and fatal in a container: Node executes JavaScript
+and its type-stripping mode does not remap the `./x.js` specifiers those files
+use onto the `./x.ts` files on disk. An image built that way starts and dies on
+its first import, in production, after a green pipeline. So each package now
+builds with `tsc -p tsconfig.build.json` and `Dockerfile.api` imports every
+package under Node before it will emit an image.
+
+Two consequences to preserve:
+
+- Turbo's `typecheck` and `test` both `dependsOn: ["^build"]`, so a cross-package
+  import always reads a fresh `dist/`. A stale `dist` means you are testing code
+  you did not write.
+- `transpilePackages` and `experimental.extensionAlias` have been **removed** from
+  all three Next configs, and each config records why. There are no `.ts` files
+  inside `@meridian/*` for webpack to compile, and remapping `./civil-date.js`
+  onto `civil-date.ts` would send a valid JavaScript request hunting for
+  TypeScript that is not published. Restoring either would break `next build`.
 
 ---
 
@@ -305,7 +418,8 @@ that restates the implementation.
 
 ## Verification commands
 
-From the package directory:
+From the project directory — `packages/<name>`, or `apps/api`, which also has a
+suite:
 
 ```bash
 pnpm exec tsc --noEmit
@@ -313,11 +427,13 @@ pnpm exec vitest run
 ```
 
 Both must exit clean. Never report success without having run them and seen
-them pass.
+them pass. If your change moves a test count, state the new number.
 
-Across packages:
+Across packages — build first, because packages are consumed as emitted
+JavaScript:
 
 ```bash
+pnpm build --filter "./packages/*"
 pnpm -r --filter "./packages/*" typecheck
 pnpm -r --filter "./packages/*" test
 ```
@@ -335,6 +451,15 @@ that an invariant broke rather than a build:
 node scripts/check-advice-boundary.mjs
 node scripts/check-no-credential-custody.mjs
 node scripts/check-pathway-citations.mjs
+```
+
+If you change how a package is built, resolved or exported, also build and run
+the API image — it is the only check that catches a package resolving to
+TypeScript at runtime:
+
+```bash
+docker build -f Dockerfile.api -t meridian-api:local .
+docker run --rm meridian-api:local
 ```
 
 `check-no-credential-custody` scans the whole tree, `docs/` included. When
@@ -384,14 +509,23 @@ standard library or what is already there, and say so in your report.
   immutable audit trail of release decisions.
 - **Legal corpus**: Tezca — Mexican-law oracle, informational.
 - **Deploy**: Enclii. `enclii onboard --repo madfam-org/meridian`.
-- **CORS**: explicit allowlist per service; wildcards banned (H2/H5/H6).
+- **CORS**: explicit allowlist per service; wildcards banned (H2/H5/H6), and
+  rejected by `apps/api/src/config.ts` at load rather than at use.
 - **Images**: `@sha256:`-pinned in every manifest.
 - **Dates**: ISO 8601 everywhere; times in `America/Mexico_City`.
 
-Allocation (claimed, not deployed): namespace `meridian`; `meridian-api` :6100,
-`meridian-web` :6101, `meridian-admin` :6102; domains `meridian.madfam.io`,
-`meridian-api.madfam.io`, `meridian-admin.madfam.io`; port block 6100-6199;
-registry `ghcr.io/madfam-org/meridian/*`.
+Allocation (not deployed): namespace `meridian`; `meridian-landing` :3000 on
+meridian.madfam.io, `meridian-app` :3000 on meridian-app.madfam.io,
+`meridian-admin` :3000 on meridian-admin.madfam.io, `meridian-api` :8000 on
+meridian-api.madfam.io. Registry `ghcr.io/madfam-org/` with two path shapes —
+`meridian-api`, `meridian-web`, `meridian-admin` from before the landing split
+and the nested `meridian/landing` after it. Container ports are framework
+defaults and have no production effect: pods have their own network namespaces
+and the tunnel routes by hostname. The port is named `http` throughout so
+containerPort, Service targetPort, probes and the generated NetworkPolicy agree
+by construction. No port block is claimed. Local dev uses 3000/3001/3002 and
+whatever `PORT` says for the API. `ECOSYSTEM.md` carries the full argument —
+reference it rather than restating it.
 
 ## Enclii-first operations contract
 
@@ -457,22 +591,29 @@ public-safe summary plus a link here.
 
 Recorded so no agent mistakes them for a decision:
 
-1. **No application has any tests**, and `apps/api` has no `src/main.ts`. The
-   disclosure gate's HTTP-layer boundary conditions are unasserted. Largest gap
-   in the repository.
-2. No pathway is counsel-reviewed. Legal review is the gating item between the
+1. **The three Next.js applications have no tests.** The disclosure gate's
+   HTTP-layer boundary conditions *are* asserted now, by
+   `apps/api/tests/disclosure.test.ts`; what remains unasserted is everything the
+   browser renders. Largest gap in the repository.
+2. No contract test suite for the repository ports. The in-memory and Prisma
+   adapters can drift, and ADR 0006 names that as its main risk.
+3. No pathway is counsel-reviewed. Legal review is the gating item between the
    engine and a sellable product.
-3. The source PRD text is not committed; `docs/PRD.md` holds the editorial
-   preface and awaits the verbatim origin document.
-4. `canRelease`'s doc comment enumerates authorised representatives too
-   narrowly, omitting the paralegal limb of IRPA s.91. Behaviour is correct via
-   `other_regulated`; the enumeration is left for counsel review.
-5. `packages/mrtd/package.json` declares no dependencies while `src/bac.ts`
-   imports `node:crypto`. Types resolve from the hoisted root `@types/node`.
-   Add `"@types/node": "^22.10.2"` to that package's devDependencies the next
-   time the lockfile is touched.
-6. Data residency for EU subjects is an open architectural question.
-7. Persistence, document storage and presence-ledger ingestion are undesigned.
+4. No migration has been generated. `apps/api/prisma/` holds a schema and
+   nothing else; `prisma generate` runs only inside `Dockerfile.api`.
+5. The source PRD text is not committed; `docs/PRD.md` holds the editorial
+   preface, the record of our departures and a marked block awaiting the
+   verbatim origin document.
+6. `packages/mrtd/package.json` declares no dependencies while `src/bac.ts`
+   imports `node:crypto`. Types resolve from the hoisted root `@types/node`, so
+   `tsc` is clean today. Add `"@types/node": "^22.10.2"` to that package's
+   devDependencies the next time the lockfile is touched. There is no runtime
+   dependency — `node:crypto` is standard library.
+7. No formatting check. Prettier is a root devDependency with no config file and
+   CI does not run it.
+8. Data residency for EU subjects is an open architectural question.
+9. Document storage and presence-ledger ingestion are undesigned. Persistence is
+   designed but unproven: the Prisma schema exists and has never met a database.
 
 ## Maintenance
 

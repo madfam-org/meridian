@@ -17,7 +17,7 @@ Innovaciones MADFAM S.A.S. de C.V. — AGPL-3.0-only.
 
 ## Status
 
-**Snapshot taken 2026-07-25 15:30 America/Mexico_City, at the end of the
+**Snapshot taken 2026-07-25 17:50 America/Mexico_City, at the end of the
 repository's initial build.** Numbers below were measured by running the commands
 named, not estimated. **Verify the current state yourself** with the commands in
 *Verification* before relying on any claim here.
@@ -26,60 +26,82 @@ named, not estimated. **Verify the current state yourself** with the commands in
 
 Every project typechecks clean under strict settings — including
 `noUncheckedIndexedAccess`, `verbatimModuleSyntax` and `noUnusedLocals` — and
-every test passes.
+every test passes. `pnpm typecheck` runs 16 turbo tasks and `pnpm build` runs 10;
+both are green.
 
-| Project | What it does | Tests |
-|---|---|---|
-| `@meridian/core` | Civil-date arithmetic, the advice boundary, `Citation`, tenancy, matter/task model | 60 |
-| `@meridian/mrtd` | ICAO Doc 9303 MRZ parsing, check digits, century windows, BAC key seed | 111 |
-| `@meridian/presence` | Presence ledger, Schengen 90/180, tax day counts, continuous residence, work hours | 147 |
-| `@meridian/pathways` | Declarative rules engine, three-valued evaluation, review gate, ES + CA catalog | 139 |
-| `@meridian/documents` | Legalisation routing, translation requirements, freshness projection, checklists, gaps | 146 |
-| `@meridian/govtech` | Government adapters with honest capability reporting and refused credential custody | 310 |
-| `@meridian/api` | Fastify service, Janua RS256 auth, the disclosure gate, tenant-scoped repositories | 108 |
-| `@meridian/web` | Applicant portal — typechecks and `next build` succeeds | — |
-| `@meridian/admin` | Firm console — typechecks and `next build` succeeds | — |
-| | | **1021** |
+| Project | What it does | Test files | Tests |
+|---|---|---|---|
+| `@meridian/core` | Civil-date arithmetic, the advice boundary, `Citation`, tenancy, matter/task model | 2 | 60 |
+| `@meridian/mrtd` | ICAO Doc 9303 MRZ parsing, check digits, century windows, BAC key seed | 5 | 111 |
+| `@meridian/presence` | Presence ledger, Schengen 90/180, tax day counts, continuous residence, work hours | 6 | 147 |
+| `@meridian/pathways` | Declarative rules engine, three-valued evaluation, review gate, ES + CA catalog | 5 | 139 |
+| `@meridian/documents` | Legalisation routing, translation requirements, freshness projection, checklists, gaps | 6 | 146 |
+| `@meridian/govtech` | Government adapters with honest capability reporting and refused credential custody | 8 | 310 |
+| `@meridian/api` | Fastify service, Janua RS256 auth, the disclosure gate, tenant-scoped repositories | 7 | 108 |
+| `@meridian/landing` | Marketing site — typechecks and `next build` succeeds | — | — |
+| `@meridian/web` | Applicant portal — typechecks and `next build` succeeds | — | — |
+| `@meridian/admin` | Firm console — typechecks and `next build` succeeds | — | — |
+| | | **39** | **1021** |
 
-Neither Next.js application has a test suite. That is the largest remaining gap
-in the repository, and it is why the two rows above claim only that they build.
+None of the three Next.js applications has a test suite. That is the largest
+remaining gap in the repository, and it is why those three rows claim only that
+they build.
 
-All three repository guard scripts pass:
+All three repository guard scripts pass. Each prints what it examined rather
+than only its verdict, because a guard that has quietly stopped matching
+anything passes just as silently as one that is working:
 
-```bash
-node scripts/check-advice-boundary.mjs
-node scripts/check-no-credential-custody.mjs
-node scripts/check-pathway-citations.mjs
+```
+$ node scripts/check-advice-boundary.mjs
+check-advice-boundary: OK — gate and producer anchors verified,
+123 application files read, 16 routes examined.
+
+$ node scripts/check-no-credential-custody.mjs
+check-no-credential-custody: OK — 273 files scanned, 3 rules,
+3 path exemptions, 2 structural anchors verified.
+
+$ node scripts/check-pathway-citations.mjs
+check-pathway-citations: OK — as of 2026-07-25: 4 catalog files, 8 pathways,
+20 citations, 64 criterion references resolved
 ```
 
-Each prints what it examined rather than only its verdict, because a guard that
-has quietly stopped matching anything passes just as silently as one that is
-working. Two of them were additionally proven able to fail: a deliberate
-violation was written into `apps/api/src/`, each script caught it, and the file
-was removed. Re-run that probe yourself if you change a detector.
+Two of them were additionally proven able to fail: a deliberate violation was
+written into `apps/api/src/`, each script caught it, and the file was removed.
+Re-run that probe yourself if you change a detector.
 
 CI exists at `.github/workflows/ci.yml` with four jobs — **policy** (the three
 guard scripts, run first and with no install), **typecheck**, **test** and
-**build** — plus `build-deploy.yml`. Deployment configuration exists:
-`enclii.yaml` (four documents), `Dockerfile.{api,web,admin}`,
-`docker-compose.yml`, and `infra/k8s/production/` (namespace, three
-deployment/service pairs, kustomization, and a secrets *template* that is
-deliberately not a kustomize resource).
+**build** — plus `build-deploy.yml`, which builds and signs four images.
+Deployment configuration exists: `enclii.yaml` (five YAML documents — one
+project-level record and one Service per deployable),
+`Dockerfile.{api,web,admin,landing}`, `docker-compose.yml`, and
+`infra/k8s/production/` (namespace, four deployment/service pairs,
+kustomization, and a secrets *template* that is deliberately not a kustomize
+resource).
 
 ### Known gaps
 
-- **The two Next.js applications have no tests.** They build and typecheck; no
+- **The three Next.js applications have no tests.** They build and typecheck; no
   assertion covers their rendering or their state derivation.
 - **The API has never run against a real database.** Its 108 tests exercise the
   in-memory repository adapter, which is a complete implementation rather than a
   mock, but the Prisma adapter is covered only by typechecking and its schema has
-  never been applied to a live Postgres. `prisma generate` has not been run here.
-- **Nothing has been exercised end to end.** No request has travelled from the
-  web application through the API to a database in any environment.
+  never been applied to a live Postgres. `prisma generate` has not been run in
+  this workspace — only inside `Dockerfile.api`, where it writes into the image
+  and nothing else — and `apps/api/prisma/` contains a schema and no migrations.
+- **Nothing has been exercised end to end.** No request has travelled from a web
+  application through the API to a database in any environment. The three Next
+  apps read no environment configuration for an API host, so nothing would call
+  it yet even if it were running.
 
 What is built in the API is worth naming, because it is the shape the
 architecture documents describe:
 
+- `src/main.ts` — the composition root, and the only file that reads
+  `process.env`, constructs a database client or binds a socket. Everything else
+  takes what it needs as an argument, which is why the test suite can assemble
+  the same application with an in-memory store and a local key pair and still be
+  testing the real thing.
 - `auth/` — Janua JWKS verification, **RS256 only**, with the algorithm checked
   both before and during verification, and issuer *and* audience both required.
 - `disclosure/` — the gate, the response envelope, a leak detector, and a route
@@ -94,9 +116,9 @@ architecture documents describe:
   else; there is no update or delete to call.
 - `prisma/schema.prisma` — 10 models, 15 enums.
 - `routes/` — health, tenants, applicants, matters, tasks, presence, documents,
-  pathways, identity, govtech and audit. The identity route validates an MRZ and
-  **persists none of it**: the verdict is returned and every field derived from
-  the travel document is discarded.
+  pathways, identity, govtech and audit: 41 HTTP routes across 11 modules. The
+  identity route validates an MRZ and **persists none of it**: the verdict is
+  returned and every field derived from the travel document is discarded.
 
 ### Not done
 
@@ -159,7 +181,7 @@ way it is.
 
 ```
 meridian/
-├── packages/                       the mature part — pure libraries, 901 tests
+├── packages/                       the mature part — pure libraries, 913 tests
 │   ├── core/          @meridian/core      the shared contract. Read this first.
 │   │   src/civil-date.ts   IsoDate, DateRange (closed/inclusive), Hinnant algorithms
 │   │   src/disclosure.ts   DisclosureClass, canRelease, Disclosable<T>
@@ -173,12 +195,15 @@ meridian/
 │   ├── pathways/      rules engine + catalog. The law is data.
 │   ├── documents/     legalisation, translation, freshness, checklist, gaps.
 │   └── govtech/       adapters that tell the truth about themselves.
-├── apps/                           newly landed, no tests yet
+│   Each builds to dist/ with tsconfig.build.json; consumers import the emitted JS.
+├── apps/
 │   ├── api/           Fastify. auth · disclosure gate · repositories · audit · routes
 │   │                  prisma/schema.prisma — 10 models, 15 enums
-│   │                  NO src/main.ts — nothing composes it into a process yet
-│   ├── web/           applicant portal, Next.js 15 App Router, port 6101
-│   └── admin/         firm console, Next.js 15 App Router, port 6102
+│   │                  src/main.ts composes it; image builds and runs. 108 tests.
+│   ├── landing/       marketing site, Next.js 15 App Router, local dev port 3000
+│   ├── web/           applicant portal, Next.js 15 App Router, local dev port 3001
+│   └── admin/         firm console, Next.js 15 App Router, local dev port 3002
+│                      the three Next apps have no tests
 ├── docs/
 │   ├── PRD.md                    origin document + editorial preface on our departures
 │   ├── ARCHITECTURE.md           module map, data flow, where the disclosure gate sits
@@ -187,9 +212,10 @@ meridian/
 │   └── adr/                      0001-0006 architecture decision records
 ├── scripts/           check-advice-boundary · check-no-credential-custody
 │                      check-pathway-citations   (all three run clean)
-├── infra/k8s/production/          namespace, deployments, services, kustomization
-├── enclii.yaml                    four Enclii service documents
-├── Dockerfile.{api,web,admin}     docker-compose.yml
+├── infra/k8s/production/          namespace, four deployment/service pairs,
+│                                  kustomization, secrets template
+├── enclii.yaml                    five documents: a project record + four Services
+├── Dockerfile.{api,web,admin,landing}     docker-compose.yml
 └── .github/workflows/             ci.yml (policy · typecheck · test · build)
                                    build-deploy.yml
 ```
@@ -235,12 +261,16 @@ pnpm test
 pnpm build
 ```
 
-`pnpm dev` starts the API on 6100, the applicant portal on 6101 and the firm
-console on 6102. The API validates its environment at boot and refuses to start
-without `DATABASE_URL`, `JANUA_JWKS_URL`, `JANUA_ISSUER`, `JANUA_AUDIENCE` and
-`CORS_ALLOWED_ORIGINS`; it names what is missing and never prints a value. The
-two Next.js apps render from sample data declared in their own source and do not
-call the API yet.
+`pnpm dev` runs each application's own `dev` script: the landing site on 3000,
+the applicant portal on 3001, the firm console on 3002 and the API on whatever
+`PORT` says. The three Next apps render from data declared in their own source
+and call nothing; the landing site additionally counts its catalog figures from
+`@meridian/pathways` at build time rather than hard-coding them.
+
+The API validates its whole environment at boot and reports every problem at
+once. With an empty environment it names **seven** variables — `DATABASE_URL`,
+`JANUA_JWKS_URL`, `JANUA_ISSUER`, `JANUA_AUDIENCE`, `PORT`, `NODE_ENV` and
+`CORS_ALLOWED_ORIGINS` — and exits 78 without printing a single value.
 
 The API image can be built and run locally, which is the only way to catch a
 package that resolves to TypeScript at runtime:
@@ -250,8 +280,10 @@ docker build -f Dockerfile.api -t meridian-api:local .
 docker run --rm meridian-api:local
 ```
 
-The build imports every workspace package under Node before it will produce an
-image, so a package missing its `dist` fails the build rather than the pod.
+`Dockerfile.api` sets `NODE_ENV` and `PORT`, so that `docker run` reaches
+environment validation and names the remaining five variables. The build also
+imports every workspace package under Node before it will produce an image, so a
+package missing its `dist` fails the build rather than the pod.
 
 ---
 
@@ -277,9 +309,10 @@ a thin service that composes them:
 
 Every package is a library of total functions over plain data. None of them
 performs I/O, reads a clock without being asked, or knows what a database is.
-The reference date is always a parameter. That is what makes 901 tests possible
-without a fixture server, and it is what makes the API testable without Postgres
-— see [ADR 0006](docs/adr/0006-ports-and-adapters-repositories.md).
+The reference date is always a parameter. That is what makes 913 package tests
+possible without a fixture server, and it is what makes the API's own 108 tests
+possible without Postgres — see
+[ADR 0006](docs/adr/0006-ports-and-adapters-repositories.md).
 
 Full detail, including where the disclosure gate sits in the request path:
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -292,8 +325,12 @@ Full detail, including where the disclosure gate sits in the request path:
 |---|---|
 | Pathways | 8 — six Spain, two Canada |
 | Counsel-reviewed | **0** |
+| Open on 2026-07-25 | 7 of 8 — the Spanish investor route is recorded as closed |
+| Eligibility criteria | 43 |
 | Distinct citations in the pathway catalog | 20, of which 5 are `discretionary` and 7 carry a URL |
 | Presence-engine citations | 6, of which 3 are `discretionary` |
+| Document-engine citations | 23, of which 15 are `discretionary` |
+| Govtech citations | 16, of which 9 are `discretionary` |
 | Jurisdictions | ES, CA (plus MX and US translation profiles in `documents`) |
 | Catalog `verifiedOn` | 2026-07-25 — `fresh` until 2026-10-23 |
 
@@ -316,6 +353,14 @@ Meridian is a MADFAM platform service in the **Mobility** pillar. It consumes
 Janua for authentication (OIDC, RS256 via JWKS), Dhanam for billing, Selva at
 `/v1` for every LLM call (never a provider directly), Karafiel for compliance
 timestamping, and deploys through Enclii.
+
+Four deployables are allocated and none is deployed: `meridian-landing` on
+`meridian.madfam.io`, `meridian-app` on `meridian-app.madfam.io`,
+`meridian-admin` on `meridian-admin.madfam.io` and `meridian-api` on
+`meridian-api.madfam.io`. Container ports are framework defaults — 3000 for the
+three Next apps, 8000 for the API — and Meridian claims no port block;
+[ECOSYSTEM.md](ECOSYSTEM.md) explains why the number has no production effect
+and the two narrow cases where it does.
 
 Full context, including the enclii CLI day-to-day reference:
 [ECOSYSTEM.md](ECOSYSTEM.md).

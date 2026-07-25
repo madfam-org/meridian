@@ -1,14 +1,23 @@
 # Meridian — Enclii service definitions.
 #
-# Four documents:
+# Five documents:
 #   1. the project-level record (status-page entries + the network block),
-#   2-4. one Service per deployable: meridian-api, meridian-web, meridian-admin.
+#   2-5. one Service per deployable: meridian-api, meridian-app,
+#        meridian-landing, meridian-admin.
+#
+# The public front door and the applicant portal are two different services.
+# `meridian.madfam.io` is the explainer anyone can read before they trust us with
+# a passport number; `meridian-app.madfam.io` is the portal they sign in to. Avala
+# runs the same split (avala.studio marketing, app.avala.studio application), as
+# does Pravara MES.
 #
 # Domains are declared once, on the service that owns them. They deliberately do
 # NOT nest: `meridian-api.madfam.io`, not `api.meridian.madfam.io`. Cloudflare's
 # universal certificate covers `*.madfam.io` but not `*.*.madfam.io`, so a nested
 # host serves a certificate error to every visitor. Pravara MES hit exactly this
-# and the flat pattern is what came out of it.
+# and the flat pattern is what came out of it. It is also why the portal is
+# `meridian-app.madfam.io` and not `app.meridian.madfam.io` — Avala can nest one
+# level because it owns its own apex domain, and Meridian does not.
 #
 # Secrets appear here only as `secretKeyRef` name/key pairs. No value, and no
 # placeholder shaped like a value — this repository is public. The key names are
@@ -26,8 +35,13 @@ spec:
   status:
     enabled: true
     entries:
-      - name: Meridian Web
+      - name: Meridian Landing
         url: https://meridian.madfam.io
+        group: Meridian
+        family: MADFAM Platform
+        description: Public explainer — what the platform does, and what it refuses to do
+      - name: Meridian App
+        url: https://meridian-app.madfam.io
         group: Meridian
         family: MADFAM Platform
         description: Applicant portal — a migrant's view of their own matter
@@ -50,23 +64,32 @@ spec:
   #
   # `ports:` in a generated policy must intersect the pods' containerPorts or the
   # CNI drops the traffic silently, so the port numbers below are the same ones
-  # the Deployments expose: 6100 / 6101 / 6102.
+  # the Deployments expose: 8000 / 3000 / 3000 / 3000.
   network:
     services:
       - name: meridian-api
-        port: 6100
+        port: 8000
         ingress: [cloudflare-tunnel]
         # postgres: the matter store. janua: JWKS fetch for token verification.
         # https: government reference material and ecosystem edges. No egress is
         # opened to any government authentication endpoint, because Meridian does
         # not authenticate as a user anywhere — see packages/govtech.
         egress: [dns, https, postgres, janua]
-      - name: meridian-web
-        port: 6101
+      - name: meridian-app
+        port: 3000
         ingress: [cloudflare-tunnel]
         egress: [dns, https]
+      - name: meridian-landing
+        port: 3000
+        ingress: [cloudflare-tunnel]
+        # dns only. The landing site renders no external data, holds no API
+        # client and signs nobody in, so it has nothing to call. If a server-side
+        # fetch is ever added, add `https` here in the same change — a policy
+        # that does not list the port drops the connection with no error anyone
+        # can see, and it presents as a rendering bug rather than a network one.
+        egress: [dns]
       - name: meridian-admin
-        port: 6102
+        port: 3000
         ingress: [cloudflare-tunnel]
         egress: [dns, https]
 
@@ -90,7 +113,7 @@ spec:
         autoDeploy: true
 
   runtime:
-    port: 6100
+    port: 8000
     replicas: 2
     resources:
       requests:
@@ -117,7 +140,7 @@ spec:
     - name: MERIDIAN_ENV
       value: production
     - name: PORT
-      value: "6100"
+      value: "8000"
     - name: DATABASE_URL
       valueFrom:
         secretKeyRef:
@@ -128,9 +151,21 @@ spec:
     - name: JANUA_JWKS_URL
       value: "https://auth.madfam.io/.well-known/jwks.json"
     # CORS allow-list. Both browsers that may call this API are ours; anything
-    # else is refused rather than reflected back.
+    # else is refused rather than reflected back. An explicit list, never a
+    # wildcard: these responses carry an applicant's own documents.
+    #
+    # `https://meridian.madfam.io` is deliberately NOT on the list. That host is
+    # now the landing site, which makes no API call at all; a marketing page on
+    # the allow-list is standing permission nothing needs.
+    #
+    # CORS_ALLOWED_ORIGINS is the variable apps/api/src/config.ts actually reads,
+    # and it is required — the API refuses to start without it rather than
+    # defaulting to something permissive. The two MERIDIAN_*_ORIGIN entries below
+    # are the per-surface names SECURITY.md documents; keep all three in step.
+    - name: CORS_ALLOWED_ORIGINS
+      value: "https://meridian-app.madfam.io,https://meridian-admin.madfam.io"
     - name: MERIDIAN_WEB_ORIGIN
-      value: "https://meridian.madfam.io"
+      value: "https://meridian-app.madfam.io"
     - name: MERIDIAN_ADMIN_ORIGIN
       value: "https://meridian-admin.madfam.io"
 
@@ -154,9 +189,13 @@ spec:
 apiVersion: enclii.dev/v1
 kind: Service
 metadata:
-  name: meridian-web
+  # Named for the surface it serves, not for the directory it is built from. The
+  # workspace package stays `@meridian/web` and the source stays `apps/web`;
+  # only the deployed service and its hostname move. Avala does the same —
+  # `avala-web` is the application, `avala-landing` is the marketing site.
+  name: meridian-app
   project: meridian
-  description: "Meridian Web — applicant portal"
+  description: "Meridian App — applicant portal, where a migrant signs in to their own matter"
 
 spec:
   build:
@@ -170,7 +209,7 @@ spec:
         autoDeploy: true
 
   runtime:
-    port: 6101
+    port: 3000
     replicas: 2
     resources:
       requests:
@@ -192,8 +231,79 @@ spec:
       value: "https://meridian-api.madfam.io"
     - name: NEXT_PUBLIC_JANUA_URL
       value: "https://auth.madfam.io"
+    # Still `meridian-web`. This is the client's registered identifier in Janua,
+    # not a label we own: changing it here without registering the new client
+    # first fails every sign-in with an unknown-client error. Rename it in the
+    # change that registers it, not in this one.
     - name: NEXT_PUBLIC_JANUA_CLIENT_ID
       value: "meridian-web"
+
+  domains:
+    - domain: meridian-app.madfam.io
+      tls: true
+      tlsIssuer: cloudflare
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+
+  slo:
+    availability: 99.9
+    latencyP95: 200
+    errorRate: 0.5
+
+---
+apiVersion: enclii.dev/v1
+kind: Service
+metadata:
+  name: meridian-landing
+  project: meridian
+  description: "Meridian Landing — public explainer for the platform"
+
+spec:
+  build:
+    type: dockerfile
+    dockerfile: Dockerfile.landing
+    context: .
+    source:
+      git:
+        repository: https://github.com/madfam-org/meridian
+        branch: main
+        autoDeploy: true
+
+  runtime:
+    port: 3000
+    # Two replicas is not a capacity decision either. This is the hostname a
+    # person reaches first, often from a link someone sent them, and a rollout
+    # of a single replica is a front door that briefly answers nothing.
+    replicas: 2
+    # Smaller than the portal on purpose: this service renders marketing copy
+    # from its own bundle. It opens no database connection, verifies no token
+    # and holds no applicant data, so the working set is a Next server and its
+    # rendered pages.
+    resources:
+      requests:
+        cpu: "50m"
+        memory: "128Mi"
+      limits:
+        cpu: "250m"
+        memory: "384Mi"
+    # `/` for the same reason as the portal and the console: apps/landing has no
+    # health route, and a probe pointed at one that does not exist keeps every
+    # pod unready forever. See infra/k8s/production/landing-deployment.yaml.
+    healthCheck: /
+
+  env:
+    # The landing site's only outward dependency is knowing where the portal
+    # lives, for the sign-in link. Next inlines NEXT_PUBLIC_* at build time, so
+    # this is also passed as --build-arg in
+    # .github/workflows/build-deploy.yml. No API URL and no Janua client: this
+    # site calls nothing and signs nobody in — that is what makes it safe to
+    # serve to anyone.
+    - name: NEXT_PUBLIC_APP_URL
+      value: "https://meridian-app.madfam.io"
 
   domains:
     - domain: meridian.madfam.io
@@ -203,7 +313,7 @@ spec:
   autoscaling:
     enabled: true
     minReplicas: 2
-    maxReplicas: 6
+    maxReplicas: 4
     targetCPUUtilizationPercentage: 70
 
   slo:
@@ -231,7 +341,7 @@ spec:
         autoDeploy: true
 
   runtime:
-    port: 6102
+    port: 3000
     # Two replicas, not because of load — this console is small — but because a
     # single replica means a rollout is an outage, and the console is where a
     # licensed representative signs off on catalog records.

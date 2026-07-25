@@ -71,9 +71,24 @@ lookbacks and residence periods all follow this convention; mixing a half-open
 window into a closed-range engine is an off-by-one that will not show up until
 it matters.
 
-There is exactly one sanctioned clock read in the whole repo: `todayUtc()` in
-`@meridian/mrtd`, which exists so a caller can override it. Every other
-reference date is a parameter. Do not add a second clock.
+**No domain package reads a clock.** There is exactly one sanctioned clock read
+under `packages/`: `todayUtc()` in `@meridian/mrtd`, which exists so a caller can
+override it. Every other reference date in every package is a parameter, and
+adding a second clock there is not an acceptable trade.
+
+Three reads exist under `apps/`, and each is documented at the top of the file
+that makes it. Do not add a fourth without the same treatment:
+
+- `apps/api/src/clock.ts` — delegates its civil date to `todayUtc()` and reads
+  the current *instant* separately, for audit stamps only. An audit event needs a
+  moment, not a calendar day, because two events on the same day need an order.
+  It must never be truncated to ten characters and used as a civil date.
+- `apps/admin/lib/clock.ts` — reproduces the same UTC civil-date read once,
+  because `@meridian/mrtd` is not a dependency of that app and adding one needs a
+  lockfile change. `?asOf=` and `MERIDIAN_ASOF` override it, in that order.
+
+`apps/web` and `apps/landing` read no clock at all: both derive every figure from
+a fixed reference date declared in their own source.
 
 ### 2. Every applied rule carries a `Citation`
 
@@ -137,26 +152,50 @@ packages/pathways/    declarative rules engine + the pathway catalog
 packages/documents/   legalisation, translation, freshness, checklist, gaps
 packages/govtech/     government adapters, capability reporting, credential refusal
 apps/api/             Fastify. auth/ · disclosure/ · repositories/ · audit/ · routes/
-                      prisma/schema.prisma. NO src/main.ts yet, and NO tests.
-apps/web/             applicant portal, Next.js 15 App Router, port 6101. No tests.
-apps/admin/           firm console, Next.js 15 App Router, port 6102. No tests.
+                      prisma/schema.prisma · src/main.ts is the composition root.
+                      7 test files, 108 tests.
+apps/landing/         public marketing site, Next.js 15 App Router, local dev port 3000. No tests.
+apps/web/             applicant portal, Next.js 15 App Router, local dev port 3001. No tests.
+apps/admin/           firm console, Next.js 15 App Router, local dev port 3002. No tests.
 docs/                 PRD, architecture, regulatory posture, catalog review, ADRs
 scripts/              the three policy guards — all three run clean
-infra/k8s/production/ namespace, deployments, services, kustomization, secrets template
-enclii.yaml           four Enclii service documents · Dockerfile.{api,web,admin}
+infra/k8s/production/ namespace, four deployment/service pairs, kustomization,
+                      secrets template
+enclii.yaml           five documents: a project record + one Service per deployable
+Dockerfile.{api,web,admin,landing}
 .github/workflows/    ci.yml (policy · typecheck · test · build) + build-deploy.yml
 ```
 
-The `packages/` are mature — 32 test files, 901 tests. The `apps/` landed during
-the repository's initial build session, have **no tests at all**, and `apps/api`
-has **no server entry point**. Treat any status claim about the apps as needing
-re-verification; treat the packages as the stable contract.
+The `packages/` are mature — 32 test files, 913 tests — and are the stable
+contract. `apps/api` is close behind: it has a composition root and 7 test files
+carrying 108 tests, all against the in-memory repository adapter, so the Prisma
+adapter is covered by nothing but `tsc`. **The three Next.js applications have no
+tests at all**, which is the largest gap in the repository; treat any status
+claim about them as needing re-verification.
+
+The four surfaces do not map one-to-one onto their directory names.
+`meridian.madfam.io` is the landing site; the applicant portal is
+`meridian-app.madfam.io`, deployed as the service `meridian-app` while its
+workspace package stays `@meridian/web` and its source stays `apps/web`. Avala
+runs the same split. Renaming the package to match the hostname would touch every
+import in the repository to change a URL, so it has not been done, and the Janua
+`client_id` stays `meridian-web` because that is an external registration — see
+the comment in `infra/k8s/production/web-deployment.yaml` before changing it.
 
 ### Where the API's invariants are enforced
 
 If you touch `apps/api`, these are the parts that are load-bearing rather than
 incidental:
 
+- `src/main.ts` — the composition root, and **the only file that reads
+  `process.env`, constructs a database client or binds a socket.** Everything
+  else takes what it needs as an argument, which is why `tests/harness.ts` can
+  assemble the same application over an in-memory store and a local key pair.
+  Keep it that way: a `process.env` read anywhere else is a value no test can
+  set.
+- `src/config.ts` — validates the whole environment once, collects **every**
+  problem rather than the first, and **never interpolates a value into a message**.
+  If you add a variable, add its *name* to a diagnostic and nothing more.
 - `src/routes/registry.ts` — a Fastify `onRoute` hook **refuses to register any
   route** whose config lacks a `meridian` block declaring whether it returns
   engine output. The server does not start until a new route answers that.
@@ -186,10 +225,22 @@ adding one is not an acceptable trade.
   new file in `src/catalog/`. If a legal rule ever lands in `evaluate.ts` it has
   escaped to a place no reviewing lawyer will ever look, which defeats the whole
   design.
-- **A package's `src/index.ts` is its only public surface.** The `exports` map
-  is `{ ".": "./src/index.ts" }`. Raw engines behind a disclosure wrapper are
-  unreachable from outside on purpose; do not widen the exports map to "make
-  testing easier".
+- **A package's `src/index.ts` is its only public surface.** Each package builds
+  with `tsc -p tsconfig.build.json` and its `exports` map has a single entry —
+  `"."`, with `types` at `./dist/index.d.ts` and `default` at `./dist/index.js`.
+  Consumers therefore import **emitted JavaScript**, not TypeScript source. Raw
+  engines behind a disclosure wrapper are unreachable from outside on purpose; do
+  not widen the exports map to "make testing easier", and do not point a default
+  condition back at `src/`.
+
+  That last part is not a style question. `Dockerfile.api` imports every
+  workspace package under Node before it will produce an image, precisely
+  because a package resolving to `.ts` is correct inside the workspace and fatal
+  in a container: Node executes JavaScript, so such an image starts and then dies
+  on its first import, in production, after a green pipeline. The three Next
+  configs consequently carry **no** `transpilePackages` and **no**
+  `experimental.extensionAlias`; each explains why restoring either would send a
+  valid JavaScript request hunting for TypeScript that is not published.
 
 ---
 
@@ -229,16 +280,21 @@ recomputation over a test that restates the implementation.
 
 ---
 
-## Verification — run both, from the package directory
+## Verification — run both, from the project directory
 
 ```bash
-cd packages/<name>
+cd packages/<name>        # or apps/api, which also has a vitest suite
 pnpm exec tsc --noEmit
 pnpm exec vitest run
 ```
 
 Both must exit clean. Iterate until they do. **Never report success without
 having run them and seen them pass.**
+
+As of 2026-07-25 that is 39 test files and 1021 tests across the seven projects
+that have suites: `core` 2/60, `mrtd` 5/111, `presence` 6/147, `pathways` 5/139,
+`documents` 6/146, `govtech` 8/310, `api` 7/108. If your change moves a count,
+say the new number in your report rather than "tests pass".
 
 Repo-wide, packages only. Build first — packages are consumed as emitted
 JavaScript, so a cross-package import reads `dist/`, and a stale `dist` means you
@@ -250,10 +306,21 @@ pnpm -r --filter "./packages/*" typecheck
 pnpm -r --filter "./packages/*" test
 ```
 
-Whole repo, through turbo — this is what CI runs:
+Whole repo, through turbo — this is what CI runs. On 2026-07-25 that is 16
+typecheck tasks, 13 test tasks and 10 build tasks, all green:
 
 ```bash
 pnpm typecheck && pnpm test && pnpm build
+```
+
+If you change anything about how a package is built, resolved or exported, build
+and run the API image as well. It is the only check that catches a package
+resolving to TypeScript at runtime, and it fails at build time instead of in a
+pod:
+
+```bash
+docker build -f Dockerfile.api -t meridian-api:local .
+docker run --rm meridian-api:local   # reaches config validation, exits 78
 ```
 
 And the three policy guards, which need no install and are the fastest signal
@@ -333,6 +400,6 @@ Full detail and the enclii CLI reference: [ECOSYSTEM.md](ECOSYSTEM.md).
 - [`README.md`](README.md) — status first, then architecture and quickstart
 - [`ECOSYSTEM.md`](ECOSYSTEM.md) — ecosystem position and enclii day-to-day
 - [`docs/`](docs/) — PRD, architecture, regulatory posture, catalog review, ADRs
-- `infra/k8s/production/`, `enclii.yaml`, the three `Dockerfile.*` files and
+- `infra/k8s/production/`, `enclii.yaml`, the four `Dockerfile.*` files and
   `.github/workflows/` — deployment configuration and CI. Present; nothing is
   deployed yet.

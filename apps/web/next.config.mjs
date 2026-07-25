@@ -1,36 +1,35 @@
 /**
  * Next configuration for the applicant portal.
  *
- * Two settings here are load-bearing rather than stylistic.
+ * `output: 'standalone'` is load-bearing rather than stylistic. `Dockerfile.web`
+ * copies `.next/standalone` and has no other way to start the server; it fails
+ * the build with an explicit message when the directory is absent. Declaring it
+ * here keeps the image and the app in agreement.
  *
- * `transpilePackages` — the Meridian domain packages are consumed as
- * TypeScript *source*. They publish `"main": "./src/index.ts"` and ship no
- * build step, deliberately: a single compiler pass over the whole workspace
- * means the app cannot drift from a stale `dist/` of the rules engine, and a
- * legal-rule change is visible in the app the moment it lands. Next will not
- * compile files under `node_modules` unless it is told to, so without this the
- * build fails on the first `.ts` file it meets inside `@meridian/core`.
+ * The Meridian workspace packages are consumed as **emitted JavaScript**. Each
+ * one builds with `tsc -p tsconfig.build.json` and points its `exports` default
+ * condition at `./dist/index.js`, so nothing under `node_modules/@meridian`
+ * needs a TypeScript pass from this app. That was not always true — the packages
+ * once published `"main": "./src/index.ts"` — and it changed because the API
+ * container cannot run TypeScript: Node executes JavaScript, so a package
+ * without a `dist/` fails at process start rather than at build time.
  *
- * `experimental.extensionAlias` — those same packages are strict ESM and write
- * their relative imports as `./civil-date.js` while the file on disk is
- * `civil-date.ts`. That is the correct ESM spelling and TypeScript resolves it
- * under `moduleResolution: "bundler"`, but webpack takes an explicit extension
- * literally and would look for a `.js` that does not exist. The alias tells it
- * to try `.ts` and `.tsx` first and fall back to `.js`, so genuine JavaScript
- * still resolves normally.
+ * Two settings that existed to serve the old arrangement have therefore been
+ * removed, and this note records why so nobody restores them by reflex:
+ *
+ *  - `transpilePackages` compiled the `.ts` sources webpack met inside
+ *    `@meridian/*`. There are none to meet now.
+ *  - `experimental.extensionAlias` mapped a `./civil-date.js` request onto
+ *    `civil-date.ts`. The emitted tree has a real `civil-date.js` at that path,
+ *    and remapping it would send a genuine JavaScript request looking for
+ *    TypeScript that is not shipped.
  *
  * @type {import('next').NextConfig}
  */
 const nextConfig = {
   reactStrictMode: true,
 
-  transpilePackages: ['@meridian/core', '@meridian/pathways', '@meridian/presence'],
-
-  experimental: {
-    extensionAlias: {
-      '.js': ['.ts', '.tsx', '.js'],
-    },
-  },
+  output: 'standalone',
 
   // TypeScript errors still fail the build (`typescript.ignoreBuildErrors`
   // stays at its default of `false`). ESLint is not yet part of this

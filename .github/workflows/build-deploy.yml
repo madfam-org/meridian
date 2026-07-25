@@ -107,6 +107,24 @@ jobs:
             NEXT_PUBLIC_JANUA_URL=${{ vars.NEXT_PUBLIC_JANUA_URL || 'https://auth.madfam.io' }}
             NEXT_PUBLIC_JANUA_CLIENT_ID=meridian-admin
 
+      # The public explainer at meridian.madfam.io. It takes one build argument
+      # and it is the least sensitive of the four images: no API URL, no Janua
+      # client id, nothing to inline but the address of the portal it links to.
+      - name: Build and push landing
+        id: build-landing
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.landing
+          push: true
+          tags: |
+            ghcr.io/madfam-org/meridian/landing:${{ github.sha }}
+            ghcr.io/madfam-org/meridian/landing:main
+          cache-from: type=gha,scope=landing
+          cache-to: type=gha,mode=max,scope=landing
+          build-args: |
+            NEXT_PUBLIC_APP_URL=${{ vars.NEXT_PUBLIC_APP_URL || 'https://meridian-app.madfam.io' }}
+
       # Keyless signing through the workflow's OIDC identity — no key material
       # exists to leak. The signature is a public transparency-log record that
       # these digests were produced by this workflow in this repository.
@@ -138,6 +156,7 @@ jobs:
           sign_image "ghcr.io/madfam-org/meridian-api@${{ steps.build-api.outputs.digest }}"
           sign_image "ghcr.io/madfam-org/meridian-web@${{ steps.build-web.outputs.digest }}"
           sign_image "ghcr.io/madfam-org/meridian-admin@${{ steps.build-admin.outputs.digest }}"
+          sign_image "ghcr.io/madfam-org/meridian/landing@${{ steps.build-landing.outputs.digest }}"
 
       # Same self-verifying download pattern as cosign above. The version is
       # pinned so a kustomize release cannot change the shape of the manifest
@@ -174,6 +193,8 @@ jobs:
             ghcr.io/madfam-org/meridian-web=ghcr.io/madfam-org/meridian-web@${{ steps.build-web.outputs.digest }}
           kustomize edit set image \
             ghcr.io/madfam-org/meridian-admin=ghcr.io/madfam-org/meridian-admin@${{ steps.build-admin.outputs.digest }}
+          kustomize edit set image \
+            ghcr.io/madfam-org/meridian/landing=ghcr.io/madfam-org/meridian/landing@${{ steps.build-landing.outputs.digest }}
 
       # ArgoCD syncs from this commit. A push authenticated with GITHUB_TOKEN
       # does not start another workflow run, so this cannot loop; `[skip ci]`

@@ -11,10 +11,15 @@ resources:
 - namespace.yaml
 - api-deployment.yaml
 - api-service.yaml
+# web-*.yaml carry the workload named `meridian-app`: the file name follows the
+# source directory (apps/web), the workload name follows the public surface
+# (meridian-app.madfam.io). See web-deployment.yaml.
 - web-deployment.yaml
 - web-service.yaml
 - admin-deployment.yaml
 - admin-service.yaml
+- landing-deployment.yaml
+- landing-service.yaml
 
 # secrets-template.yaml is deliberately NOT a resource. It documents the key
 # names this namespace needs; the Secret itself is provisioned by the operator
@@ -30,10 +35,23 @@ resources:
 # is a mutable pointer — two syncs of `:main` can deliver different bytes and
 # ArgoCD cannot tell one from the other — so nothing should stay pinned to a tag
 # once the pipeline has run.
+#
+# Two path shapes coexist here. The first three predate the landing split and use
+# `madfam-org/meridian-<part>`; the landing image uses `madfam-org/meridian/<part>`,
+# the nested form Avala and Enclii already publish under. Renaming the existing
+# three to match would orphan their GHCR packages and reset three pinned digests
+# for images whose bytes did not change, so they stay as they are.
+#
+# The landing entry goes last because `kustomize edit set image` rewrites the
+# entries it recognises in place and appends anything new to the end. Writing it
+# anywhere else means the first CI run moves it, and that reordering commit
+# lands on top of the digest change it was supposed to be.
 images:
 - name: ghcr.io/madfam-org/meridian-admin
   newTag: main
 - name: ghcr.io/madfam-org/meridian-api
   newTag: main
 - name: ghcr.io/madfam-org/meridian-web
+  newTag: main
+- name: ghcr.io/madfam-org/meridian/landing
   newTag: main

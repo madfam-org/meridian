@@ -5,9 +5,9 @@
   "description": "Meridian client portal — the applicant's view of their own matter",
   "license": "AGPL-3.0-only",
   "scripts": {
-    "dev": "next dev --port 6101",
+    "dev": "next dev --port 3001",
     "build": "next build",
-    "start": "next start --port 6101",
+    "start": "next start --port 3001",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },

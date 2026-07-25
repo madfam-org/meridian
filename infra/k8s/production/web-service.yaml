@@ -1,15 +1,19 @@
+# Service for the applicant portal. Named `meridian-app` to match the workload
+# in web-deployment.yaml; the selector below has to match that Deployment's pod
+# labels exactly, or this Service resolves to no endpoints and the tunnel gets
+# connection refused with every pod healthy.
 apiVersion: v1
 kind: Service
 metadata:
-  name: meridian-web
+  name: meridian-app
   namespace: meridian
   labels:
-    app: meridian-web
+    app: meridian-app
     app.kubernetes.io/part-of: madfam-platform
 spec:
   type: ClusterIP
   selector:
-    app: meridian-web
+    app: meridian-app
   ports:
     - name: http
       port: 80

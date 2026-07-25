@@ -1,0 +1,391 @@
+/*
+ * Design tokens and the small number of global rules.
+ *
+ * The palette, spacing scale and type ramp are deliberately the same ones the
+ * applicant portal uses. Somebody who reads this page and then follows the link
+ * into the portal should not feel handed off to a different product, and the
+ * quickest way to break that is to let a marketing site drift onto its own
+ * "brand" colours.
+ *
+ * Everything else is a colocated CSS Module. There is no CSS framework here on
+ * purpose: this site publishes counts taken from the legal catalog, and a
+ * utility-class build step that reorders or purges rules is one more thing
+ * between the computed number and the pixel. Plain custom properties are
+ * deterministic and inspectable.
+ *
+ * COLOUR IS NEVER THE ONLY SIGNAL. Every status carries a word and a distinct
+ * glyph in addition to its colour. Around 1 in 12 men has a colour vision
+ * deficiency, and "built" versus "permanently refused" is not something anyone
+ * should have to infer from hue.
+ *
+ * Both themes are authored, and the dark palette is a real palette rather than
+ * an inversion — inverted text on inverted backgrounds loses contrast exactly
+ * where the figures are.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  /* Surfaces and text — light theme. */
+  --bg: #fbfaf8;
+  --surface: #ffffff;
+  --surface-sunken: #f2f1ed;
+  --fg: #1a1c20;
+  --fg-muted: #55595f;
+  --fg-subtle: #6c7076;
+  --border: #dcd9d3;
+  --border-strong: #b4b0a8;
+
+  --accent: #145c56;
+  --accent-hover: #0e4642;
+  --accent-fg: #ffffff;
+  --accent-soft: #e2efec;
+
+  --focus: #0a63c2;
+
+  /* Status palette. Each has a foreground, a tint, and a border. */
+  --ok-fg: #10552c;
+  --ok-bg: #e6f2e9;
+  --ok-border: #a9d0b6;
+
+  --warn-fg: #6a4407;
+  --warn-bg: #fbf0da;
+  --warn-border: #e0c893;
+
+  --bad-fg: #8a1b1b;
+  --bad-bg: #fbe8e8;
+  --bad-border: #ecbcbc;
+
+  --info-fg: #1a4877;
+  --info-bg: #e6f0f8;
+  --info-border: #b5cee5;
+
+  --review-fg: #532d8b;
+  --review-bg: #f0e8fb;
+  --review-border: #d0bdee;
+
+  --neutral-fg: var(--fg-muted);
+  --neutral-bg: var(--surface-sunken);
+  --neutral-border: var(--border);
+
+  --radius: 6px;
+  --radius-sm: 4px;
+  --shadow: 0 1px 2px rgb(26 28 32 / 6%);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  --measure: 68ch;
+  --page-max: 76rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1216;
+    --surface: #161a1f;
+    --surface-sunken: #1c2127;
+    --fg: #e9ecef;
+    --fg-muted: #a8aeb6;
+    --fg-subtle: #8b929b;
+    --border: #2a3038;
+    --border-strong: #3d4650;
+
+    --accent: #57c2b3;
+    --accent-hover: #74d3c5;
+    --accent-fg: #08201d;
+    --accent-soft: #12312d;
+
+    --focus: #7db6f2;
+
+    --ok-fg: #82d79c;
+    --ok-bg: #12251a;
+    --ok-border: #2b4a34;
+
+    --warn-fg: #e6c277;
+    --warn-bg: #272013;
+    --warn-border: #4b3d20;
+
+    --bad-fg: #f19b9b;
+    --bad-bg: #2a1616;
+    --bad-border: #522b2b;
+
+    --info-fg: #92c3ed;
+    --info-bg: #12202b;
+    --info-border: #26404f;
+
+    --review-fg: #c3a9f0;
+    --review-bg: #1f1a2d;
+    --review-border: #3c3057;
+
+    --shadow: 0 1px 2px rgb(0 0 0 / 40%);
+  }
+}
+
+/*
+ * An explicit override wins over the media query in both directions, so a
+ * viewer whose OS says light but whose browser is forced dark still gets a
+ * coherent palette. Nothing on this site sets these attributes today; they exist
+ * so a future preference control does not require restyling every module.
+ */
+:root[data-theme='dark'] {
+  --bg: #0f1216;
+  --surface: #161a1f;
+  --surface-sunken: #1c2127;
+  --fg: #e9ecef;
+  --fg-muted: #a8aeb6;
+  --fg-subtle: #8b929b;
+  --border: #2a3038;
+  --border-strong: #3d4650;
+  --accent: #57c2b3;
+  --accent-hover: #74d3c5;
+  --accent-fg: #08201d;
+  --accent-soft: #12312d;
+  --focus: #7db6f2;
+  --ok-fg: #82d79c;
+  --ok-bg: #12251a;
+  --ok-border: #2b4a34;
+  --warn-fg: #e6c277;
+  --warn-bg: #272013;
+  --warn-border: #4b3d20;
+  --bad-fg: #f19b9b;
+  --bad-bg: #2a1616;
+  --bad-border: #522b2b;
+  --info-fg: #92c3ed;
+  --info-bg: #12202b;
+  --info-border: #26404f;
+  --review-fg: #c3a9f0;
+  --review-bg: #1f1a2d;
+  --review-border: #3c3057;
+}
+
+:root[data-theme='light'] {
+  --bg: #fbfaf8;
+  --surface: #ffffff;
+  --surface-sunken: #f2f1ed;
+  --fg: #1a1c20;
+  --fg-muted: #55595f;
+  --fg-subtle: #6c7076;
+  --border: #dcd9d3;
+  --border-strong: #b4b0a8;
+  --accent: #145c56;
+  --accent-hover: #0e4642;
+  --accent-fg: #ffffff;
+  --accent-soft: #e2efec;
+  --focus: #0a63c2;
+  --ok-fg: #10552c;
+  --ok-bg: #e6f2e9;
+  --ok-border: #a9d0b6;
+  --warn-fg: #6a4407;
+  --warn-bg: #fbf0da;
+  --warn-border: #e0c893;
+  --bad-fg: #8a1b1b;
+  --bad-bg: #fbe8e8;
+  --bad-border: #ecbcbc;
+  --info-fg: #1a4877;
+  --info-bg: #e6f0f8;
+  --info-border: #b5cee5;
+  --review-fg: #532d8b;
+  --review-bg: #f0e8fb;
+  --review-border: #d0bdee;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  /*
+   * The header nav is a set of in-page anchors. Smooth scrolling is turned off
+   * again in the reduced-motion block below, where it belongs.
+   */
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  /* Tabular figures everywhere: counts sit in columns and must align. */
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.25;
+  text-wrap: balance;
+  margin: 0;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+}
+
+h1 {
+  font-size: 1.75rem;
+}
+h2 {
+  font-size: 1.3rem;
+}
+h3 {
+  font-size: 1.05rem;
+}
+h4 {
+  font-size: 0.95rem;
+}
+
+p {
+  margin: 0 0 var(--space-4);
+  max-width: var(--measure);
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+ul,
+ol {
+  margin: 0 0 var(--space-4);
+  padding-left: 1.25rem;
+  max-width: var(--measure);
+}
+
+li + li {
+  margin-top: var(--space-2);
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 0.15em;
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+/*
+ * The focus ring is deliberately loud and never removed. Everything on this
+ * page is reachable by keyboard, and a site where you cannot see where you are
+ * is a site a screen-magnifier user cannot navigate.
+ */
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Wide content scrolls inside its own box; the page body never scrolls sideways. */
+.scrollX {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.9375rem;
+}
+
+th,
+td {
+  text-align: left;
+  vertical-align: top;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  font-weight: 600;
+  color: var(--fg-muted);
+  font-size: 0.8125rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: var(--space-6) 0;
+}
+
+img,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/*
+ * The skip link hides itself by translating a full multiple of its own height,
+ * not by a fixed negative offset. The label is bilingual and wraps to two lines
+ * on a narrow screen, and a hard `top: -3rem` would leave the second line poking
+ * into the viewport above the header. A percentage transform cannot drift that
+ * way however long the text becomes.
+ */
+.skipLink {
+  position: fixed;
+  left: var(--space-4);
+  top: var(--space-4);
+  max-width: calc(100% - var(--space-6));
+  z-index: 50;
+  background: var(--accent);
+  color: var(--accent-fg);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(calc(-100% - var(--space-5)));
+  transition: transform 120ms ease;
+}
+
+.skipLink:focus {
+  transform: translateY(0);
+  color: var(--accent-fg);
+}
+
+/*
+ * Bilingual runs default to a muted grey for the Spanish half. On the accent
+ * fill that grey drops below an accessible ratio, so inside the skip link both
+ * languages inherit the link's own foreground.
+ */
+.skipLink span {
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}

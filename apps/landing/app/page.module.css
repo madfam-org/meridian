@@ -1,0 +1,69 @@
+.cardTitle {
+  margin-bottom: var(--space-1);
+}
+
+.cardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: calc(-1 * var(--space-2));
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: 0.9375rem;
+}
+
+.factBadge {
+  margin-top: var(--space-2);
+}
+
+.factCodes {
+  margin-top: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+
+.factNote {
+  margin-top: var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+
+.calloutLink {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+/*
+ * The table caption is the accessible name of the table, so it stays in the
+ * document rather than being replaced by a heading above it. It is sized down
+ * because the surrounding section heading already carries the visual weight.
+ */
+.tableCaption {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.rowHead {
+  /* A row header, not a column header: the uppercase column treatment would
+     misread these as labels rather than as the class each row is about. */
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.9375rem;
+  color: var(--fg);
+  white-space: nowrap;
+}
+
+.closing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+}

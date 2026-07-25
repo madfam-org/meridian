@@ -12,7 +12,7 @@ spec:
     app: meridian-api
   ports:
     # Port 80 is what the Cloudflare Tunnel connector dials; the pod listens on
-    # 6100. There is no Ingress or LoadBalancer: the tunnel terminates TLS at
+    # 8000. There is no Ingress or LoadBalancer: the tunnel terminates TLS at
     # the edge and reaches this ClusterIP directly, so nothing here is exposed
     # to the bare-metal node's network.
     - name: http
