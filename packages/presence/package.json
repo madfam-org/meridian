@@ -5,17 +5,29 @@
   "description": "Jurisdictional day counting: tax residency, Schengen 90/180, continuous residence",
   "license": "AGPL-3.0-only",
   "type": "module",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
-  "exports": { ".": "./src/index.ts" },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "dependencies": {"@meridian/core":"workspace:*"},
+  "dependencies": {
+    "@meridian/core": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

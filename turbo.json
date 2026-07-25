@@ -12,9 +12,10 @@
     },
     "lint": {},
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": ["^build"]
     },
     "test": {
+      "dependsOn": ["^build"],
       "outputs": ["coverage/**"],
       "inputs": [
         "src/**/*.ts",

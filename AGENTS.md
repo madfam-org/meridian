@@ -240,9 +240,12 @@ pnpm exec vitest run
 Both must exit clean. Iterate until they do. **Never report success without
 having run them and seen them pass.**
 
-Repo-wide, packages only:
+Repo-wide, packages only. Build first — packages are consumed as emitted
+JavaScript, so a cross-package import reads `dist/`, and a stale `dist` means you
+are testing code you did not write:
 
 ```bash
+pnpm build --filter "./packages/*"
 pnpm -r --filter "./packages/*" typecheck
 pnpm -r --filter "./packages/*" test
 ```

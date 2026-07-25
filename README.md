@@ -207,9 +207,13 @@ cd meridian
 pnpm install
 ```
 
-The packages are the part that works end to end today:
+Workspace packages are consumed as **built JavaScript**, not as TypeScript
+source, so anything that reads them across a package boundary needs them built
+first. Turbo enforces the ordering (`typecheck` and `test` both depend on
+`^build`), which is why the whole-repo commands below need no ceremony:
 
 ```bash
+pnpm build --filter "./packages/*"   # or just `pnpm build`
 pnpm -r --filter "./packages/*" typecheck
 pnpm -r --filter "./packages/*" test
 ```
@@ -231,9 +235,23 @@ pnpm test
 pnpm build
 ```
 
-`apps/api` has no `src/main.ts`, so `pnpm dev` cannot start the API. The two
-Next.js apps will start (`--port 6101` and `--port 6102`) but have no API to
-talk to.
+`pnpm dev` starts the API on 6100, the applicant portal on 6101 and the firm
+console on 6102. The API validates its environment at boot and refuses to start
+without `DATABASE_URL`, `JANUA_JWKS_URL`, `JANUA_ISSUER`, `JANUA_AUDIENCE` and
+`CORS_ALLOWED_ORIGINS`; it names what is missing and never prints a value. The
+two Next.js apps render from sample data declared in their own source and do not
+call the API yet.
+
+The API image can be built and run locally, which is the only way to catch a
+package that resolves to TypeScript at runtime:
+
+```bash
+docker build -f Dockerfile.api -t meridian-api:local .
+docker run --rm meridian-api:local
+```
+
+The build imports every workspace package under Node before it will produce an
+image, so a package missing its `dist` fails the build rather than the pod.
 
 ---
 
