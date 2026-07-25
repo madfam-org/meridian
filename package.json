@@ -1,0 +1,39 @@
+{
+  "name": "meridian-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Meridian — global migration law and logistics platform",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/madfam-org/meridian.git"
+  },
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json,yaml,yml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json,yaml,yml}\"",
+    "db:generate": "pnpm --filter @meridian/api db:generate",
+    "db:migrate": "pnpm --filter @meridian/api db:migrate",
+    "db:migrate:deploy": "pnpm --filter @meridian/api db:migrate:deploy",
+    "check:advice-boundary": "node scripts/check-advice-boundary.mjs",
+    "check:no-credential-custody": "node scripts/check-no-credential-custody.mjs",
+    "check:pathway-citations": "node scripts/check-pathway-citations.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "prettier": "^3.4.2",
+    "turbo": "2.3.3",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

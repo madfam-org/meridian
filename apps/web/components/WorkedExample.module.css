@@ -1,0 +1,47 @@
+.banner {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  border: 1px solid var(--warn-border);
+  border-left-width: 4px;
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+  border-radius: var(--radius);
+  padding: var(--space-4) var(--space-5);
+}
+
+.mark {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  line-height: 1.6;
+  flex: none;
+}
+
+.body {
+  min-width: 0;
+}
+
+.title {
+  margin: 0 0 var(--space-2);
+  font-weight: 650;
+  font-size: 0.9375rem;
+}
+
+.detail {
+  margin: 0 0 var(--space-2);
+  font-size: 0.875rem;
+}
+
+.detail:last-child {
+  margin-bottom: 0;
+}
+
+.date {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.banner :global(span[lang='es']) {
+  color: inherit;
+  opacity: 0.85;
+}

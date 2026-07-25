@@ -1,0 +1,270 @@
+# Meridian — Enclii service definitions.
+#
+# Four documents:
+#   1. the project-level record (status-page entries + the network block),
+#   2-4. one Service per deployable: meridian-api, meridian-web, meridian-admin.
+#
+# Domains are declared once, on the service that owns them. They deliberately do
+# NOT nest: `meridian-api.madfam.io`, not `api.meridian.madfam.io`. Cloudflare's
+# universal certificate covers `*.madfam.io` but not `*.*.madfam.io`, so a nested
+# host serves a certificate error to every visitor. Pravara MES hit exactly this
+# and the flat pattern is what came out of it.
+#
+# Secrets appear here only as `secretKeyRef` name/key pairs. No value, and no
+# placeholder shaped like a value — this repository is public. The key names are
+# documented in infra/k8s/production/secrets-template.yaml and provisioned by the
+# operator with `enclii secrets set`.
+
+apiVersion: enclii.dev/v1
+kind: Service
+metadata:
+  name: meridian
+  project: meridian
+  description: "Meridian — global migration law and logistics platform"
+
+spec:
+  status:
+    enabled: true
+    entries:
+      - name: Meridian Web
+        url: https://meridian.madfam.io
+        group: Meridian
+        family: MADFAM Platform
+        description: Applicant portal — a migrant's view of their own matter
+      - name: Meridian API
+        url: https://meridian-api.madfam.io/health
+        href: https://meridian-api.madfam.io
+        group: Meridian
+        family: MADFAM Platform
+        description: Presence, documents, pathways, and the advice-boundary gate
+      - name: Meridian Admin
+        url: https://meridian-admin.madfam.io
+        href: https://meridian-admin.madfam.io
+        group: Meridian
+        family: MADFAM Platform
+        description: Firm console — caseload, representative assignment, catalog review
+
+  # The control plane generates NetworkPolicies from this block and applies them
+  # via the K8s API; they are not committed to git (see
+  # internal-devops/ecosystem/deployment-conventions.md).
+  #
+  # `ports:` in a generated policy must intersect the pods' containerPorts or the
+  # CNI drops the traffic silently, so the port numbers below are the same ones
+  # the Deployments expose: 6100 / 6101 / 6102.
+  network:
+    services:
+      - name: meridian-api
+        port: 6100
+        ingress: [cloudflare-tunnel]
+        # postgres: the matter store. janua: JWKS fetch for token verification.
+        # https: government reference material and ecosystem edges. No egress is
+        # opened to any government authentication endpoint, because Meridian does
+        # not authenticate as a user anywhere — see packages/govtech.
+        egress: [dns, https, postgres, janua]
+      - name: meridian-web
+        port: 6101
+        ingress: [cloudflare-tunnel]
+        egress: [dns, https]
+      - name: meridian-admin
+        port: 6102
+        ingress: [cloudflare-tunnel]
+        egress: [dns, https]
+
+---
+apiVersion: enclii.dev/v1
+kind: Service
+metadata:
+  name: meridian-api
+  project: meridian
+  description: "Meridian API — matters, presence, documents, pathways, and the disclosure gate"
+
+spec:
+  build:
+    type: dockerfile
+    dockerfile: Dockerfile.api
+    context: .
+    source:
+      git:
+        repository: https://github.com/madfam-org/meridian
+        branch: main
+        autoDeploy: true
+
+  runtime:
+    port: 6100
+    replicas: 2
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+      limits:
+        cpu: "1000m"
+        memory: "1Gi"
+    healthCheck: /health
+    # Readiness is deep (`/health/ready` reaches the database) so a pod that
+    # loses its store leaves rotation instead of returning 500s. Liveness stays
+    # shallow on `/health`: a database blip must not kill a process midway
+    # through writing a matter's presence ledger.
+    readinessProbe:
+      path: /health/ready
+      initialDelaySeconds: 10
+      periodSeconds: 10
+    livenessProbe:
+      path: /health
+      initialDelaySeconds: 20
+      periodSeconds: 30
+
+  env:
+    - name: MERIDIAN_ENV
+      value: production
+    - name: PORT
+      value: "6100"
+    - name: DATABASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: meridian-secrets
+          key: database-url
+    - name: JANUA_URL
+      value: "https://auth.madfam.io"
+    - name: JANUA_JWKS_URL
+      value: "https://auth.madfam.io/.well-known/jwks.json"
+    # CORS allow-list. Both browsers that may call this API are ours; anything
+    # else is refused rather than reflected back.
+    - name: MERIDIAN_WEB_ORIGIN
+      value: "https://meridian.madfam.io"
+    - name: MERIDIAN_ADMIN_ORIGIN
+      value: "https://meridian-admin.madfam.io"
+
+  domains:
+    - domain: meridian-api.madfam.io
+      tls: true
+      tlsIssuer: cloudflare
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+
+  slo:
+    availability: 99.9
+    latencyP95: 300
+    errorRate: 0.5
+
+---
+apiVersion: enclii.dev/v1
+kind: Service
+metadata:
+  name: meridian-web
+  project: meridian
+  description: "Meridian Web — applicant portal"
+
+spec:
+  build:
+    type: dockerfile
+    dockerfile: Dockerfile.web
+    context: .
+    source:
+      git:
+        repository: https://github.com/madfam-org/meridian
+        branch: main
+        autoDeploy: true
+
+  runtime:
+    port: 6101
+    replicas: 2
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    # `/` because apps/web and apps/admin have no health route; probing one
+    # that does not exist keeps every pod unready. See
+    # infra/k8s/production/web-deployment.yaml.
+    healthCheck: /
+
+  env:
+    # Next inlines NEXT_PUBLIC_* at build time, so these are also passed as
+    # --build-arg in .github/workflows/build-deploy.yml. Keeping them here too
+    # documents the runtime contract and keeps the two in one diff.
+    - name: NEXT_PUBLIC_API_URL
+      value: "https://meridian-api.madfam.io"
+    - name: NEXT_PUBLIC_JANUA_URL
+      value: "https://auth.madfam.io"
+    - name: NEXT_PUBLIC_JANUA_CLIENT_ID
+      value: "meridian-web"
+
+  domains:
+    - domain: meridian.madfam.io
+      tls: true
+      tlsIssuer: cloudflare
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+
+  slo:
+    availability: 99.9
+    latencyP95: 200
+    errorRate: 0.5
+
+---
+apiVersion: enclii.dev/v1
+kind: Service
+metadata:
+  name: meridian-admin
+  project: meridian
+  description: "Meridian Admin — firm console for licensed representatives"
+
+spec:
+  build:
+    type: dockerfile
+    dockerfile: Dockerfile.admin
+    context: .
+    source:
+      git:
+        repository: https://github.com/madfam-org/meridian
+        branch: main
+        autoDeploy: true
+
+  runtime:
+    port: 6102
+    # Two replicas, not because of load — this console is small — but because a
+    # single replica means a rollout is an outage, and the console is where a
+    # licensed representative signs off on catalog records.
+    replicas: 2
+    resources:
+      requests:
+        cpu: "100m"
+        memory: "256Mi"
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+    # `/` because apps/web and apps/admin have no health route; probing one
+    # that does not exist keeps every pod unready. See
+    # infra/k8s/production/web-deployment.yaml.
+    healthCheck: /
+
+  env:
+    - name: NEXT_PUBLIC_API_URL
+      value: "https://meridian-api.madfam.io"
+    - name: NEXT_PUBLIC_JANUA_URL
+      value: "https://auth.madfam.io"
+    - name: NEXT_PUBLIC_JANUA_CLIENT_ID
+      value: "meridian-admin"
+
+  domains:
+    - domain: meridian-admin.madfam.io
+      tls: true
+      tlsIssuer: cloudflare
+
+  autoscaling:
+    enabled: false
+
+  slo:
+    availability: 99.5
+    latencyP95: 300
+    errorRate: 0.5

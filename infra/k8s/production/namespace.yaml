@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: meridian
+  labels:
+    app.kubernetes.io/part-of: madfam-platform
+    enclii.dev/type: application
+    # Meridian holds travel-document numbers, dates of birth, and presence
+    # histories — a record of where a named person physically was, day by day.
+    # The label is informational; the controls that matter are the NetworkPolicy
+    # set generated from enclii.yaml and the absence of any egress route to a
+    # government authentication endpoint.
+    madfam.io/data-class: personal-data

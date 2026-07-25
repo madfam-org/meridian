@@ -1,0 +1,100 @@
+.badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4em;
+  padding: 0.15em 0.55em 0.2em;
+  border-radius: var(--radius-sm);
+  border: 1px solid;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  font-weight: 560;
+  max-width: 100%;
+  /*
+   * Bilingual labels are long — "Current at the target submission date ·
+   * Vigente en la fecha objetivo de presentación" does not fit a column on a
+   * narrow screen. Wrapping is allowed and the glyph is pinned to the first
+   * line, because a badge that overflows its container is a badge whose second
+   * language is unreadable.
+   */
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.glyph {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.9em;
+  flex: none;
+}
+
+.ok {
+  color: var(--ok-fg);
+  background: var(--ok-bg);
+  border-color: var(--ok-border);
+}
+
+.warn {
+  color: var(--warn-fg);
+  background: var(--warn-bg);
+  border-color: var(--warn-border);
+}
+
+.bad {
+  color: var(--bad-fg);
+  background: var(--bad-bg);
+  border-color: var(--bad-border);
+}
+
+.info {
+  color: var(--info-fg);
+  background: var(--info-bg);
+  border-color: var(--info-border);
+}
+
+.review {
+  color: var(--review-fg);
+  background: var(--review-bg);
+  border-color: var(--review-border);
+}
+
+.neutral {
+  color: var(--neutral-fg);
+  background: var(--neutral-bg);
+  border-color: var(--neutral-border);
+}
+
+.accent {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.chip {
+  display: inline-block;
+  padding: 0.1em 0.5em 0.15em;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+  color: var(--fg-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/*
+ * Same reason as the skip link: a badge sits on a tinted fill, and the muted
+ * grey the Spanish half would otherwise take loses contrast against it. Both
+ * languages inherit the badge's own status colour; the slight opacity keeps the
+ * visual hierarchy without dropping the ratio.
+ */
+.badge :global(span[lang='es']) {
+  color: inherit;
+  opacity: 0.82;
+}
+
+.chip :global(span[lang='es']) {
+  color: inherit;
+  opacity: 0.82;
+}

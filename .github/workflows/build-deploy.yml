@@ -1,0 +1,193 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**']
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build, push, and pin image digests
+    runs-on: ${{ vars.ARC_BOOTSTRAP_COMPLETE == 'true' && 'madfam-runners-blue' || 'ubuntu-latest' }}
+    timeout-minutes: 45
+    permissions:
+      # contents: write — the digest commit back to main (see the last step).
+      # packages: write — push to GHCR.
+      # id-token: write — cosign keyless signing; no signing key is stored.
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Installed by direct download rather than sigstore/cosign-installer: the
+      # action's install script shells out to `envsubst`, which the minimal ARC
+      # runner image does not carry. The checksum file comes from the same
+      # release, so the binary verifies itself before it is trusted.
+      - name: Install cosign
+        run: |
+          set -euo pipefail
+          COSIGN_VERSION=v2.6.0
+          mkdir -p "$HOME/.local/bin"
+          curl -sSfL -o "$HOME/.local/bin/cosign" \
+            "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64"
+          curl -sSfL -o /tmp/cosign_checksums.txt \
+            "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign_checksums.txt"
+          expected="$(grep ' cosign-linux-amd64$' /tmp/cosign_checksums.txt | awk '{print $1}')"
+          echo "${expected}  $HOME/.local/bin/cosign" | sha256sum -c -
+          chmod +x "$HOME/.local/bin/cosign"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # Base images are pulled from Docker Hub anonymously. A busy runner pool
+      # can exhaust the anonymous pull allowance; the fix is a docker.io login
+      # step before buildx starts, which needs a registry credential this public
+      # repository does not currently hold.
+      - name: Build and push api
+        id: build-api
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.api
+          push: true
+          tags: |
+            ghcr.io/madfam-org/meridian-api:${{ github.sha }}
+            ghcr.io/madfam-org/meridian-api:main
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Build and push web
+        id: build-web
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.web
+          push: true
+          tags: |
+            ghcr.io/madfam-org/meridian-web:${{ github.sha }}
+            ghcr.io/madfam-org/meridian-web:main
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+          # Public endpoints only. Build arguments are recorded in the image
+          # history of a publicly pullable image.
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://meridian-api.madfam.io' }}
+            NEXT_PUBLIC_JANUA_URL=${{ vars.NEXT_PUBLIC_JANUA_URL || 'https://auth.madfam.io' }}
+            NEXT_PUBLIC_JANUA_CLIENT_ID=meridian-web
+
+      - name: Build and push admin
+        id: build-admin
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.admin
+          push: true
+          tags: |
+            ghcr.io/madfam-org/meridian-admin:${{ github.sha }}
+            ghcr.io/madfam-org/meridian-admin:main
+          cache-from: type=gha,scope=admin
+          cache-to: type=gha,mode=max,scope=admin
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://meridian-api.madfam.io' }}
+            NEXT_PUBLIC_JANUA_URL=${{ vars.NEXT_PUBLIC_JANUA_URL || 'https://auth.madfam.io' }}
+            NEXT_PUBLIC_JANUA_CLIENT_ID=meridian-admin
+
+      # Keyless signing through the workflow's OIDC identity — no key material
+      # exists to leak. The signature is a public transparency-log record that
+      # these digests were produced by this workflow in this repository.
+      #
+      # The cluster does not enforce verification yet: turning that on is an
+      # operator change (the `enclii.dev/verify-signatures` namespace label plus
+      # a policy controller configured with the accepted identity), and enabling
+      # it from here without the matching cluster side would stop every pull.
+      - name: Sign images
+        env:
+          COSIGN_EXPERIMENTAL: 'true'
+        run: |
+          set -euo pipefail
+
+          sign_image() {
+            image="$1"
+            for attempt in 1 2 3; do
+              if cosign sign --yes "$image"; then
+                return 0
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                echo "cosign failed after ${attempt} attempts for ${image}" >&2
+                return 1
+              fi
+              sleep $((attempt * 20))
+            done
+          }
+
+          sign_image "ghcr.io/madfam-org/meridian-api@${{ steps.build-api.outputs.digest }}"
+          sign_image "ghcr.io/madfam-org/meridian-web@${{ steps.build-web.outputs.digest }}"
+          sign_image "ghcr.io/madfam-org/meridian-admin@${{ steps.build-admin.outputs.digest }}"
+
+      # Same self-verifying download pattern as cosign above. The version is
+      # pinned so a kustomize release cannot change the shape of the manifest
+      # this job commits.
+      - name: Install kustomize
+        run: |
+          set -euo pipefail
+          KUSTOMIZE_VERSION=v5.5.0
+          BASE="https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${KUSTOMIZE_VERSION}"
+          ASSET="kustomize_${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          mkdir -p "$HOME/.local/bin"
+          curl -sSfL -o "/tmp/${ASSET}" "${BASE}/${ASSET}"
+          curl -sSfL -o /tmp/kustomize_checksums.txt "${BASE}/checksums.txt"
+          expected="$(grep " ${ASSET}\$" /tmp/kustomize_checksums.txt | awk '{print $1}')"
+          if [ -z "${expected}" ]; then
+            echo "no checksum published for ${ASSET} in ${BASE}/checksums.txt" >&2
+            exit 1
+          fi
+          echo "${expected}  /tmp/${ASSET}" | sha256sum -c -
+          tar -xzf "/tmp/${ASSET}" -C "$HOME/.local/bin" kustomize
+          chmod +x "$HOME/.local/bin/kustomize"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # Digests, not tags. A tag is a mutable pointer; the cluster must roll out
+      # the exact bytes this job built and signed, and ArgoCD must be able to
+      # tell one revision from the next.
+      - name: Pin image digests
+        working-directory: infra/k8s/production
+        run: |
+          set -euo pipefail
+          kustomize edit set image \
+            ghcr.io/madfam-org/meridian-api=ghcr.io/madfam-org/meridian-api@${{ steps.build-api.outputs.digest }}
+          kustomize edit set image \
+            ghcr.io/madfam-org/meridian-web=ghcr.io/madfam-org/meridian-web@${{ steps.build-web.outputs.digest }}
+          kustomize edit set image \
+            ghcr.io/madfam-org/meridian-admin=ghcr.io/madfam-org/meridian-admin@${{ steps.build-admin.outputs.digest }}
+
+      # ArgoCD syncs from this commit. A push authenticated with GITHUB_TOKEN
+      # does not start another workflow run, so this cannot loop; `[skip ci]`
+      # states the intent for any human reading the history.
+      - name: Commit pinned digests
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add infra/k8s/production/kustomization.yaml
+          if ! git diff --staged --quiet; then
+            git commit -m "ci: pin image digests for ${GITHUB_SHA} [skip ci]"
+            git pull --rebase origin main
+            git push
+          else
+            echo "digests unchanged — nothing to commit"
+          fi

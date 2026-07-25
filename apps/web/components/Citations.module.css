@@ -1,0 +1,142 @@
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: none;
+}
+
+.entry {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: var(--space-4);
+  margin: 0;
+}
+
+.entry + .entry {
+  margin-top: 0;
+}
+
+.entry:target {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.entryHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.id {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.1em 0.45em;
+  overflow-wrap: anywhere;
+}
+
+.instrument {
+  margin: 0 0 var(--space-2);
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.provision {
+  color: var(--fg-muted);
+  font-weight: 400;
+}
+
+.meta {
+  margin: 0 0 var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+}
+
+.meta:last-child {
+  margin-bottom: 0;
+}
+
+.date {
+  font-family: var(--font-mono);
+}
+
+.age {
+  color: var(--fg-subtle);
+}
+
+.note {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+}
+
+.note > p,
+.caveat > p {
+  margin: 0 0 var(--space-2);
+  max-width: var(--measure);
+}
+
+.note > p:last-child,
+.caveat > p:last-child {
+  margin-bottom: 0;
+}
+
+.caveat {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--radius-sm);
+  color: var(--warn-fg);
+  font-size: 0.875rem;
+}
+
+.caveat :global(span[lang='es']) {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.caveatLead {
+  font-weight: 600;
+}
+
+.refs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35em;
+}
+
+.ref {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2em;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  padding: 0.05em 0.4em 0.1em;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+.ref:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.refId {
+  overflow-wrap: anywhere;
+}

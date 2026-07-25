@@ -1,0 +1,92 @@
+.callout {
+  border: 1px solid;
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  font-size: 0.9375rem;
+}
+
+.icon {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  flex: none;
+}
+
+/*
+ * A callout usually holds two or three `TProse` blocks, each of which is a div
+ * of paragraphs. Spacing them with a flex gap rather than child margins means
+ * the rhythm holds whatever mix of paragraphs, lists and prose blocks a caller
+ * passes in.
+ */
+.body {
+  font-size: 0.9375rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.body > p {
+  margin-bottom: 0;
+}
+
+.ok {
+  color: var(--ok-fg);
+  background: var(--ok-bg);
+  border-color: var(--ok-border);
+}
+
+.warn {
+  color: var(--warn-fg);
+  background: var(--warn-bg);
+  border-color: var(--warn-border);
+}
+
+.bad {
+  color: var(--bad-fg);
+  background: var(--bad-bg);
+  border-color: var(--bad-border);
+}
+
+.info {
+  color: var(--info-fg);
+  background: var(--info-bg);
+  border-color: var(--info-border);
+}
+
+.review {
+  color: var(--review-fg);
+  background: var(--review-bg);
+  border-color: var(--review-border);
+}
+
+.neutral {
+  color: var(--fg);
+  background: var(--surface-sunken);
+  border-color: var(--border-strong);
+}
+
+.accent {
+  color: var(--fg);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/*
+ * Inside a tinted callout the Spanish line would otherwise drop to the global
+ * muted grey and lose contrast against the tint. Inheriting the callout's own
+ * foreground at reduced opacity keeps the ratio while still reading as
+ * secondary.
+ */
+.callout :global(span[lang='es']) {
+  color: inherit;
+  opacity: 0.85;
+}

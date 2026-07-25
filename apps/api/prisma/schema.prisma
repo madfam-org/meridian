@@ -1,0 +1,554 @@
+// Meridian persistence schema.
+//
+// Three conventions run through this file, and each exists because getting it
+// wrong costs a person their status rather than costing us a bug report.
+//
+// 1. CIVIL DATES ARE STRINGS, NOT `DateTime`.
+//    "The day you entered Spain" is a calendar day, not an instant. Postgres
+//    `timestamptz` normalises to an instant and hands back whatever the session
+//    timezone says, which silently turns a lawful 90-day stay into 91. Every
+//    field that models a calendar day is `String @db.Char(10)` holding
+//    `YYYY-MM-DD`, matching `IsoDate` in `@meridian/core`, and is read back into
+//    that branded type at the repository boundary. Lexicographic ordering on
+//    zero-padded ISO dates is exact chronological ordering, so `ORDER BY` and
+//    range predicates still work. `DateTime` appears only for genuine instants —
+//    row creation and audit occurrence — where the timezone is the point.
+//
+// 2. EVERY TENANT-SCOPED MODEL CARRIES `tenantId` AND IS INDEXED ON IT.
+//    The repository layer takes a tenant id in its constructor and has no method
+//    that can read across tenants, so `tenantId` is in the WHERE clause of every
+//    query by construction rather than by anyone remembering. The index is what
+//    makes that affordable.
+//
+// 3. `AuditEvent` IS APPEND-ONLY.
+//    There is no update or delete path to this table anywhere in the codebase:
+//    the repository interface exposes `append` and `list` and nothing else. It
+//    carries no `updatedAt`, deliberately — a mutable audit trail is not an
+//    audit trail. Grant the application role INSERT and SELECT on this table
+//    only; the schema cannot enforce that, but the deployment can.
+//
+// Enum values mirror the union types in `@meridian/core` and the domain packages
+// character for character. A drift between them is a defect, and the repository
+// mappers are written so the compiler catches it.
+//
+// NOTE: this schema is not generated or migrated as part of the build. Run
+// `pnpm --filter @meridian/api db:generate` before starting the Prisma-backed
+// server; the in-memory repositories need nothing.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums — mirrors of the domain union types.
+// ---------------------------------------------------------------------------
+
+/// `TenantKind` in `@meridian/core/tenancy`. Decides the audience the disclosure
+/// gate releases to, which is why it is an enum and not free text.
+enum TenantKind {
+  firm
+  individual
+  corporate
+  madfam_represented
+}
+
+/// `RepresentativeCredential` in `@meridian/core/disclosure`.
+enum RepresentativeCredential {
+  rcic
+  canadian_lawyer
+  canadian_paralegal
+  quebec_notary
+  spanish_abogado
+  spanish_gestor
+  other_regulated
+}
+
+/// `MatterPhase` — the PRD's six-stage journey, ordered.
+enum MatterPhase {
+  intake
+  identity_validation
+  document_assembly
+  submission
+  post_arrival_tracking
+  status_transition
+}
+
+enum MatterStatus {
+  draft
+  active
+  awaiting_applicant
+  awaiting_authority
+  awaiting_representative_review
+  submitted
+  granted
+  refused
+  withdrawn
+  abandoned
+}
+
+enum TaskAssignee {
+  applicant
+  representative
+  employer
+  platform
+  authority
+}
+
+enum TaskStatus {
+  locked
+  available
+  in_progress
+  submitted
+  complete
+  waived
+}
+
+/// `DocumentKind` in `@meridian/documents/model`. A closed set: an unrecognised
+/// kind has no legalisation or translation routing, and routing a document by
+/// guesswork sends an applicant to the wrong ministry.
+enum DocumentKind {
+  passport
+  national_id
+  birth_certificate
+  marriage_certificate
+  criminal_record
+  proof_of_income
+  proof_of_accommodation
+  health_insurance
+  degree_certificate
+  academic_transcript
+  professional_licence
+  employment_offer
+  employment_contract
+  cv
+  photograph
+  application_form
+  payment_receipt
+  biometrics_confirmation
+  prior_visa
+  travel_itinerary
+}
+
+enum DocumentStatus {
+  required
+  provided
+  under_review
+  accepted
+  rejected
+  expired
+}
+
+/// The authentication act actually completed. Distinct from "nothing has been
+/// done", which is `NULL` — see `DocumentLegalisation.route` in
+/// `@meridian/documents`, where `none` is a finding about the receiving state
+/// and `null` is the absence of any act.
+enum LegalisationRoute {
+  none
+  apostille
+  consular
+  unknown
+}
+
+enum TranslatorStandard {
+  none
+  sworn_traductor_jurado
+  certified_translator
+  affidavit_translation
+  perito_traductor
+  translator_certification
+  unknown
+}
+
+/// Where a presence record came from. Not a boolean "verified" flag: the gap
+/// between an itinerary and a border stamp is the gap between a plan and
+/// evidence, and both belong in the ledger.
+enum PresenceSource {
+  border_stamp
+  gps
+  declared
+  itinerary
+  inferred
+}
+
+enum PresenceConfidence {
+  confirmed
+  probable
+  assumed
+}
+
+/// `DisclosureClass` in `@meridian/core/disclosure`.
+enum DisclosureClass {
+  information
+  assessment
+  advice
+}
+
+/// `Verdict` in `@meridian/pathways/evaluate`.
+enum EligibilityVerdict {
+  eligible
+  ineligible
+  indeterminate
+  requires_human_review
+}
+
+/// What happened, from the audit trail's point of view. `refused` is its own
+/// outcome rather than a flavour of `failure`: a disclosure downgrade is the
+/// system working correctly, and burying it under "failure" would make the one
+/// event a regulator most wants to see look like noise.
+enum AuditOutcome {
+  success
+  refused
+  failure
+}
+
+// ---------------------------------------------------------------------------
+// Tenancy
+// ---------------------------------------------------------------------------
+
+model Tenant {
+  id               String     @id
+  kind             TenantKind
+  displayName      String
+  /// ISO 3166-1 alpha-2 of the tenant's own seat, for data-residency routing.
+  homeJurisdiction String     @db.Char(2)
+  createdAt        DateTime   @default(now()) @db.Timestamptz(6)
+  updatedAt        DateTime   @updatedAt @db.Timestamptz(6)
+
+  representatives Representative[]
+  applicants      Applicant[]
+  matters         Matter[]
+  tasks           Task[]
+  documents       Document[]
+  stays           Stay[]
+  evaluations     PathwayEvaluation[]
+  auditEvents     AuditEvent[]
+  handoffs        GovTechHandoff[]
+
+  @@map("tenant")
+}
+
+/// A professional whose standing authorises regulated advice.
+///
+/// `verifiedOn` and `expiresOn` are civil dates because a licence register
+/// records a date, not a moment. A lapsed licence must not gate release, so
+/// `expiresOn` is compared against the request's `asOf` on every gate decision
+/// rather than being cached as a boolean.
+model Representative {
+  id            String                   @id
+  tenantId      String
+  /// Jurisdiction whose regulator issued the standing. ISO 3166-1 alpha-2.
+  jurisdiction  String                   @db.Char(2)
+  credential    RepresentativeCredential
+  /// Licence or roll number exactly as it appears in the regulator's public
+  /// register. Public register data — never a credential or a login.
+  licenceNumber String
+  verifiedOn    String                   @db.Char(10)
+  expiresOn     String?                  @db.Char(10)
+  createdAt     DateTime                 @default(now()) @db.Timestamptz(6)
+  updatedAt     DateTime                 @updatedAt @db.Timestamptz(6)
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  matters Matter[]
+
+  @@unique([tenantId, jurisdiction, licenceNumber])
+  @@index([tenantId])
+  @@map("representative")
+}
+
+// ---------------------------------------------------------------------------
+// People and cases
+// ---------------------------------------------------------------------------
+
+/// The migrant.
+///
+/// `nationalities` and `claimedNationality` are separate columns and the
+/// distinction is load-bearing: Spain's reduced-residency route is conferred on
+/// nationals of named states, and a dual national who entered on the other
+/// passport cannot claim it. Storing only the list and picking the most
+/// favourable member is the bug that costs someone eight years.
+///
+/// `givenNames` and `familyNames` are personal data. They are redacted from
+/// every log line by the logger's redaction list and never appear in an audit
+/// event body.
+model Applicant {
+  id                  String   @id
+  tenantId            String
+  /// Caseworker-facing label, e.g. an internal file reference.
+  reference           String?
+  givenNames          String?
+  familyNames         String?
+  /// ISO 3166-1 alpha-2 codes. Order carries no significance.
+  nationalities       String[]
+  claimedNationality  String?  @db.Char(2)
+  dateOfBirth         String?  @db.Char(10)
+  createdAt           DateTime @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime @updatedAt @db.Timestamptz(6)
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  matters Matter[]
+
+  @@index([tenantId])
+  @@index([tenantId, reference])
+  @@map("applicant")
+}
+
+/// One migration objective pursued by one applicant under one pathway.
+model Matter {
+  id                  String       @id
+  tenantId            String
+  applicantId         String
+  pathwayId           String
+  targetJurisdiction  String       @db.Char(2)
+  /// The nationality the applicant actually entered and applied under — see the
+  /// note on `Applicant.claimedNationality`.
+  claimedNationality  String       @db.Char(2)
+  status              MatterStatus
+  phase               MatterPhase
+  openedOn            String       @db.Char(10)
+  closedOn            String?      @db.Char(10)
+  /// Set when a licensed human is accountable for this matter's advice. Null is
+  /// the case the disclosure gate exists to catch.
+  representativeId    String?
+  createdAt           DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt           DateTime     @updatedAt @db.Timestamptz(6)
+
+  tenant         Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  applicant      Applicant           @relation(fields: [applicantId], references: [id], onDelete: Restrict)
+  representative Representative?     @relation(fields: [representativeId], references: [id], onDelete: SetNull)
+  tasks          Task[]
+  documents      Document[]
+  stays          Stay[]
+  evaluations    PathwayEvaluation[]
+  handoffs       GovTechHandoff[]
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, applicantId])
+  @@index([representativeId])
+  @@map("matter")
+}
+
+/// A checklist item generated by the rules engine.
+///
+/// `dependsOn` holds task ids rather than a self-relation because the graph is
+/// rebuilt wholesale when a checklist is regenerated, and a partially-applied
+/// relation update would leave a matter with a dependency edge pointing at a
+/// task that no longer exists. Cycle detection lives in `@meridian/core`'s
+/// `findTaskCycles`, which reports a cycle rather than silently repairing it.
+model Task {
+  id          String       @id
+  tenantId    String
+  matterId    String
+  phase       MatterPhase
+  title       String
+  assignee    TaskAssignee
+  status      TaskStatus
+  dependsOn   String[]
+  dueOn       String?      @db.Char(10)
+  /// Citation ids justifying why this task exists at all.
+  citationIds String[]
+  createdAt   DateTime     @default(now()) @db.Timestamptz(6)
+  updatedAt   DateTime     @updatedAt @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, matterId])
+  @@index([tenantId, matterId, status])
+  @@map("task")
+}
+
+/// A piece of paper in the file.
+///
+/// This row records *metadata only*: what kind of document it is, who issued
+/// it, what has been done to make it usable abroad. The scan itself is not
+/// stored here and this service never receives one.
+model Document {
+  id                    String              @id
+  tenantId              String
+  matterId              String
+  kind                  DocumentKind
+  /// The state whose authority issued it — not the applicant's nationality. A
+  /// Mexican national's police certificate covering three years in Canada is
+  /// issued by Canada, and routing it as Mexican sends them to the wrong
+  /// ministry.
+  issuingCountry        String              @db.Char(2)
+  issuedOn              String?             @db.Char(10)
+  expiresOn             String?             @db.Char(10)
+  status                DocumentStatus
+  /// The route actually completed. NULL means nothing has been done yet, which
+  /// is not the same as `none`.
+  legalisationRoute     LegalisationRoute?
+  legalisationDate      String?             @db.Char(10)
+  /// Apostille register number or consular reference — public verification data.
+  legalisationReference String?
+  /// BCP 47 tag. Mandatory: there is no safe default, and inferring the language
+  /// from the issuing country bills applicants for translations they never
+  /// needed.
+  sourceLanguage        String
+  translationLanguage   String?
+  translatorStandard    TranslatorStandard?
+  translationDate       String?             @db.Char(10)
+  /// The translator's number in the public register. Never a credential.
+  translatorReference   String?
+  /// Identifier of the person who last reviewed it. An id, never a name.
+  verifiedBy            String?
+  createdAt             DateTime            @default(now()) @db.Timestamptz(6)
+  updatedAt             DateTime            @updatedAt @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, matterId])
+  @@index([tenantId, matterId, kind])
+  @@map("document")
+}
+
+/// One continuous period of physical presence in one country — the presence
+/// ledger.
+///
+/// `startOn` and `endOn` are both *inclusive*. A stay from 2025-01-01 to
+/// 2025-01-01 is one day of presence, not zero. `endOn` is nullable for a stay
+/// that has not ended; the engine closes it at an explicitly supplied date and
+/// marks the result `openEnded` so the imputation stays visible rather than
+/// being laundered into a total.
+model Stay {
+  id                          String             @id
+  tenantId                    String
+  matterId                    String
+  country                     String             @db.Char(2)
+  startOn                     String             @db.Char(10)
+  endOn                       String?            @db.Char(10)
+  source                      PresenceSource
+  confidence                  PresenceConfidence
+  /// True only when the traveller held *that State's own* residence permit or
+  /// long-stay visa for the whole stay. Days in other Schengen States are still
+  /// short-stay days and must not be flagged.
+  exemptFromSchengenShortStay Boolean            @default(false)
+  createdAt                   DateTime           @default(now()) @db.Timestamptz(6)
+  updatedAt                   DateTime           @updatedAt @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, matterId])
+  @@index([tenantId, matterId, startOn])
+  @@map("stay")
+}
+
+/// A stored eligibility report.
+///
+/// `pathwayVersion` is recorded alongside `pathwayId` because the catalog is
+/// versioned and the law moves: an assessment produced under last quarter's
+/// rules must remain explicable after the rules change. `asOf` is the civil date
+/// the evaluation was made *for*, which is not necessarily the date it was run.
+///
+/// `classification` and `released` record what the disclosure gate decided at
+/// the time. A report generated as `advice` and released as `assessment` is a
+/// different event from one generated as `assessment`, and only the pair
+/// distinguishes them.
+model PathwayEvaluation {
+  id             String             @id
+  tenantId       String
+  matterId       String
+  pathwayId      String
+  pathwayVersion String
+  asOf           String             @db.Char(10)
+  verdict        EligibilityVerdict
+  classification DisclosureClass
+  released       Boolean
+  /// The full `EligibilityReport`, including per-criterion evidence and the
+  /// citations it rests on. Stored whole so the arithmetic can be reproduced.
+  report         Json
+  createdAt      DateTime           @default(now()) @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  matter Matter @relation(fields: [matterId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, matterId])
+  @@index([tenantId, matterId, pathwayId])
+  @@map("pathway_evaluation")
+}
+
+/// A generated hand-off pack: the instructions a person follows to act before a
+/// government themselves.
+///
+/// Meridian does not hold government credentials and does not act while
+/// presenting as the user. The hand-off is the replacement, and it is stored so
+/// the applicant keeps the audit trail of what they were told to do.
+model GovTechHandoff {
+  id             String          @id
+  tenantId       String
+  matterId       String?
+  adapterId      String
+  capabilityId   String?
+  title          String
+  /// Verified https, on an allowlisted official host, with no query string.
+  destinationUrl String
+  classification DisclosureClass
+  generatedOn    String          @db.Char(10)
+  /// The full `AssistedHandoff`: steps, documents, fields, captures, citations.
+  payload        Json
+  createdAt      DateTime        @default(now()) @db.Timestamptz(6)
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  matter Matter? @relation(fields: [matterId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, matterId])
+  @@map("govtech_handoff")
+}
+
+// ---------------------------------------------------------------------------
+// The append-only trail
+// ---------------------------------------------------------------------------
+
+/// Every mutation and every disclosure downgrade.
+///
+/// APPEND-ONLY. There is no update or delete path to this model anywhere in the
+/// codebase: `AuditRepository` exposes `append` and `list`, and nothing else.
+/// There is deliberately no `updatedAt` column — a row that can be edited is not
+/// evidence of anything.
+///
+/// `disclosureClass` records what classification the actor was shown, which is
+/// the fact a regulator asks about: not "did the system compute advice" but "did
+/// a recommendation reach an unrepresented consumer". `outcome = refused` is the
+/// gate doing its job.
+///
+/// `detail` is a flat map of scalars, never nested JSON. That is a containment
+/// rule, not a style preference: it makes it structurally impossible for an
+/// engine payload — or an MRZ, or a document number — to be smuggled into the
+/// audit trail as an opaque blob.
+model AuditEvent {
+  id              String          @id
+  tenantId        String
+  occurredAt      DateTime        @default(now()) @db.Timestamptz(6)
+  /// Subject claim from the verified token. An opaque id, never an email.
+  actorUserId     String
+  actorRoles      String[]
+  /// Dotted verb, e.g. `matter.phase.advanced`, `disclosure.downgraded`.
+  action          String
+  targetType      String
+  targetId        String?
+  disclosureClass DisclosureClass?
+  outcome         AuditOutcome
+  /// Flat scalar map. See the note above on why it is not nested.
+  detail          Json            @default("{}")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, occurredAt])
+  @@index([tenantId, action])
+  @@index([tenantId, targetType, targetId])
+  @@map("audit_event")
+}

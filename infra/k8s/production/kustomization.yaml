@@ -1,0 +1,39 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: meridian
+
+# List style and image ordering below match what `kustomize edit` writes back.
+# CI rewrites this file on every push to main, and if the checked-in form
+# differed the first commit would reindent everything and bury the one line that
+# actually changed.
+resources:
+- namespace.yaml
+- api-deployment.yaml
+- api-service.yaml
+- web-deployment.yaml
+- web-service.yaml
+- admin-deployment.yaml
+- admin-service.yaml
+
+# secrets-template.yaml is deliberately NOT a resource. It documents the key
+# names this namespace needs; the Secret itself is provisioned by the operator
+# and never rendered from git.
+
+# CI replaces each `newTag` here with the digest of the image it just built and
+# signed:
+#
+#   kustomize edit set image \
+#     ghcr.io/madfam-org/meridian-api=ghcr.io/madfam-org/meridian-api@sha256:...
+#
+# The `main` tags are the bootstrap value, valid only until that first run. A tag
+# is a mutable pointer — two syncs of `:main` can deliver different bytes and
+# ArgoCD cannot tell one from the other — so nothing should stay pinned to a tag
+# once the pipeline has run.
+images:
+- name: ghcr.io/madfam-org/meridian-admin
+  newTag: main
+- name: ghcr.io/madfam-org/meridian-api
+  newTag: main
+- name: ghcr.io/madfam-org/meridian-web
+  newTag: main

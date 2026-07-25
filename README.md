@@ -1,0 +1,323 @@
+# Meridian
+
+Global migration law and logistics platform. Eligibility assessment against a
+versioned catalog of immigration pathways, sequential document assembly with
+legalisation and sworn-translation routing, machine-readable travel-document
+validation to ICAO Doc 9303, and continuous cross-border presence tracking.
+
+Innovaciones MADFAM S.A.S. de C.V. — AGPL-3.0-only.
+
+> **Boundary note (Lane C, public-safe).** This repository carries public-safe
+> service documentation only. Operational detail — cluster access, secret paths,
+> operator gates, cost and capacity data — lives in the private
+> [`madfam-org/internal-devops`](https://github.com/madfam-org/internal-devops)
+> repo under [`docs/repo-boundary-contract.md`](https://github.com/madfam-org/internal-devops/blob/main/docs/repo-boundary-contract.md).
+
+---
+
+## Status
+
+**Snapshot taken 2026-07-25 15:30 America/Mexico_City, at the end of the
+repository's initial build.** Numbers below were measured by running the commands
+named, not estimated. **Verify the current state yourself** with the commands in
+*Verification* before relying on any claim here.
+
+### Verified working
+
+Every project typechecks clean under strict settings — including
+`noUncheckedIndexedAccess`, `verbatimModuleSyntax` and `noUnusedLocals` — and
+every test passes.
+
+| Project | What it does | Tests |
+|---|---|---|
+| `@meridian/core` | Civil-date arithmetic, the advice boundary, `Citation`, tenancy, matter/task model | 60 |
+| `@meridian/mrtd` | ICAO Doc 9303 MRZ parsing, check digits, century windows, BAC key seed | 111 |
+| `@meridian/presence` | Presence ledger, Schengen 90/180, tax day counts, continuous residence, work hours | 147 |
+| `@meridian/pathways` | Declarative rules engine, three-valued evaluation, review gate, ES + CA catalog | 139 |
+| `@meridian/documents` | Legalisation routing, translation requirements, freshness projection, checklists, gaps | 146 |
+| `@meridian/govtech` | Government adapters with honest capability reporting and refused credential custody | 310 |
+| `@meridian/api` | Fastify service, Janua RS256 auth, the disclosure gate, tenant-scoped repositories | 108 |
+| `@meridian/web` | Applicant portal — typechecks and `next build` succeeds | — |
+| `@meridian/admin` | Firm console — typechecks and `next build` succeeds | — |
+| | | **1021** |
+
+Neither Next.js application has a test suite. That is the largest remaining gap
+in the repository, and it is why the two rows above claim only that they build.
+
+All three repository guard scripts pass:
+
+```bash
+node scripts/check-advice-boundary.mjs
+node scripts/check-no-credential-custody.mjs
+node scripts/check-pathway-citations.mjs
+```
+
+Each prints what it examined rather than only its verdict, because a guard that
+has quietly stopped matching anything passes just as silently as one that is
+working. Two of them were additionally proven able to fail: a deliberate
+violation was written into `apps/api/src/`, each script caught it, and the file
+was removed. Re-run that probe yourself if you change a detector.
+
+CI exists at `.github/workflows/ci.yml` with four jobs — **policy** (the three
+guard scripts, run first and with no install), **typecheck**, **test** and
+**build** — plus `build-deploy.yml`. Deployment configuration exists:
+`enclii.yaml` (four documents), `Dockerfile.{api,web,admin}`,
+`docker-compose.yml`, and `infra/k8s/production/` (namespace, three
+deployment/service pairs, kustomization, and a secrets *template* that is
+deliberately not a kustomize resource).
+
+### Known gaps
+
+- **The two Next.js applications have no tests.** They build and typecheck; no
+  assertion covers their rendering or their state derivation.
+- **The API has never run against a real database.** Its 108 tests exercise the
+  in-memory repository adapter, which is a complete implementation rather than a
+  mock, but the Prisma adapter is covered only by typechecking and its schema has
+  never been applied to a live Postgres. `prisma generate` has not been run here.
+- **Nothing has been exercised end to end.** No request has travelled from the
+  web application through the API to a database in any environment.
+
+What is built in the API is worth naming, because it is the shape the
+architecture documents describe:
+
+- `auth/` — Janua JWKS verification, **RS256 only**, with the algorithm checked
+  both before and during verification, and issuer *and* audience both required.
+- `disclosure/` — the gate, the response envelope, a leak detector, and a route
+  registry whose Fastify `onRoute` hook **refuses to register any route that
+  does not declare whether it returns engine output**. The server does not start
+  until a new route answers that question.
+- `repositories/` — ports with **structural tenant scoping**: no interface method
+  takes a tenant id; a repository is obtained from `forTenant()` with the id from
+  a verified token, so there is no call a handler could make that reads another
+  tenant's row. Memory and Prisma adapters both implement them.
+- `audit/` — append-only. `AuditRepository` has `append` and `list` and nothing
+  else; there is no update or delete to call.
+- `prisma/schema.prisma` — 10 models, 15 enums.
+- `routes/` — health, tenants, applicants, matters, tasks, presence, documents,
+  pathways, identity, govtech and audit. The identity route validates an MRZ and
+  **persists none of it**: the verdict is returned and every field derived from
+  the travel document is discarded.
+
+### Not done
+
+- **Nothing is deployed.** No namespace, no DNS, no tunnel routes. The manifests
+  and the Enclii service definitions exist; the operator gates have not been run.
+- **No pathway has been reviewed by counsel.** All 8 ship
+  `reviewStatus: 'unreviewed'`, so `recommend()` ranks nothing and lists every
+  pathway as excluded with code `not_counsel_reviewed`. This is the intended
+  live state, not a placeholder — see
+  [docs/LEGAL_CATALOG_REVIEW.md](docs/LEGAL_CATALOG_REVIEW.md).
+- **No government integration is live.** Of 15 declared adapter capabilities, 6
+  are `available` and every one of those is local computation. Zero
+  `government_system` capabilities are available: 2 are `not_provisioned`
+  (pending formal agreements), 3 are `not_implemented`, and 4 are
+  `refused_by_policy` and will stay that way.
+
+### Deliberately refused, permanently
+
+Meridian does not hold a user's government authentication credential (Cl@ve PIN,
+Cl@ve Permanente password, portal password, e.firma key) and does not act before
+an authority while presenting as the user. The refusal is in the type system,
+backed by a runtime guard and a CI check — not in a policy document. See
+[docs/adr/0003-no-credential-custody.md](docs/adr/0003-no-credential-custody.md).
+
+Meridian does not emit a recommendation, ranking, strategy or prediction of
+outcome to an unrepresented applicant. See
+[docs/adr/0002-advice-boundary-as-a-type.md](docs/adr/0002-advice-boundary-as-a-type.md).
+
+---
+
+## The three invariants
+
+Everything in this repository is built to hold these three. A change that breaks
+one of them is a defect regardless of what else it improves.
+
+**1. Never use JavaScript's `Date` for calendar arithmetic.**
+Immigration day-counting is civil-date arithmetic: "the day you entered Spain"
+is a calendar day, not an instant. A UTC-versus-local off-by-one silently turns
+a lawful 90-day stay into an overstay. Use `addDays` / `addMonths` / `diffDays` /
+`mergeRanges` / `overlapDays` / `complementRanges` / `lookbackWindow` from
+`@meridian/core`. `DateRange` is closed at both ends: 2025-01-01 to 2025-01-01
+is one day.
+
+**2. Every applied rule carries a `Citation`.**
+Instrument, provision, jurisdiction, and `verifiedOn`. A rule with no citation
+cannot be checked by the person whose life it governs, and cannot be re-verified
+when the law changes. Citations age `fresh` (≤90d) → `aging` (≤180d) → `stale`.
+
+**3. Every engine output is born disclosure-classified.**
+`information` | `assessment` | `advice`, decided where the output is produced,
+never at render time. `canRelease()` is the single gate. Downgrading is
+possible; upgrading is not.
+
+Each has a CI guard script, and each has an ADR explaining why it is shaped the
+way it is.
+
+---
+
+## Repository map
+
+```
+meridian/
+├── packages/                       the mature part — pure libraries, 901 tests
+│   ├── core/          @meridian/core      the shared contract. Read this first.
+│   │   src/civil-date.ts   IsoDate, DateRange (closed/inclusive), Hinnant algorithms
+│   │   src/disclosure.ts   DisclosureClass, canRelease, Disclosable<T>
+│   │   src/citation.ts     Citation, staleness bands
+│   │   src/jurisdiction.ts CountryCode, dated Schengen membership, apostille status
+│   │   src/tenancy.ts      TenantKind, representativeFor, audienceFor
+│   │   src/matter.ts       Matter, MatterPhase, Task, unlockTasks, findTaskCycles
+│   │   src/result.ts       Result<T,E>  ·  src/errors.ts  MeridianError
+│   ├── mrtd/          ICAO 9303. Pure computation, depends on nothing.
+│   ├── presence/      day counting. Every number shows its work.
+│   ├── pathways/      rules engine + catalog. The law is data.
+│   ├── documents/     legalisation, translation, freshness, checklist, gaps.
+│   └── govtech/       adapters that tell the truth about themselves.
+├── apps/                           newly landed, no tests yet
+│   ├── api/           Fastify. auth · disclosure gate · repositories · audit · routes
+│   │                  prisma/schema.prisma — 10 models, 15 enums
+│   │                  NO src/main.ts — nothing composes it into a process yet
+│   ├── web/           applicant portal, Next.js 15 App Router, port 6101
+│   └── admin/         firm console, Next.js 15 App Router, port 6102
+├── docs/
+│   ├── PRD.md                    origin document + editorial preface on our departures
+│   ├── ARCHITECTURE.md           module map, data flow, where the disclosure gate sits
+│   ├── REGULATORY_POSTURE.md     tenancy model, IRPA s.91, the Spanish position
+│   ├── LEGAL_CATALOG_REVIEW.md   the counsel review protocol. Nothing is reviewed yet.
+│   └── adr/                      0001-0006 architecture decision records
+├── scripts/           check-advice-boundary · check-no-credential-custody
+│                      check-pathway-citations   (all three run clean)
+├── infra/k8s/production/          namespace, deployments, services, kustomization
+├── enclii.yaml                    four Enclii service documents
+├── Dockerfile.{api,web,admin}     docker-compose.yml
+└── .github/workflows/             ci.yml (policy · typecheck · test · build)
+                                   build-deploy.yml
+```
+
+---
+
+## Quickstart
+
+Requires Node 22 (the root `package.json` sets `engines.node >= 20`; development
+and CI are on 22) and pnpm 9.15.9.
+
+```bash
+git clone https://github.com/madfam-org/meridian
+cd meridian
+pnpm install
+```
+
+The packages are the part that works end to end today:
+
+```bash
+pnpm -r --filter "./packages/*" typecheck
+pnpm -r --filter "./packages/*" test
+```
+
+The three policy checks need no install and are the fastest signal that an
+invariant is intact:
+
+```bash
+node scripts/check-advice-boundary.mjs
+node scripts/check-no-credential-custody.mjs
+node scripts/check-pathway-citations.mjs
+```
+
+Whole repo, through turbo:
+
+```bash
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+`apps/api` has no `src/main.ts`, so `pnpm dev` cannot start the API. The two
+Next.js apps will start (`--port 6101` and `--port 6102`) but have no API to
+talk to.
+
+---
+
+## Architecture at a glance
+
+Six pure-computation packages with one dependency direction and no cycles, plus
+a thin service that composes them:
+
+```
+                    ┌──────────────────┐
+                    │  @meridian/core  │  civil dates · disclosure · citation
+                    └────────┬─────────┘
+          ┌──────────────┬───┴────┬──────────────┐
+          │              │        │              │
+    ┌─────▼─────┐  ┌─────▼─────┐  │        ┌─────▼─────┐
+    │ presence  │  │ pathways  │  │        │  govtech  │
+    └───────────┘  └─────┬─────┘  │        └───────────┘
+                         │        │
+                   ┌─────▼────────▼─┐        ┌──────────────┐
+                   │   documents    │        │     mrtd     │  (depends on nothing)
+                   └────────────────┘        └──────────────┘
+```
+
+Every package is a library of total functions over plain data. None of them
+performs I/O, reads a clock without being asked, or knows what a database is.
+The reference date is always a parameter. That is what makes 901 tests possible
+without a fixture server, and it is what makes the API testable without Postgres
+— see [ADR 0006](docs/adr/0006-ports-and-adapters-repositories.md).
+
+Full detail, including where the disclosure gate sits in the request path:
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+---
+
+## The legal catalog, as it actually stands
+
+| | |
+|---|---|
+| Pathways | 8 — six Spain, two Canada |
+| Counsel-reviewed | **0** |
+| Distinct citations in the pathway catalog | 20, of which 5 are `discretionary` and 7 carry a URL |
+| Presence-engine citations | 6, of which 3 are `discretionary` |
+| Jurisdictions | ES, CA (plus MX and US translation profiles in `documents`) |
+| Catalog `verifiedOn` | 2026-07-25 — `fresh` until 2026-10-23 |
+
+Because no pathway is counsel-reviewed, `recommend()` returns an empty ranking
+and lists all 8 as excluded with code `not_counsel_reviewed`. That is the system
+working. The gating item between this engine and a sellable product is legal
+review, not engineering.
+
+Two foundational corridors seed the catalog: **Mexico → Spain** (nationality by
+residence on the reduced two-year period) and **Mexico → Canada** (CUSMA
+Chapter 16 professional entry, bridging to the Canadian Experience Class). The
+engine is jurisdiction-generic; the corridors are data in
+`packages/pathways/src/catalog/`.
+
+---
+
+## Ecosystem position
+
+Meridian is a MADFAM platform service in the **Mobility** pillar. It consumes
+Janua for authentication (OIDC, RS256 via JWKS), Dhanam for billing, Selva at
+`/v1` for every LLM call (never a provider directly), Karafiel for compliance
+timestamping, and deploys through Enclii.
+
+Full context, including the enclii CLI day-to-day reference:
+[ECOSYSTEM.md](ECOSYSTEM.md).
+
+---
+
+## Contributing and reporting
+
+- Agent and contributor operating doctrine: [AGENTS.md](AGENTS.md)
+- Human contribution guide: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Security and data-sensitivity policy: [SECURITY.md](SECURITY.md)
+- Release history and known gaps: [CHANGELOG.md](CHANGELOG.md)
+
+**This repository is public and handles the design of a system that will process
+passport, biometric-derived and travel-history data.** Never commit real
+applicant data, real document numbers, real MRZ strings, or credentials of any
+kind. Every fixture in the test suites is synthetic — issuing state `ZZZ`,
+document numbers beginning `ZZ`, `example.invalid` hostnames — and must stay
+that way.
+
+## Licence
+
+AGPL-3.0-only. See [LICENSE](LICENSE).

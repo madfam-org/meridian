@@ -1,0 +1,97 @@
+.notice {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/*
+ * A downgraded output is marked with a left rule rather than a red fill. This
+ * is not an error: the gate worked, and colouring it like a failure teaches
+ * people to dismiss it.
+ */
+.downgraded {
+  border-left: 4px solid var(--review-fg);
+}
+
+.plain {
+  border-left: 4px solid var(--accent);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.title {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  font-size: 1rem;
+}
+
+.mark {
+  font-family: var(--font-mono);
+  color: var(--fg-subtle);
+  flex: none;
+}
+
+.badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.arrow {
+  color: var(--fg-subtle);
+  font-family: var(--font-mono);
+}
+
+.meaning {
+  margin: 0;
+  font-size: 0.9375rem;
+  max-width: var(--measure);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.blockTitle {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.blockTitle :global(span[lang='es']) {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: 0.9375rem;
+  max-width: var(--measure);
+}
+
+.reason {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-sunken);
+  border-left: 2px solid var(--border-strong);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.9375rem;
+  color: var(--fg);
+  max-width: var(--measure);
+}

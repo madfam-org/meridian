@@ -1,0 +1,428 @@
+/*
+ * Design tokens for the firm console.
+ *
+ * No CSS framework. Everything below is either a token other stylesheets read,
+ * or a base rule that applies to bare HTML — component styling lives in CSS
+ * Modules next to the component that owns it.
+ *
+ * Two constraints shaped this file and neither is aesthetic:
+ *
+ * 1. **No colour-only encoding.** Every state token comes as a text/background
+ *    pair *and* every badge that uses one carries a written label and a leading
+ *    glyph. A practitioner triaging a caseload on a projector, colour-blind, or
+ *    printing to greyscale must read the same information.
+ *
+ * 2. **Both themes, always.** The dark palette is not a filter over the light
+ *    one; the semantic pairs are chosen separately so contrast holds in both.
+ *    `prefers-color-scheme` is the default signal and `data-theme` on the root
+ *    element overrides it in both directions, so an explicit choice wins over
+ *    the OS in either.
+ *
+ * Every foreground/background pair below was measured, in both themes, against
+ * every surface it is actually painted on — including `--bg-sunken` and
+ * `--bg-hover`, which is where a "muted" colour usually quietly falls under 4.5.
+ * All body-text pairs clear WCAG AA; the semantic badge pairs clear AAA. The
+ * console is read all day by people making decisions about somebody's right to
+ * remain somewhere, and a figure that is hard to read is a figure that gets
+ * skimmed.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces, from furthest back to nearest front. */
+  --bg: #ffffff;
+  --bg-sunken: #f4f5f7;
+  --bg-raised: #ffffff;
+  --bg-hover: #eef0f3;
+
+  /* Rules. `--rule` separates rows; `--rule-strong` separates regions. */
+  --rule: #e0e3e8;
+  --rule-strong: #c4c9d2;
+
+  --text: #14161a;
+  --text-muted: #565d68;
+  --text-faint: #616873;
+
+  --accent: #0b4f9e;
+  --accent-hover: #093f80;
+  --on-accent: #ffffff;
+  --focus: #0b57d0;
+
+  /* Semantic pairs. Foreground is text on the paired background. */
+  --ok-fg: #10462a;
+  --ok-bg: #e3f5ea;
+  --ok-rule: #9dd3b4;
+
+  --warn-fg: #6f4200;
+  --warn-bg: #fdf1dc;
+  --warn-rule: #e2b871;
+
+  --danger-fg: #8a1c16;
+  --danger-bg: #fdeae8;
+  --danger-rule: #eaa9a3;
+
+  --info-fg: #123c66;
+  --info-bg: #e6effb;
+  --info-rule: #a5c4ea;
+
+  --neutral-fg: #3b414b;
+  --neutral-bg: #edeff2;
+  --neutral-rule: #ccd1d9;
+
+  /* Refusal is deliberately its own pair. It is not a warning and it is not an
+     error — it is a settled decision, and it should not read as a fault. */
+  --refused-fg: #4b2c62;
+  --refused-bg: #f1e9f7;
+  --refused-rule: #c9adde;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+
+  --radius: 3px;
+  --radius-lg: 5px;
+
+  /* Density. The console is a working tool: rows are tight on purpose. */
+  --row-y: 0.375rem;
+  --row-x: 0.625rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --bg: #0f1115;
+    --bg-sunken: #16191f;
+    --bg-raised: #1a1e25;
+    --bg-hover: #232830;
+
+    --rule: #2b313a;
+    --rule-strong: #3d444f;
+
+    --text: #e8eaee;
+    --text-muted: #a4acb8;
+    --text-faint: #949cab;
+
+    --accent: #7fb0f2;
+    --accent-hover: #a3c6f7;
+    --on-accent: #0f1115;
+    --focus: #8ab4f8;
+
+    --ok-fg: #8fe0ab;
+    --ok-bg: #102c1d;
+    --ok-rule: #2f6b47;
+
+    --warn-fg: #f2c47a;
+    --warn-bg: #33260c;
+    --warn-rule: #7a5c22;
+
+    --danger-fg: #ffb0a6;
+    --danger-bg: #3a1613;
+    --danger-rule: #8a3a32;
+
+    --info-fg: #a8ccf5;
+    --info-bg: #12253c;
+    --info-rule: #33578a;
+
+    --neutral-fg: #c6ccd6;
+    --neutral-bg: #242932;
+    --neutral-rule: #414855;
+
+    --refused-fg: #d7bcec;
+    --refused-bg: #2a1f36;
+    --refused-rule: #5b4374;
+  }
+}
+
+/*
+ * An explicit choice overrides the OS in *both* directions. `data-theme="light"`
+ * has to undo the dark media block, so the light values are restated here rather
+ * than relying on cascade order.
+ */
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #ffffff;
+  --bg-sunken: #f4f5f7;
+  --bg-raised: #ffffff;
+  --bg-hover: #eef0f3;
+
+  --rule: #e0e3e8;
+  --rule-strong: #c4c9d2;
+
+  --text: #14161a;
+  --text-muted: #565d68;
+  --text-faint: #616873;
+
+  --accent: #0b4f9e;
+  --accent-hover: #093f80;
+  --on-accent: #ffffff;
+  --focus: #0b57d0;
+
+  --ok-fg: #10462a;
+  --ok-bg: #e3f5ea;
+  --ok-rule: #9dd3b4;
+
+  --warn-fg: #6f4200;
+  --warn-bg: #fdf1dc;
+  --warn-rule: #e2b871;
+
+  --danger-fg: #8a1c16;
+  --danger-bg: #fdeae8;
+  --danger-rule: #eaa9a3;
+
+  --info-fg: #123c66;
+  --info-bg: #e6effb;
+  --info-rule: #a5c4ea;
+
+  --neutral-fg: #3b414b;
+  --neutral-bg: #edeff2;
+  --neutral-rule: #ccd1d9;
+
+  --refused-fg: #4b2c62;
+  --refused-bg: #f1e9f7;
+  --refused-rule: #c9adde;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #0f1115;
+  --bg-sunken: #16191f;
+  --bg-raised: #1a1e25;
+  --bg-hover: #232830;
+
+  --rule: #2b313a;
+  --rule-strong: #3d444f;
+
+  --text: #e8eaee;
+  --text-muted: #a4acb8;
+  --text-faint: #949cab;
+
+  --accent: #7fb0f2;
+  --accent-hover: #a3c6f7;
+  --on-accent: #0f1115;
+  --focus: #8ab4f8;
+
+  --ok-fg: #8fe0ab;
+  --ok-bg: #102c1d;
+  --ok-rule: #2f6b47;
+
+  --warn-fg: #f2c47a;
+  --warn-bg: #33260c;
+  --warn-rule: #7a5c22;
+
+  --danger-fg: #ffb0a6;
+  --danger-bg: #3a1613;
+  --danger-rule: #8a3a32;
+
+  --info-fg: #a8ccf5;
+  --info-bg: #12253c;
+  --info-rule: #33578a;
+
+  --neutral-fg: #c6ccd6;
+  --neutral-bg: #242932;
+  --neutral-rule: #414855;
+
+  --refused-fg: #d7bcec;
+  --refused-bg: #2a1f36;
+  --refused-rule: #5b4374;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+h1 {
+  font-size: 1.3rem;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: 1rem;
+}
+
+h3 {
+  font-size: 0.875rem;
+}
+
+p {
+  margin: 0 0 var(--sp-3);
+  max-width: 78ch;
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+ul,
+ol {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+a {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+a:hover {
+  color: var(--accent-hover);
+}
+
+code,
+kbd,
+samp,
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+kbd {
+  display: inline-block;
+  padding: 0 0.3em;
+  border: 1px solid var(--rule-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  color: var(--text);
+  font-size: 0.78em;
+  line-height: 1.5;
+}
+
+/*
+ * A single visible focus treatment for every interactive element. `:focus-visible`
+ * rather than `:focus` so a mouse click on a row link does not leave a ring
+ * behind, but every keyboard path does.
+ */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+caption {
+  text-align: left;
+  padding: 0 0 var(--sp-2);
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+th,
+td {
+  padding: var(--row-y) var(--row-x);
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--rule);
+}
+
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-sunken);
+  border-bottom: 1px solid var(--rule-strong);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+input,
+select,
+button,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+input[type='text'],
+input[type='search'],
+input[type='date'],
+select {
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  color: var(--text);
+  min-width: 0;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: var(--sp-4) 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,23 @@
+node_modules/
+dist/
+.next/
+out/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+.env
+.env.*
+!.env.example
+
+.DS_Store
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Never commit anything that could carry applicant PII or travel-document data.
+/tmp/
+/scratch/
+*.mrz
+*.passport.json
+applicant-data/

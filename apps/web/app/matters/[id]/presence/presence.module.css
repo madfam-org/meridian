@@ -1,0 +1,133 @@
+.caption {
+  caption-side: top;
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.numeric {
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.small {
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+
+.noteStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  align-items: flex-start;
+}
+
+.range {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35em;
+  flex-wrap: wrap;
+}
+
+.rangeArrow {
+  color: var(--fg-subtle);
+  font-family: var(--font-mono);
+}
+
+.subheading {
+  font-size: 1rem;
+  margin-bottom: var(--space-3);
+}
+
+.headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.thresholdMeta {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+}
+
+.factNote {
+  margin-top: var(--space-1);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  max-width: 34ch;
+}
+
+.muted {
+  color: var(--fg-muted);
+  font-size: 0.9375rem;
+}
+
+.footnote {
+  margin: var(--space-3) 0 0;
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.issueList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: none;
+}
+
+.issue {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--warn-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: var(--space-3) var(--space-4);
+  margin: 0;
+}
+
+.issue + .issue {
+  margin-top: 0;
+}
+
+.issueHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.issueDetail {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.limbList {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: 0.9375rem;
+}
+
+.caveatText {
+  margin: 0 0 var(--space-3);
+  max-width: var(--measure);
+}
+
+/* Cards on this page stack their internals with breathing room. */
+.headline + * {
+  margin-top: 0;
+}

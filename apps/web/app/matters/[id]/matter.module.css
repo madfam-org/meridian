@@ -1,0 +1,73 @@
+.subheading {
+  font-size: 1.05rem;
+  margin-bottom: var(--space-3);
+}
+
+.subheading a {
+  text-decoration: none;
+}
+
+.subheading a:hover {
+  text-decoration: underline;
+}
+
+.plainList {
+  margin: 0 0 var(--space-3);
+  padding-left: 1.15rem;
+  font-size: 0.9375rem;
+}
+
+.note {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.routeHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.routeBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.orderNote {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.assessmentTitle {
+  font-size: 0.9375rem;
+  margin-bottom: var(--space-3);
+}
+
+.assessmentTitle a {
+  text-decoration: none;
+}
+
+.assessmentTitle a:hover {
+  text-decoration: underline;
+}
+
+.assessmentBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.assessmentMeta {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}

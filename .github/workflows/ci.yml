@@ -1,0 +1,165 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# One run per ref. A superseded push is cancelled rather than left to finish,
+# because the only result anyone acts on is the newest one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# This repository is public and its dependency graph is public too: no private
+# registry, no org token, nothing beyond the read the checkout needs.
+permissions:
+  contents: read
+
+jobs:
+  # Runs first and needs no install — three plain-Node checks over the tree.
+  # These are the ones whose failure means a legal or regulatory invariant broke,
+  # not that a build is red.
+  policy:
+    name: Policy checks
+    runs-on: ${{ vars.ARC_BOOTSTRAP_COMPLETE == 'true' && 'madfam-runners-blue' || 'ubuntu-latest' }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Meridian refuses custody of government authentication secrets. The
+      # refusal is enforced in the type system inside packages/govtech; this is
+      # the repository-wide form of the same rule.
+      - name: No credential custody
+        run: node scripts/check-no-credential-custody.mjs
+
+      # Nothing may reach an applicant as advice without passing canRelease.
+      # Under IRPA s.91 and Spanish reserved-activity rules an unlicensed
+      # recommendation to a paying consumer is an offence.
+      - name: Advice boundary
+        run: node scripts/check-advice-boundary.mjs
+
+      # Every encoded rule must be traceable to a named instrument that a human
+      # has verified recently enough to trust.
+      - name: Pathway citations
+        run: node scripts/check-pathway-citations.mjs
+
+  typecheck:
+    name: Type check
+    runs-on: ${{ vars.ARC_BOOTSTRAP_COMPLETE == 'true' && 'madfam-runners-blue' || 'ubuntu-latest' }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The compiler is a load-bearing safety control here, not a style gate:
+      # packages/govtech expresses its refusal to hold government credentials as
+      # a type that nothing is assignable to, and its tests assert the refusal
+      # with @ts-expect-error. If the refusal stops working, tsc is what notices.
+      - name: Run type checking
+        run: pnpm typecheck
+
+  test:
+    name: Test
+    runs-on: ${{ vars.ARC_BOOTSTRAP_COMPLETE == 'true' && 'madfam-runners-blue' || 'ubuntu-latest' }}
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # No database service container: the domain packages are pure calendar and
+      # rule arithmetic and reach nothing. Add one here when the API grows tests
+      # that touch Postgres, matching docker-compose.yml.
+      - name: Run tests
+        run: pnpm test
+
+  build:
+    name: Build
+    runs-on: ${{ vars.ARC_BOOTSTRAP_COMPLETE == 'true' && 'madfam-runners-blue' || 'ubuntu-latest' }}
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all apps and packages
+        run: pnpm build

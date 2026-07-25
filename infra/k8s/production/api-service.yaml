@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: meridian-api
+  namespace: meridian
+  labels:
+    app: meridian-api
+    app.kubernetes.io/part-of: madfam-platform
+spec:
+  type: ClusterIP
+  selector:
+    app: meridian-api
+  ports:
+    # Port 80 is what the Cloudflare Tunnel connector dials; the pod listens on
+    # 6100. There is no Ingress or LoadBalancer: the tunnel terminates TLS at
+    # the edge and reaches this ClusterIP directly, so nothing here is exposed
+    # to the bare-metal node's network.
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

@@ -1,0 +1,38 @@
+.link {
+  display: inline-block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--fg-muted);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 550;
+  border: 1px solid transparent;
+}
+
+.link:hover {
+  color: var(--fg);
+  background: var(--surface-sunken);
+}
+
+/*
+ * The current page is marked three ways at once — weight, a border, and a
+ * background — so it is identifiable without relying on the accent hue.
+ */
+.active {
+  color: var(--fg);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  font-weight: 650;
+}
+
+.tab {
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab.active {
+  background: var(--surface);
+  border-color: var(--border);
+  border-bottom-color: var(--accent);
+}

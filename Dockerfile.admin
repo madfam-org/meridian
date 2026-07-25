@@ -1,0 +1,81 @@
+# Meridian Admin — ghcr.io/madfam-org/meridian-admin
+#
+# The firm console: caseload, representative assignment, and catalog review. It
+# is the surface where a licensed person's name goes onto a pathway record, so
+# it is built from the same commit as the API rather than shipped independently.
+#
+# Requires `output: 'standalone'` in apps/admin/next.config.* and the workspace
+# packages listed under `transpilePackages` — see Dockerfile.web for why.
+
+FROM node:22-alpine AS deps
+
+WORKDIR /app
+
+RUN corepack enable
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+COPY apps/admin/package.json ./apps/admin/
+COPY packages/core/package.json ./packages/core/
+COPY packages/mrtd/package.json ./packages/mrtd/
+COPY packages/presence/package.json ./packages/presence/
+COPY packages/pathways/package.json ./packages/pathways/
+COPY packages/documents/package.json ./packages/documents/
+COPY packages/govtech/package.json ./packages/govtech/
+
+RUN pnpm install --frozen-lockfile
+
+
+FROM deps AS build
+
+WORKDIR /app
+
+COPY tsconfig.base.json turbo.json ./
+COPY packages/ ./packages/
+COPY apps/admin/ ./apps/admin/
+
+# Public endpoints only — build arguments are readable from the published image.
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_JANUA_URL
+ARG NEXT_PUBLIC_JANUA_CLIENT_ID
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_JANUA_URL=$NEXT_PUBLIC_JANUA_URL
+ENV NEXT_PUBLIC_JANUA_CLIENT_ID=$NEXT_PUBLIC_JANUA_CLIENT_ID
+
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN pnpm --filter "@meridian/admin..." build
+
+RUN set -eu; \
+    if [ ! -d apps/admin/.next/standalone ]; then \
+      echo "next build produced no .next/standalone directory."; \
+      echo "Set output: 'standalone' in apps/admin/next.config.* — the runtime"; \
+      echo "image copies that tree and has no other way to start the server."; \
+      exit 1; \
+    fi; \
+    mkdir -p apps/admin/public
+
+
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+# uid/gid 1001 matches the pod securityContext in
+# infra/k8s/production/admin-deployment.yaml.
+RUN addgroup --system --gid 1001 meridian && \
+    adduser --system --uid 1001 --ingroup meridian meridian
+
+COPY --from=build --chown=meridian:meridian /app/apps/admin/.next/standalone ./
+COPY --from=build --chown=meridian:meridian /app/apps/admin/.next/static ./apps/admin/.next/static
+COPY --from=build --chown=meridian:meridian /app/apps/admin/public ./apps/admin/public
+
+USER meridian
+
+ENV NODE_ENV=production
+ENV PORT=6102
+ENV HOSTNAME=0.0.0.0
+
+EXPOSE 6102
+
+CMD ["node", "apps/admin/server.js"]

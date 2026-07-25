@@ -1,0 +1,48 @@
+# Local development dependencies. Postgres and nothing else.
+#
+# The applications are not in here on purpose. They run from the workspace with
+# `pnpm dev`, against this database, so a change is visible without a rebuild.
+# What a developer needs from Docker is the one thing that is genuinely awkward
+# to run by hand.
+#
+# Every value below is a local development value and is meant to be readable in
+# a public repository. Nothing here is used anywhere else: production
+# credentials are provisioned by the operator into the `meridian-secrets` Secret
+# and are documented, by key name only, in
+# infra/k8s/production/secrets-template.yaml.
+#
+#   docker compose up -d
+#   DATABASE_URL=postgresql://meridian:local-dev-only@127.0.0.1:5432/meridian_dev
+#
+# Note for anyone loading real data: don't. This container has a throwaway
+# password and no backups, and the schema holds travel-document numbers, dates
+# of birth, and day-by-day records of where a named person physically was. Use
+# invented applicants locally, the way the package test fixtures do.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: meridian-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: meridian
+      POSTGRES_PASSWORD: local-dev-only
+      POSTGRES_DB: meridian_dev
+      # Deterministic collation, so ordering in a local query matches ordering
+      # in a test and in production rather than following the host locale.
+      POSTGRES_INITDB_ARGS: "--locale=C --encoding=UTF8"
+    ports:
+      # Bound to loopback deliberately. `5432:5432` would publish this database
+      # to every machine on the network the laptop happens to be joined to.
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - meridian-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meridian -d meridian_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  meridian-postgres-data:

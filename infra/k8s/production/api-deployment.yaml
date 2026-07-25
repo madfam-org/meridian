@@ -1,0 +1,120 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meridian-api
+  namespace: meridian
+  labels:
+    app: meridian-api
+    app.kubernetes.io/part-of: madfam-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: meridian-api
+  template:
+    metadata:
+      labels:
+        app: meridian-api
+        app.kubernetes.io/part-of: madfam-platform
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      imagePullSecrets:
+        - name: ghcr-credentials
+      containers:
+        - name: api
+          # Bootstrap tag. The first push to main replaces this with an
+          # immutable digest through the `images:` block in kustomization.yaml
+          # (.github/workflows/build-deploy.yml).
+          image: ghcr.io/madfam-org/meridian-api:main
+          ports:
+            - name: http
+              containerPort: 6100
+          env:
+            # Pinned here as well as in enclii.yaml so the production posture
+            # does not depend on what the Secret happens to carry.
+            - name: MERIDIAN_ENV
+              value: production
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "6100"
+            - name: HOST
+              value: 0.0.0.0
+            - name: JANUA_URL
+              value: "https://auth.madfam.io"
+            - name: JANUA_JWKS_URL
+              value: "https://auth.madfam.io/.well-known/jwks.json"
+            - name: MERIDIAN_WEB_ORIGIN
+              value: "https://meridian.madfam.io"
+            - name: MERIDIAN_ADMIN_ORIGIN
+              value: "https://meridian-admin.madfam.io"
+            # The only secret this service reads. Referenced by name; the value
+            # is provisioned by the operator and never appears in git.
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: meridian-secrets
+                  key: database-url
+            # Node writes transient files under TMPDIR. The root filesystem is
+            # read-only, so it is pointed at the emptyDir mounted below.
+            - name: TMPDIR
+              value: /tmp
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          # A cold start compiles nothing and opens one connection pool, but a
+          # slow database makes the first readiness attempt fail. The startup
+          # probe absorbs that without letting the liveness probe restart a pod
+          # that is merely waiting.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 30
+          # Readiness is deep — `/health/ready` actually calls Postgres — so a
+          # pod that loses its store leaves the Service instead of returning
+          # 500s. It answers 503 when a dependency fails, which is what makes
+          # this probe worth having; a readiness endpoint that returns 200
+          # unconditionally removes the signal while looking like it provides it.
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          # Liveness is shallow on purpose. A database blip must not kill a
+          # process midway through writing a matter's presence ledger; that is a
+          # record of where a person was, and a torn write is worse than a slow
+          # response.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: tmp
+          emptyDir: {}

@@ -1,0 +1,132 @@
+# Meridian API — ghcr.io/madfam-org/meridian-api
+#
+# Build context is the repository root, because the API imports six workspace
+# packages and pnpm resolves them through the root lockfile.
+#
+# Layout: deps -> build -> runner. The runner stage receives only the compiled
+# output and a production-only node_modules tree produced by `pnpm deploy`; no
+# devDependency (typescript, tsx, vitest, prisma CLI) is present at runtime.
+
+FROM node:22-alpine AS deps
+
+WORKDIR /app
+
+# corepack activates the pnpm version pinned by the root package.json
+# `packageManager` field, so the image and CI resolve the same dependency graph.
+RUN corepack enable
+
+# Manifests first, so a source-only change does not invalidate the install layer.
+# Every workspace project's package.json must be present: `--frozen-lockfile`
+# compares the lockfile against the whole workspace, not just the filtered
+# project, and fails if a manifest is missing.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+COPY apps/admin/package.json ./apps/admin/
+COPY packages/core/package.json ./packages/core/
+COPY packages/mrtd/package.json ./packages/mrtd/
+COPY packages/presence/package.json ./packages/presence/
+COPY packages/pathways/package.json ./packages/pathways/
+COPY packages/documents/package.json ./packages/documents/
+COPY packages/govtech/package.json ./packages/govtech/
+
+RUN pnpm install --frozen-lockfile
+
+
+FROM deps AS build
+
+WORKDIR /app
+
+COPY tsconfig.base.json turbo.json ./
+COPY packages/ ./packages/
+COPY apps/api/ ./apps/api/
+
+# Prisma's generator writes into node_modules, so it has to run before tsc.
+# DATABASE_URL is only read to satisfy the schema validator at generate time —
+# the real connection string arrives at runtime from the `meridian-secrets`
+# Secret and is never baked into a layer.
+#
+# The guard is not a placeholder: an API build that has not yet added a Prisma
+# schema is a legitimate state of this repository, and a hard failure there
+# would be a build that nobody can fix by writing application code.
+RUN set -eu; \
+    if [ -f apps/api/prisma/schema.prisma ]; then \
+      echo "prisma: generating client from apps/api/prisma/schema.prisma"; \
+      DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build" \
+        pnpm --filter @meridian/api db:generate; \
+    else \
+      echo "prisma: no apps/api/prisma/schema.prisma — skipping client generation"; \
+    fi
+
+# The trailing `...` builds every upstream workspace dependency first. Packages
+# without a `build` script are skipped by pnpm, so this stays correct as the
+# domain packages gain build steps.
+RUN pnpm --filter "@meridian/api..." build
+
+# `pnpm deploy` flattens the workspace symlink farm into one self-contained
+# directory. Without it the runner stage inherits an empty root node_modules —
+# pnpm keeps the real packages under .pnpm/ and links into them — and the
+# process dies at boot on the first bare import.
+RUN pnpm --filter @meridian/api --prod deploy /app/deploy/api
+
+# `pnpm deploy` reinstalls @prisma/client from the content-addressed store
+# *without* re-running the generator, leaving a stub that throws
+# "@prisma/client did not initialize yet" on first query. Node resolves
+# `.prisma/client` by walking up from @prisma/client's own directory, so the
+# generated output has to land in that hashed .pnpm path — a copy to the
+# top-level node_modules/.prisma is never found.
+RUN set -eu; \
+    src=$(ls -d /app/node_modules/.pnpm/@prisma+client@*/node_modules/.prisma 2>/dev/null || true); \
+    if [ -n "$src" ]; then \
+      dest=$(ls -d /app/deploy/api/node_modules/.pnpm/@prisma+client@*/node_modules/ 2>/dev/null || true); \
+      if [ -n "$dest" ]; then \
+        rm -rf "$dest/.prisma"; \
+        cp -r "$src" "$dest/.prisma"; \
+        echo "prisma: staged generated client into $dest"; \
+      fi; \
+    fi
+
+# Runtime entry-point contract.
+#
+# Every @meridian/* package currently declares `main`/`exports` pointing at
+# TypeScript source (`./src/index.ts`). That is correct for the workspace, where
+# tsc and vitest read the sources directly, and fatal for a container: Node
+# cannot execute .ts, and its type-stripping mode does not remap the `./x.js`
+# specifiers those files use to the `./x.ts` files on disk. An image built this
+# way starts and then dies on the first import — in production, after a green
+# pipeline.
+#
+# So the build fails here instead, with the fix stated. Each package consumed at
+# runtime needs a `build` script emitting JavaScript and an `exports` map whose
+# default condition points at the emitted file.
+#
+# Set MERIDIAN_API_SELF_CONTAINED=1 when the API build emits a single bundle
+# that inlines its workspace dependencies, in which case these entry points are
+# never resolved at runtime and the check does not apply.
+ARG MERIDIAN_API_SELF_CONTAINED=0
+RUN node -e "const fs=require('fs');const dir='/app/deploy/api/node_modules/@meridian';const bad=[];if(fs.existsSync(dir)){for(const name of fs.readdirSync(dir)){const pj=dir+'/'+name+'/package.json';if(!fs.existsSync(pj))continue;const m=JSON.parse(fs.readFileSync(pj,'utf8'));const entry=[m.main,m.module,JSON.stringify(m.exports||null)].join(' ');if(entry.includes('.ts'))bad.push('@meridian/'+name);}}if(bad.length===0){process.exit(0);}if(process.env.MERIDIAN_API_SELF_CONTAINED==='1'){console.log('entry-point check skipped (MERIDIAN_API_SELF_CONTAINED=1): '+bad.join(', '));process.exit(0);}console.error('\nThese workspace packages resolve to TypeScript at runtime:\n  '+bad.join('\n  ')+'\n\nNode cannot execute .ts, so this image would crash on its first import.\nFix: give each package a build script that emits JavaScript, and point its\npackage.json exports default condition at the emitted file.\nIf the API build inlines its dependencies instead, rebuild with\n--build-arg MERIDIAN_API_SELF_CONTAINED=1.\n');process.exit(1);"
+
+
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+# uid/gid 1001 matches the pod securityContext in
+# infra/k8s/production/api-deployment.yaml. When the two disagree the container
+# runs as a uid that owns none of its files, and every read is a coin toss.
+RUN addgroup --system --gid 1001 meridian && \
+    adduser --system --uid 1001 --ingroup meridian meridian
+
+COPY --from=build --chown=meridian:meridian /app/apps/api/dist ./dist
+COPY --from=build --chown=meridian:meridian /app/apps/api/package.json ./package.json
+COPY --from=build --chown=meridian:meridian /app/deploy/api/node_modules ./node_modules
+
+USER meridian
+
+ENV NODE_ENV=production
+ENV PORT=6100
+ENV HOST=0.0.0.0
+
+EXPOSE 6100
+
+CMD ["node", "dist/main.js"]

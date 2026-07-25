@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meridian-web
+  namespace: meridian
+  labels:
+    app: meridian-web
+    app.kubernetes.io/part-of: madfam-platform
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: meridian-web
+  template:
+    metadata:
+      labels:
+        app: meridian-web
+        app.kubernetes.io/part-of: madfam-platform
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      imagePullSecrets:
+        - name: ghcr-credentials
+      containers:
+        - name: web
+          image: ghcr.io/madfam-org/meridian-web:main
+          ports:
+            - name: http
+              containerPort: 6101
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "6101"
+            - name: HOSTNAME
+              value: 0.0.0.0
+            # Next inlines NEXT_PUBLIC_* into the client bundle at build time.
+            # These runtime copies are what server components read, so they must
+            # match the --build-arg values in build-deploy.yml — a mismatch
+            # produces a page whose client and server disagree about where the
+            # API lives.
+            - name: NEXT_PUBLIC_API_URL
+              value: "https://meridian-api.madfam.io"
+            - name: NEXT_PUBLIC_JANUA_URL
+              value: "https://auth.madfam.io"
+            - name: NEXT_PUBLIC_JANUA_CLIENT_ID
+              value: "meridian-web"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            # Next writes its fetch and route caches under .next/cache at
+            # runtime. Locking the filesystem would need an emptyDir mounted at
+            # a path that moves with the app's directory layout, which is a
+            # sharper edge than the one it removes.
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: [ALL]
+          # Probing `/` because that is a route this application actually has.
+          # There is no `/api/health` handler in apps/web yet, and a probe
+          # pointed at one would leave every pod permanently unready — a
+          # deployment that never rolls out, caused by a health check for an
+          # endpoint nobody wrote.
+          #
+          # It is a heavier probe than a dedicated handler: it renders the home
+          # page each time. Move all three to `/api/health` when that route
+          # exists, in the same change that adds it.
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3

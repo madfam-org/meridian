@@ -1,0 +1,242 @@
+/* The console frame: skip link, banner, navigation, content, contentinfo. */
+
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: var(--sp-2) var(--sp-4);
+  background: var(--bg-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+/* The skip link is not hidden from keyboard users — it is the first tab stop and
+   becomes visible the moment it receives focus. A skip link that stays offscreen
+   when focused is decoration. */
+.skip:focus {
+  left: var(--sp-3);
+  top: var(--sp-3);
+}
+
+.banner {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--bg-sunken);
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.bannerInner {
+  max-width: 96rem;
+  margin: 0 auto;
+  padding: var(--sp-2) var(--sp-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.brandName {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.brandName:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.brandTenant {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.nav {
+  flex: 1 1 auto;
+}
+
+.navList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4em;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.navLink:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.navLink[aria-current='page'] {
+  background: var(--bg-raised);
+  border-color: var(--rule-strong);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* The active item is not distinguished by colour alone: it also gains a border,
+   a heavier weight, and `aria-current`. */
+.navKey {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-faint);
+}
+
+.bannerTools {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-left: auto;
+}
+
+.main {
+  max-width: 96rem;
+  margin: 0 auto;
+  padding: var(--sp-5) var(--sp-4) var(--sp-6);
+}
+
+.main:focus {
+  outline: none;
+}
+
+.pageHead {
+  margin-bottom: var(--sp-5);
+}
+
+.pageTitleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.pageDescription {
+  margin: var(--sp-2) 0 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  max-width: 84ch;
+}
+
+.asOfForm {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.asOfForm label {
+  white-space: nowrap;
+}
+
+.button {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--bg-hover);
+}
+
+.buttonPrimary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.buttonPrimary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: var(--on-accent);
+}
+
+.contentinfo {
+  border-top: 1px solid var(--rule-strong);
+  background: var(--bg-sunken);
+}
+
+.contentinfoInner {
+  max-width: 96rem;
+  margin: 0 auto;
+  padding: var(--sp-4);
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.contentinfo h2 {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  margin-bottom: var(--sp-2);
+}
+
+.contentinfo dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.1rem var(--sp-3);
+  margin: 0;
+}
+
+.contentinfo dt {
+  color: var(--text-faint);
+}
+
+.contentinfo dd {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.shortcutList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.shortcutList li {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: baseline;
+}
+
+.shortcutKeys {
+  min-width: 5.5rem;
+}

@@ -1,0 +1,123 @@
+# Meridian
+
+Compact LLM context index for this repository.
+
+Global migration law and logistics platform. TypeScript monorepo (pnpm + turbo,
+Node 22, ESM). PUBLIC repo, AGPL-3.0-only. `github.com/madfam-org/meridian`.
+
+Last updated: 2026-07-25.
+
+## Read first
+
+- `AGENTS.md` — canonical agent operating instructions. Read before any change.
+- `packages/core/src/` — the shared contract. Read before writing code.
+- `README.md` — status first, then architecture and quickstart.
+- `ECOSYSTEM.md` — MADFAM ecosystem position and Enclii deployment context.
+- `llms-full.txt` — full context map and durable operating contract.
+
+## Status in one paragraph
+
+Measured 2026-07-25 14:43 America/Mexico_City, during the initial build —
+re-verify rather than trusting it. Six libraries under `packages/` are mature
+and pass **901 tests across 32 files**. The three applications under `apps/`
+landed in the same session and are substantial but unfinished: **no application
+has any tests**, and `apps/api` has **no `src/main.ts`**, so nothing composes it
+into a running process. The three policy guard scripts exist and pass; CI exists
+(`policy` · `typecheck` · `test` · `build`); deployment configuration exists
+(`enclii.yaml`, three Dockerfiles, `infra/k8s/production/`). **Nothing is
+deployed. No pathway has been counsel-reviewed**, so `recommend()` ranks
+nothing. No government-system capability is `available`.
+
+## The three invariants
+
+1. **Never use JavaScript `Date` for calendar arithmetic.** Use
+   `@meridian/core`'s civil-date module. `DateRange` is closed and inclusive at
+   both ends: 2025-01-01 to 2025-01-01 is one day.
+2. **Every applied rule carries a `Citation`** — instrument, provision,
+   jurisdiction, `verifiedOn`. `discretionary: true` where the source is
+   administrative practice, not statute.
+3. **Every engine output is born disclosure-classified** —
+   `information` | `assessment` | `advice`. `canRelease()` is the gate.
+   Downgrading is possible; upgrading is not. Anything that ranks, orders,
+   scores, or says what someone should do is `advice`.
+
+## Hard rules
+
+- Do not invent law. Omit, or mark `discretionary: true` with a note.
+- No marketing language, no fabricated metrics, no `TODO` for core
+  functionality, no stub that throws "not implemented".
+- No secrets, no credentials, no real personal data — this repo is PUBLIC.
+  Every test fixture is synthetic.
+- Never store, proxy or transit a government credential. Structurally refused.
+- Relative imports end in `.js`. Type-only imports use `import type`.
+
+## Verification
+
+```bash
+cd packages/<name>
+pnpm exec tsc --noEmit
+pnpm exec vitest run
+```
+
+Both must exit clean. Repo-wide, and what CI runs:
+
+```bash
+pnpm typecheck && pnpm test && pnpm build
+node scripts/check-advice-boundary.mjs
+node scripts/check-no-credential-custody.mjs
+node scripts/check-pathway-citations.mjs
+```
+
+`check-no-credential-custody` scans `docs/` too — documentation about the
+credential refusal must **describe** the forbidden field names rather than
+spelling them, or the document trips the check.
+
+Do not run `pnpm install` or `pnpm add` while another process may be working in
+the same worktree.
+
+## Packages
+
+| Package | Role |
+|---|---|
+| `@meridian/core` | civil dates, disclosure boundary, citations, tenancy, matter |
+| `@meridian/mrtd` | ICAO Doc 9303 MRZ. Depends on nothing. |
+| `@meridian/presence` | Schengen 90/180, tax day counts, continuous residence, work hours |
+| `@meridian/pathways` | declarative rules engine + pathway catalog (8, all unreviewed) |
+| `@meridian/documents` | legalisation, translation, freshness, checklists, gaps |
+| `@meridian/govtech` | government adapters, capability board, credential refusal |
+
+## Applications
+
+| App | Role |
+|---|---|
+| `apps/api` | Fastify. auth (JWKS RS256) · disclosure gate + route registry + leak detector · repository ports with structural tenant scoping · append-only audit · Prisma schema. No `main.ts`, no tests. |
+| `apps/web` | applicant portal, Next.js 15, port 6101. No tests. |
+| `apps/admin` | firm console, Next.js 15, port 6102. No tests. |
+
+## Documentation
+
+- `docs/PRD.md` — origin document + the two departures we made from it
+- `docs/ARCHITECTURE.md` — module map, data flow, where the disclosure gate sits
+- `docs/REGULATORY_POSTURE.md` — tenancy model, IRPA s.91, the Spanish position
+- `docs/LEGAL_CATALOG_REVIEW.md` — the counsel review protocol
+- `docs/adr/0001`-`0006` — architecture decision records
+- `SECURITY.md` — Article 9 data sensitivity, what we do not store
+- `CONTRIBUTING.md`, `CHANGELOG.md`
+
+## Ecosystem
+
+Auth via **Janua** (OIDC, RS256 JWKS, `alg: none` rejected). Billing via
+**Dhanam**. Every LLM call via **Selva** at `/v1` — never a provider directly.
+Compliance timestamping via **Karafiel**. Deploys via **Enclii**.
+
+## Production operations
+
+Routine production operations are Enclii-first. Use Enclii web, API, or CLI
+before raw infrastructure tools. Direct `kubectl`, `helm`, SSH, provider CLIs,
+`docker exec` or direct container access is bootstrap/break-glass only.
+
+## Boundary
+
+Lane C, public-safe. Private operational context — cluster access, secret
+paths, operator gates, incident detail — lives in `madfam-org/internal-devops`.
+When in doubt, put detail there and leave a summary plus a link here.

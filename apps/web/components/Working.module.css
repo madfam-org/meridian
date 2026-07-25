@@ -1,0 +1,143 @@
+.working {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.title {
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.title :global(span[lang='es']) {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.rows {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px dotted var(--border-strong);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.rowEmphasis {
+  border-top: 2px solid var(--border-strong);
+  border-bottom: 0;
+  margin-top: var(--space-1);
+  padding-top: var(--space-3);
+  font-weight: 600;
+}
+
+.label {
+  font-size: 0.9375rem;
+  min-width: 0;
+  flex: 1 1 16rem;
+}
+
+.note {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  font-weight: 400;
+}
+
+.value {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.4em;
+  flex: none;
+}
+
+.op {
+  font-family: var(--font-mono);
+  color: var(--fg-subtle);
+}
+
+.valueText {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.rowEmphasis .valueText {
+  font-size: 1.15rem;
+}
+
+.ok .valueText {
+  color: var(--ok-fg);
+}
+.warn .valueText {
+  color: var(--warn-fg);
+}
+.bad .valueText {
+  color: var(--bad-fg);
+}
+.info .valueText {
+  color: var(--info-fg);
+}
+.review .valueText {
+  color: var(--review-fg);
+}
+.neutral .valueText {
+  color: var(--fg-muted);
+}
+.accent .valueText {
+  color: var(--accent);
+}
+
+.meter {
+  height: 0.6rem;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border-strong);
+  overflow: hidden;
+}
+
+.meterFill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.meter-ok {
+  background: var(--ok-fg);
+}
+.meter-warn {
+  background: var(--warn-fg);
+}
+.meter-bad {
+  background: var(--bad-fg);
+}
+.meter-info {
+  background: var(--info-fg);
+}
+.meter-review {
+  background: var(--review-fg);
+}
+.meter-neutral {
+  background: var(--border-strong);
+}
+.meter-accent {
+  background: var(--accent);
+}

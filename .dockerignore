@@ -1,0 +1,42 @@
+# Build context exclusions.
+#
+# The first entry is the load-bearing one. Both Dockerfiles copy `packages/` and
+# an app directory wholesale after `pnpm install` has already run in the image,
+# and pnpm's node_modules is a farm of symlinks into a content-addressed store
+# that exists only on the machine that created it. Copying the host's copy in
+# would overwrite a valid install with dangling links, and the failure surfaces
+# much later as an unresolvable import.
+**/node_modules
+
+# Build output. Stale artefacts from a developer's machine must never be able to
+# reach a published image — an image is supposed to contain what this build
+# produced, not what somebody's laptop had lying around.
+**/dist
+**/.next
+**/.turbo
+**/out
+**/build
+**/coverage
+**/*.tsbuildinfo
+
+# History and local tooling.
+.git
+.github
+.vscode
+.idea
+**/.DS_Store
+**/*.log
+
+# Local environment files. `.env.example` is deliberately still allowed through;
+# anything else with a real value in it does not belong in an image layer.
+**/.env
+**/.env.*
+!**/.env.example
+
+# Not needed to build or run any service.
+docs
+infra
+scripts
+docker-compose.yml
+enclii.yaml
+**/*.md

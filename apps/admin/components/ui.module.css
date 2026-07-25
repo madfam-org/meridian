@@ -1,0 +1,467 @@
+/* Shared primitives. Everything here is layout and state encoding; nothing
+   decides what a state *is*. */
+
+.section {
+  margin: 0 0 var(--sp-6);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding-bottom: var(--sp-2);
+  margin-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--rule-strong);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-2);
+}
+
+.sectionCount {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.sectionNote {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  max-width: 84ch;
+}
+
+.sectionActions {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: baseline;
+  font-size: 0.8125rem;
+}
+
+/* --- Badges ------------------------------------------------------------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid;
+  border-radius: var(--radius);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+
+/* The glyph is the redundant encoding: the same information as the colour, for
+   anyone who cannot use the colour. It is decorative to a screen reader because
+   the badge text already carries the meaning. */
+.badgeGlyph {
+  font-size: 0.85em;
+  line-height: 1;
+}
+
+.toneOk {
+  color: var(--ok-fg);
+  background: var(--ok-bg);
+  border-color: var(--ok-rule);
+}
+
+.toneWarn {
+  color: var(--warn-fg);
+  background: var(--warn-bg);
+  border-color: var(--warn-rule);
+}
+
+.toneDanger {
+  color: var(--danger-fg);
+  background: var(--danger-bg);
+  border-color: var(--danger-rule);
+}
+
+.toneInfo {
+  color: var(--info-fg);
+  background: var(--info-bg);
+  border-color: var(--info-rule);
+}
+
+.toneNeutral {
+  color: var(--neutral-fg);
+  background: var(--neutral-bg);
+  border-color: var(--neutral-rule);
+}
+
+.toneRefused {
+  color: var(--refused-fg);
+  background: var(--refused-bg);
+  border-color: var(--refused-rule);
+}
+
+/* --- Callouts ----------------------------------------------------------- */
+
+.callout {
+  border: 1px solid;
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  padding: var(--sp-3) var(--sp-4);
+  margin: 0 0 var(--sp-4);
+}
+
+.calloutTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4em;
+  font-weight: 600;
+  margin-bottom: var(--sp-2);
+}
+
+.calloutBody {
+  font-size: 0.8125rem;
+}
+
+.calloutBody > p {
+  margin-bottom: var(--sp-2);
+}
+
+/* --- Tables ------------------------------------------------------------- */
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+}
+
+.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.zero {
+  color: var(--text-faint);
+}
+
+/* --- Definition lists --------------------------------------------------- */
+
+.definitions {
+  display: grid;
+  grid-template-columns: minmax(9rem, max-content) 1fr;
+  gap: var(--sp-1) var(--sp-4);
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.definitions dt {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.definitions dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 40rem) {
+  .definitions {
+    grid-template-columns: 1fr;
+    gap: 0 0;
+  }
+
+  .definitions dd {
+    margin-bottom: var(--sp-2);
+  }
+}
+
+/* --- Empty state -------------------------------------------------------- */
+
+.empty {
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-5);
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  background: var(--bg-sunken);
+}
+
+.emptyTitle {
+  color: var(--text);
+  font-weight: 600;
+  margin-bottom: var(--sp-2);
+}
+
+/* --- Proportional bar --------------------------------------------------- */
+
+.barRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.barTrack {
+  flex: 1 1 auto;
+  min-width: 3rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--neutral-bg);
+  border: 1px solid var(--rule);
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  background: var(--accent);
+}
+
+.barValue {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+/* --- Misc --------------------------------------------------------------- */
+
+.meta {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-2);
+}
+
+.tree {
+  margin: 0;
+  padding-left: 1.1rem;
+  list-style: none;
+  border-left: 1px solid var(--rule);
+}
+
+.treeItem {
+  position: relative;
+  padding: 0.1rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.treeItem::before {
+  content: '';
+  position: absolute;
+  left: -1.1rem;
+  top: 0.7em;
+  width: 0.7rem;
+  border-top: 1px solid var(--rule);
+}
+
+.treeRoot {
+  padding-left: 0;
+  border-left: none;
+}
+
+.treeRoot > .treeItem::before {
+  content: none;
+}
+
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Layout utilities --------------------------------------------------- */
+
+.columns {
+  display: grid;
+  gap: var(--sp-5);
+  grid-template-columns: repeat(auto-fit, minmax(24rem, 1fr));
+  align-items: start;
+}
+
+.split {
+  display: grid;
+  gap: var(--sp-5);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+@media (max-width: 62rem) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  background: var(--bg-raised);
+  padding: var(--sp-4);
+}
+
+.panelSunken {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  background: var(--bg-sunken);
+  padding: var(--sp-4);
+}
+
+.subhead {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: var(--sp-4) 0 var(--sp-2);
+}
+
+.subhead:first-child {
+  margin-top: 0;
+}
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-lg);
+  background: var(--bg-sunken);
+  margin-bottom: var(--sp-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.field select,
+.field input {
+  font-size: 0.8125rem;
+}
+
+.filterActions {
+  display: flex;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.detailText {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  display: block;
+  margin-top: 0.1rem;
+  max-width: 74ch;
+}
+
+.checkList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--sp-2);
+}
+
+.checkItem {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--sp-2);
+  align-items: baseline;
+  font-size: 0.8125rem;
+}
+
+.phaseTrack {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+
+.phaseStep {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.phaseStepDone {
+  background: var(--ok-bg);
+  border-color: var(--ok-rule);
+  color: var(--ok-fg);
+}
+
+.phaseStepCurrent {
+  background: var(--info-bg);
+  border-color: var(--info-rule);
+  color: var(--info-fg);
+  font-weight: 600;
+}
+
+.phaseOrdinal {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  opacity: 0.85;
+}
+
+/* A bordered token. Adjacent monospace identifiers with only whitespace between
+   them read as one long string; a border is the cheapest way to make each one
+   a separate object on the page. */
+.chip {
+  display: inline-block;
+  padding: 0 0.35rem;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+  white-space: nowrap;
+}

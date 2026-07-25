@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meridian-admin
+  namespace: meridian
+  labels:
+    app: meridian-admin
+    app.kubernetes.io/part-of: madfam-platform
+spec:
+  # Two replicas is not a capacity decision — this console is small. It is so a
+  # rollout is not an outage of the surface where a licensed representative
+  # signs off on catalog records and takes responsibility for advice.
+  replicas: 2
+  selector:
+    matchLabels:
+      app: meridian-admin
+  template:
+    metadata:
+      labels:
+        app: meridian-admin
+        app.kubernetes.io/part-of: madfam-platform
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      imagePullSecrets:
+        - name: ghcr-credentials
+      containers:
+        - name: admin
+          image: ghcr.io/madfam-org/meridian-admin:main
+          ports:
+            - name: http
+              containerPort: 6102
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "6102"
+            - name: HOSTNAME
+              value: 0.0.0.0
+            # Must match the --build-arg values in build-deploy.yml; see
+            # web-deployment.yaml for why.
+            - name: NEXT_PUBLIC_API_URL
+              value: "https://meridian-api.madfam.io"
+            - name: NEXT_PUBLIC_JANUA_URL
+              value: "https://auth.madfam.io"
+            - name: NEXT_PUBLIC_JANUA_CLIENT_ID
+              value: "meridian-admin"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            # See web-deployment.yaml — Next writes its caches at runtime.
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: [ALL]
+          # `/` rather than `/api/health` — see web-deployment.yaml. apps/admin
+          # has no health route, and probing one that does not exist is a
+          # deployment that never becomes ready.
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3

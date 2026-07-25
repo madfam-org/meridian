@@ -1,0 +1,28 @@
+{
+  "name": "@meridian/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Meridian client portal — the applicant's view of their own matter",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "dev": "next dev --port 6101",
+    "build": "next build",
+    "start": "next start --port 6101",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@meridian/core": "workspace:*",
+    "@meridian/pathways": "workspace:*",
+    "@meridian/presence": "workspace:*",
+    "next": "15.1.3",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "typescript": "^5.7.2"
+  }
+}
