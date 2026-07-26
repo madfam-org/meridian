@@ -38,7 +38,7 @@ spec:
           # blocker — so a `:main` tag here fails the gate even when the
           # rendered output would have been correct. The two must be kept in
           # step; CI writes both in the same commit.
-          image: ghcr.io/madfam-org/meridian-api@sha256:54c76401f76a7d86e4378b14884a6569d9875f5396b977e623c2ecd14c9f085c
+          image: ghcr.io/madfam-org/meridian-api@sha256:ea134d1d69270256b31238d0e81a894eebcfd8185c5635297ab5ce9273e1b532
           ports:
             - name: http
               containerPort: 8000

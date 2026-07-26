@@ -46,7 +46,7 @@ spec:
           # Note the nested path: this image is `madfam-org/meridian/landing`,
           # while the other three are flat `madfam-org/meridian-<part>`. The
           # split is explained in kustomization.yaml.
-          image: ghcr.io/madfam-org/meridian/landing@sha256:020449ed4d42d4f1077b8e23babb1421eb7f99f4756601b0520926e03d1411b6
+          image: ghcr.io/madfam-org/meridian/landing@sha256:d2b5c9211b1f6088c36b337c9e84f2b65db6ca09eb8bbe173211109ef3beca73
           ports:
             - name: http
               containerPort: 3000
