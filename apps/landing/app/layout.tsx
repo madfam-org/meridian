@@ -40,8 +40,9 @@ const DESCRIPTION =
  * claims nothing the long form does not.
  */
 const SHARE_DESCRIPTION =
-  'Eligibility against a versioned, cited catalog of migration pathways, document sequencing, ' +
-  'ICAO 9303 travel-document checks and day-by-day presence counting. Software, not a law firm.';
+  'A working Schengen 90/180 day counter, free and with no account, that runs in your browser and ' +
+  'shows its arithmetic and its source. Plus eligibility against a cited catalog of migration ' +
+  'pathways, document sequencing and ICAO 9303 checks. Software, not a law firm.';
 
 export const metadata: Metadata = {
   // Absolute URLs for anything a crawler or a chat client resolves. Without it
@@ -118,20 +119,20 @@ export default function RootLayout({ children }: { readonly children: ReactNode 
               anything else.
             */}
             <nav className={styles.nav} aria-label="Sections">
-              <a className={styles.navLink} href="#what-it-is">
-                <T text={UI.navWhatItIs} />
+              <a className={styles.navLink} href="#calculator">
+                <T text={UI.navCalculator} />
               </a>
-              <a className={styles.navLink} href="#corridors">
-                <T text={UI.navCorridors} />
+              <a className={styles.navLink} href="#doors">
+                <T text={UI.navDoors} />
+              </a>
+              <a className={styles.navLink} href="#worked-example">
+                <T text={UI.navProof} />
               </a>
               <a className={styles.navLink} href="#coverage">
                 <T text={UI.navCoverage} />
               </a>
               <a className={styles.navLink} href="#advice-boundary">
                 <T text={UI.navBoundary} />
-              </a>
-              <a className={styles.navLink} href="#refused">
-                <T text={UI.navRefused} />
               </a>
               <a className={styles.navLink} href="#status">
                 <T text={UI.navStatus} />

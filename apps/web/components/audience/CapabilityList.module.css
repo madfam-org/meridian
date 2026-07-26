@@ -1,0 +1,92 @@
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.name {
+  font-size: 1.0625rem;
+  min-width: 0;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.detail {
+  margin: 0;
+  font-size: 0.9375rem;
+  max-width: var(--measure);
+}
+
+.release {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.releaseMark {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* The same statement as `.release`, made once for a list the gate answered
+   uniformly. Given the accent tint so it does not read as a footnote — it is
+   the argument the list exists to make. */
+.summary {
+  margin: var(--space-4) 0 0;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  padding: var(--space-4);
+  font-size: 0.9375rem;
+  max-width: var(--measure);
+}
+
+.caveat {
+  margin: 0;
+  font-size: 0.875rem;
+  border-left: 3px solid var(--warn-border);
+  padding-left: var(--space-3);
+  max-width: var(--measure);
+}
+
+.caveatLabel {
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--fg-subtle);
+}
+
+.caveatLabel :global(span[lang='es']) {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}

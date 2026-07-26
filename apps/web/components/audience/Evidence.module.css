@@ -1,0 +1,184 @@
+.title {
+  font-size: 1.25rem;
+}
+
+.lead {
+  font-size: 0.9375rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  vertical-align: top;
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Deliberately not `nowrap`. A bilingual column label is two languages long,
+   and pinning it to one line pushes the table past its container on a desktop
+   viewport — which turns the scroll wrapper from a small-screen safety net into
+   something every reader has to use. */
+.table thead th {
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--fg-subtle);
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.table thead th :global(span[lang='es']) {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.table tbody tr:last-child th,
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.rowHead {
+  font-weight: 600;
+  min-width: 12rem;
+}
+
+.rowDetail {
+  display: block;
+  margin-top: var(--space-2);
+  font-weight: 400;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  max-width: 34ch;
+}
+
+.code {
+  font-family: var(--font-mono);
+  font-size: 0.8125em;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.05em 0.35em;
+  white-space: nowrap;
+}
+
+.downgrade {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+
+.figure {
+  font-family: var(--font-mono);
+  font-size: 1.0625rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.subheading {
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--fg-subtle);
+  margin-bottom: var(--space-2);
+}
+
+.subheading :global(span[lang='es']) {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.quoteBlock {
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-4);
+}
+
+/* The gate's own text, never paraphrased. Quoted so it reads as a machine's
+   determination rather than as the page's own prose. */
+.quote {
+  margin: 0;
+  border-left: 3px solid var(--accent);
+  padding-left: var(--space-4);
+  font-size: 0.9375rem;
+  color: var(--fg);
+  max-width: var(--measure);
+}
+
+.alarm {
+  margin: 0;
+  border: 1px solid var(--bad-border);
+  background: var(--bad-bg);
+  color: var(--bad-fg);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  font-size: 0.9375rem;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+  gap: var(--space-5);
+}
+
+.plainList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  font-size: 0.9375rem;
+}
+
+.footnote {
+  margin: var(--space-3) 0 0;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.sources {
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-4);
+}
+
+.figures {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(12rem, 100%), 1fr));
+  gap: var(--space-4);
+}
+
+.figures div {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: var(--space-4);
+}
+
+.figures dt {
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--fg-subtle);
+}
+
+.figures dt :global(span[lang='es']) {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.figures dd {
+  margin: var(--space-2) 0 0;
+}

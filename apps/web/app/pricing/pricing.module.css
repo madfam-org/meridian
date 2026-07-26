@@ -1,0 +1,16 @@
+/*
+ * The clinic tier appears twice on this page: once in the grid with the others,
+ * and once inside the commitment section. That is deliberate rather than
+ * redundant — the section is the commitment, and a section about it that made
+ * the reader scroll back up to see what it contains would be a promise with the
+ * terms on another screen. Capped so it does not stretch to the full page width
+ * outside the grid.
+ */
+.clinicCard {
+  max-width: 34rem;
+}
+
+.footLink {
+  margin: 0;
+  font-weight: 600;
+}

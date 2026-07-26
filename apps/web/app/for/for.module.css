@@ -1,0 +1,14 @@
+.links {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  font-weight: 600;
+}
+
+.note {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}

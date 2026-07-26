@@ -8,21 +8,23 @@
  * figure moves on its own, and the sentence explaining why nothing can be
  * recommended stops applying without anybody remembering to edit copy.
  *
- * **One fixed date, not a clock.** Every figure is computed as at {@link AS_OF}.
- * `@meridian/core` deliberately provides no "today": a reference date is a
- * parameter everywhere, because `new Date('2026-07-25')` is midnight UTC, which
- * is 2026-07-24 in Mexico City, and a page that answered a day-count question
- * from the wall clock would give two readers different answers. Citation
- * freshness is a day-count question like any other. There is no `Date` anywhere
- * in this application.
+ * **One fixed date, not a clock.** Every figure is computed as at {@link AS_OF},
+ * which lives in `lib/as-of.ts` — a leaf module, deliberately, so that the
+ * client-side calculator can take the date without dragging this file's
+ * `@meridian/pathways` import into the browser bundle. See that file.
+ *
+ * **This module is server-only in practice.** Nothing under a `'use client'`
+ * directive may import it, directly or transitively: it reaches the whole rule
+ * catalog and zod, none of which any browser needs.
  */
 
-import { isoDate, staleness } from '@meridian/core';
+import { staleness } from '@meridian/core';
 import type { Citation, IsoDate } from '@meridian/core';
 import { MERIDIAN_PATHWAY_CATALOG, isCounselReviewed, statusOn } from '@meridian/pathways';
 
-/** The civil date every figure on this site is computed as at. */
-export const AS_OF: IsoDate = isoDate('2026-07-25');
+import { AS_OF } from '@/lib/as-of';
+
+export { AS_OF };
 
 const catalog = MERIDIAN_PATHWAY_CATALOG;
 

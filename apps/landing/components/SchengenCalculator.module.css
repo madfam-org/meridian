@@ -1,0 +1,558 @@
+/*
+ * The calculator.
+ *
+ * Nothing here introduces a colour, a radius or a spacing value of its own —
+ * every one is a token from `globals.css`, so the instrument sits inside the
+ * site rather than looking like an embedded widget from somewhere else.
+ *
+ * Two layout rules are load-bearing at 375px, where this has to work without
+ * the page scrolling sideways: every field row wraps (`Field.module.css` gives
+ * each control `flex: 1 1 9rem`), and the working table scrolls inside its own
+ * box rather than widening the document.
+ */
+
+.calculator {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: var(--space-5);
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   The privacy claim, above the input rather than in a footer
+   --------------------------------------------------------------------------- */
+
+/*
+ * One prominent line, with the evidence one press behind it.
+ *
+ * `TInline` rather than `T` so each language stays on one line: the claim has
+ * to be impossible to miss and cheap in vertical space at the same time, on the
+ * one screen whose job is to get a stranger to the first field.
+ */
+.privacy {
+  border: 1px solid var(--ok-border);
+  background: var(--ok-bg);
+  color: var(--ok-fg);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-5);
+}
+
+.privacyTitle {
+  margin: 0;
+  font-size: 0.9375rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  color: inherit;
+  flex: 1 1 22rem;
+}
+
+.privacyGlyph {
+  font-weight: 700;
+}
+
+/*
+ * Closed, the disclosure sits beside the claim on one row. Open, it takes the
+ * full width of the box so the itemised properties read as prose rather than as
+ * a narrow column beside the headline.
+ */
+.privacyDetails {
+  font-size: 0.875rem;
+  flex: 0 1 auto;
+}
+
+.privacyDetails[open] {
+  flex-basis: 100%;
+}
+
+/*
+ * The disclosure control.
+ *
+ * `list-style` is left alone rather than replaced with a custom glyph: the
+ * browser's own marker rotates on open, is drawn in a forced-colours mode, and
+ * is the affordance a reader already recognises. Only the cursor and the
+ * padding are set, so the control is comfortably clickable without becoming a
+ * bespoke widget with bespoke bugs. The focus ring comes from `globals.css`.
+ */
+.privacySummary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: var(--space-1) 0;
+}
+
+.privacyDetails[open] .privacySummary {
+  margin-bottom: var(--space-3);
+}
+
+.privacyPoints {
+  margin: 0 0 var(--space-3);
+  padding-left: 1.15rem;
+  font-size: 0.875rem;
+  max-width: var(--measure);
+}
+
+.privacySource {
+  margin: 0;
+  font-size: 0.875rem;
+  max-width: var(--measure);
+}
+
+.privacySource a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.privacySource code {
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------------------
+   The form
+   --------------------------------------------------------------------------- */
+
+.noscript {
+  margin: 0;
+  border: 1px solid var(--warn-border);
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+  border-radius: var(--radius);
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.9375rem;
+  max-width: var(--measure);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.group {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.legend {
+  padding: 0;
+  font-size: 1.05rem;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+}
+
+.legend :global(span[lang='es']) {
+  font-size: 0.85em;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.trips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: none;
+}
+
+.trip {
+  margin: 0;
+  min-width: 0;
+}
+
+.trip + .trip {
+  margin-top: 0;
+}
+
+.tripFields {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  padding: var(--space-4);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.tripLegend {
+  padding: 0 var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.tripLegend :global(span[lang='es']) {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.tripFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.tripCount {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+
+/* ---------------------------------------------------------------------------
+   The worked inputs
+   --------------------------------------------------------------------------- */
+
+.examples {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-4);
+}
+
+.examplesLead {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  max-width: var(--measure);
+}
+
+.exampleList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: none;
+}
+
+.exampleList > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.exampleNote {
+  flex: 1 1 16rem;
+  min-width: 0;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+}
+
+/* ---------------------------------------------------------------------------
+   The answer
+   --------------------------------------------------------------------------- */
+
+.result {
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* Focused programmatically when an answer appears, so it must show a ring.
+   `:focus` rather than `:focus-visible`: this element is never focused by a
+   pointer, and a browser that declines to treat a scripted focus as "visible"
+   would leave the reader with no indication of where they now are. */
+.result:focus {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.resultHeading {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.subHeading {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.headline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-4);
+  min-width: 0;
+}
+
+.headlineFigure {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  max-width: none;
+}
+
+.headlineNumber {
+  font-family: var(--font-mono);
+  font-size: clamp(2.5rem, 1.8rem + 3vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.headlineOf {
+  font-size: 1rem;
+  color: var(--fg-muted);
+}
+
+.headlineOf :global(span[lang='es']) {
+  font-size: 0.9em;
+}
+
+/*
+ * `flex: 0 1 auto` with `min-width: 0`, never `0 0 auto`.
+ *
+ * The status labels are bilingual and long — "The record cannot decide · El
+ * registro no puede decidirlo" is wider than a 375px screen. A badge that
+ * cannot shrink pushes the whole document sideways, and a page about counting
+ * days that scrolls horizontally on a phone is a page nobody finishes reading.
+ * The badge itself already wraps and carries `max-width: 100%`; this is what
+ * lets that take effect.
+ */
+.headlineBadge {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.headlineDetail {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.window {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.note {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+/* Wide content scrolls inside its own box; the page body never scrolls
+   sideways. */
+.scrollX {
+  overflow-x: auto;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.workingTable {
+  min-width: 32rem;
+}
+
+.tableCaption {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.workingTable th:first-child,
+.workingTable td:first-child {
+  padding-left: var(--space-4);
+}
+
+.workingTable th:last-child,
+.workingTable td:last-child {
+  padding-right: var(--space-4);
+}
+
+.rowHead {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.9375rem;
+  color: var(--fg);
+  display: table-cell;
+}
+
+.tripName {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+
+.tripDates {
+  display: block;
+  margin-top: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+
+.num {
+  font-family: var(--font-mono);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.reasons {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  max-width: 34rem;
+  font-weight: 400;
+}
+
+.reasons > li {
+  margin: 0;
+  border-left: 3px solid var(--border-strong);
+  padding-left: var(--space-3);
+}
+
+.reasonDays {
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.ambiguous {
+  border: 1px solid var(--review-border);
+  background: var(--review-bg);
+  color: var(--review-fg);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ambiguous .reasons {
+  color: inherit;
+  max-width: var(--measure);
+}
+
+.ambiguous .reasons > li {
+  border-left-color: currentcolor;
+}
+
+/* ---------------------------------------------------------------------------
+   The citation, and the boundary
+   --------------------------------------------------------------------------- */
+
+.citation {
+  border: 1px solid var(--border);
+  background: var(--surface-sunken);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.citationInstrument {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.citationMeta {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+}
+
+.citationVerified :global(span[lang='es']) {
+  color: var(--fg-subtle);
+}
+
+.citationLink {
+  margin: 0;
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.citationNote {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.boundary {
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.onward {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  max-width: var(--measure);
+}
+
+@media (max-width: 40rem) {
+  .calculator {
+    padding: var(--space-4);
+  }
+
+  .tripFields {
+    padding: var(--space-3);
+  }
+
+  .result {
+    padding: var(--space-4);
+  }
+}

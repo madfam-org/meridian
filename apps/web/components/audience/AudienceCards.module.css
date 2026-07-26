@@ -1,0 +1,49 @@
+.cards {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(19rem, 100%), 1fr));
+  gap: var(--space-4);
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.name {
+  font-size: 1.0625rem;
+}
+
+.name a {
+  text-decoration: none;
+}
+
+.name a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.who {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--fg-muted);
+}
+
+.link {
+  margin: auto 0 0;
+  font-size: 0.875rem;
+}
+
+.pricingLink {
+  margin: 0;
+  font-weight: 600;
+}

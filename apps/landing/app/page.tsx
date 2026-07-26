@@ -4,6 +4,15 @@ import { bi } from '@/lib/i18n';
 import { plural } from '@/lib/ui';
 import { CATALOG, NOTHING_IS_COUNSEL_REVIEWED } from '@/lib/catalog-facts';
 import {
+  ADJACENT_READERS,
+  CLINIC_BODY,
+  CLINIC_TITLE,
+  DOORS,
+  FREE_CLASSES_ARE_THE_UNREGULATED_ONES,
+  releaseOf,
+  type ClassRelease,
+} from '@/lib/audiences';
+import {
   COVERAGE_LEAD,
   COVERAGE_NOT_EXHAUSTIVE,
   COVERAGE_OUT_OF_SCOPE,
@@ -13,9 +22,19 @@ import {
   UNCOVERED_ROUTES,
 } from '@/lib/coverage';
 import { PORTAL_URL, REPO_URL } from '@/lib/links';
-import { Badge, Chip } from '@/components/Badge';
-import { T, TProse } from '@/components/Bilingual';
+import {
+  MISSING_CRITERION_ID,
+  WORKED_CITATION,
+  WORKED_CRITERIA,
+  WORKED_FACTS_SHOWN,
+  WORKED_NOTES,
+  WORKED_REPORT,
+  WORKED_TALLY,
+} from '@/lib/worked-example';
+import { Badge, Chip, type Tone } from '@/components/Badge';
+import { T, TInline, TProse } from '@/components/Bilingual';
 import { Callout } from '@/components/Callout';
+import { SchengenCalculator } from '@/components/SchengenCalculator';
 import {
   ActionLink,
   Card,
@@ -36,32 +55,40 @@ import styles from './page.module.css';
 /**
  * The marketing site.
  *
- * Two rules govern everything on this page.
+ * ── The one structural decision ──────────────────────────────────────────────
+ *
+ * A working instrument comes first, before any prose. This page used to open by
+ * explaining, accurately and at length, that Meridian shows its arithmetic,
+ * cites every rule, and refuses to recommend. All of that is true and none of
+ * it is believable from a stranger, because every product in this category
+ * claims the same things. So the first thing on the page is a real 90/180
+ * counter that answers a real question about the reader's own travel history,
+ * in their browser, with the working and the citation shown — and everything
+ * below it is then read by somebody who has already watched the claim hold.
+ *
+ * ── The three rules that govern the rest ─────────────────────────────────────
  *
  * **Every number is counted, not written.** The catalog figures come from
- * `lib/catalog-facts.ts`, which reads the same `@meridian/pathways` catalog the
- * engine evaluates. There are no adoption numbers, no processing-time
- * estimates, no success rates, no testimonials and no roadmap dressed as a
- * feature list, because none of those would be true and a platform that tells
- * someone whether they have overstayed cannot spend its credibility on
- * marketing.
+ * `lib/catalog-facts.ts`; the worked eligibility report comes from
+ * `lib/worked-example.ts`, which runs `evaluate` from `@meridian/pathways` at
+ * build time and renders whatever comes back. There are no adoption numbers, no
+ * processing-time estimates, no success rates, no testimonials, no customer
+ * logos and no roadmap dressed as a feature list, because none of those would be
+ * true — Meridian has no customers — and a platform that tells someone whether
+ * they have overstayed cannot spend its credibility on marketing.
  *
  * **The limits get the same prominence as the capabilities.** The advice
- * boundary and the credential refusal are not disclaimers appended at the
- * bottom; they are the middle of the page, because they are the reason the
- * product can be trusted with a matter at all. The status section says plainly
- * how much of the catalog a lawyer has read, and what these applications do not
- * hold.
+ * boundary and the credential refusal are not disclaimers at the bottom; they
+ * are the middle of the page, because they are the reason the product can be
+ * trusted with a matter at all. Every card describing an unbuilt paid
+ * capability says so in the same size type as the offer.
  *
- * **A limitation is only worth stating if it will still be true tomorrow.** This
- * page used to open by saying nothing was deployed, which is a claim that
- * falsifies itself the moment anybody loads the page from a host — and unlike
- * the catalog figures, a hand-written sentence does not correct itself. What
- * replaced it is the set of statements that hold in either state: no pathway is
- * counsel-reviewed until one is signed off (counted), no government integration
- * is provisioned, and none of the three applications has an account, a sign-in or
- * a database. Deployment does not change any of those; shipping the corresponding
- * feature does, and then the sentence describing it changes with it.
+ * **A limitation is only worth stating if it will still be true tomorrow.**
+ * Statements that would falsify themselves — "nothing is deployed", read from a
+ * host that is answering — are not made. What is stated is the set that holds
+ * in either state: no pathway is counsel-reviewed until one is signed off
+ * (counted), no government integration is provisioned, and none of the three
+ * applications has an account, a sign-in or a database.
  */
 
 /**
@@ -79,6 +106,77 @@ export const metadata: Metadata = {
 
 const CATALOG_JURISDICTIONS = CATALOG.jurisdictions.map((j) => j.code).join(', ');
 
+/** Per-criterion outcome, as tone plus word plus glyph — never colour alone. */
+const CRITERION_TONE: Record<string, Tone> = {
+  met: 'ok',
+  unmet: 'bad',
+  unknown: 'review',
+  requires_human_review: 'warn',
+};
+
+const CRITERION_LABEL = {
+  met: bi('Met', 'Cumplido'),
+  unmet: bi('Unmet', 'Incumplido'),
+  unknown: bi('Not recorded', 'Sin datos'),
+  requires_human_review: bi('Needs a person', 'Requiere una persona'),
+} as const;
+
+const VERDICT_LABEL = {
+  eligible: bi('Meets the encoded criteria', 'Cumple los criterios codificados'),
+  ineligible: bi('Does not meet them', 'No los cumple'),
+  indeterminate: bi('Cannot be decided', 'No puede decidirse'),
+  requires_human_review: bi('Needs a person', 'Requiere una persona'),
+} as const;
+
+const VERDICT_TONE: Record<string, Tone> = {
+  eligible: 'ok',
+  ineligible: 'bad',
+  indeterminate: 'review',
+  requires_human_review: 'warn',
+};
+
+/**
+ * The language an instrument's own title is in, by the jurisdiction that
+ * published it.
+ *
+ * Spain gazettes in Spanish; everything else in this catalog is cited by its
+ * English title. Canada publishes bilingually and the catalog uses the English
+ * form, so `en` is right there too. Anything unrecognised falls back to the
+ * document language, which is what would have happened with no tag at all.
+ */
+function instrumentLang(jurisdiction: string): string {
+  return jurisdiction === 'ES' ? 'es' : 'en';
+}
+
+/**
+ * The "without a representative" cell of the boundary table.
+ *
+ * The verdict is not written here — {@link releaseOf} calls the real
+ * `canRelease` from `@meridian/core` at build time and this renders whatever
+ * came back, including the gate's own reason when it withholds. A table that
+ * *described* the gate would keep printing "Withheld" for as long as the words
+ * stayed on the page, whatever the code underneath had started doing.
+ */
+function GateVerdict({ decision }: { readonly decision: ClassRelease }) {
+  return (
+    <>
+      <Badge
+        tone={decision.released ? 'ok' : 'warn'}
+        label={
+          decision.released
+            ? bi('Released', 'Se entrega')
+            : bi('Withheld, and named', 'Se retiene, y se indica')
+        }
+      />
+      {decision.reason !== null ? (
+        <p className={styles.gateReason} lang="en">
+          {decision.reason}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
 export default function HomePage() {
   return (
     <Page>
@@ -91,33 +189,36 @@ export default function HomePage() {
           </>
         }
         title={bi(
-          'The rules, your figures, and the arithmetic between them',
-          'Las normas, sus cifras y la aritmética que las une',
+          'Count your Schengen days. Right here, right now.',
+          'Cuente sus días Schengen. Aquí y ahora.',
         )}
         lead={bi(
-          'Meridian assesses eligibility against a versioned catalog of migration pathways where every rule carries the instrument it comes from, assembles the documents that pathway needs with their legalisation and sworn-translation routing, validates machine-readable travel documents to ICAO Doc 9303, and counts cross-border presence day by day. It is software. It states what a rule says and measures your own facts against it; it does not tell you what to do unless somebody licensed is accountable for that answer.',
-          'Meridian evalúa la elegibilidad frente a un catálogo versionado de vías migratorias en el que cada norma lleva el instrumento del que procede, prepara la documentación que esa vía exige con su enrutado de legalización y traducción jurada, valida documentos de viaje de lectura mecánica conforme al Doc 9303 de OACI y computa la presencia transfronteriza día a día. Es software. Expone lo que dice una norma y mide sus propios datos frente a ella; no le dice qué hacer salvo que alguien con licencia responda de esa respuesta.',
+          'Enter a couple of trips, get your real number with the arithmetic and the source. Free, no account, computed in your browser.',
+          'Introduzca un par de viajes y obtenga su cifra real con la aritmética y la fuente. Gratis, sin cuenta, calculado en su navegador.',
         )}
-        actions={
-          <>
-            <ActionLink
-              href={PORTAL_URL}
-              variant="primary"
-              label={bi('Open the applicant portal', 'Abrir el portal del solicitante')}
-            />
-            <ActionLink
-              href={REPO_URL}
-              newTab
-              label={bi('Read the source on GitHub', 'Ver el código fuente en GitHub')}
-            />
-          </>
-        }
       />
 
       {/*
-        The honest summary sits above the capabilities rather than below them. A
-        visitor who reads no further than the first screen should still leave
-        knowing how much of the catalog a lawyer has read and what these
+        No section description here, deliberately. Everything a reader needs
+        before typing is inside the instrument — beside the field it applies to
+        — and two more bilingual paragraphs at this point would be another
+        200 pixels between a stranger and the first input on the one screen
+        whose whole job is to prove the product works.
+      */}
+      <Section
+        id="calculator"
+        title={bi(
+          'The Schengen 90/180 short-stay allowance',
+          'La franquicia Schengen 90/180 de estancia corta',
+        )}
+      >
+        <SchengenCalculator />
+      </Section>
+
+      {/*
+        Immediately after the instrument rather than before it. A reader who has
+        just watched the counter work is exactly the reader who should be told,
+        in the next breath, how small the reviewed catalog is and what these
         applications do not hold. The counsel figure is counted, so the sentence
         built on it stops applying by itself once a record is signed off.
       */}
@@ -125,22 +226,17 @@ export default function HomePage() {
         tone="info"
         icon="i"
         level={2}
-        title={bi('Read this before the feature list', 'Lea esto antes de la lista de funciones')}
+        title={bi(
+          'Before you believe anything else on this page',
+          'Antes de creer nada más de esta página',
+        )}
       >
         <TProse
           text={bi(
-            `The catalog ships ${plural(CATALOG.pathways, 'pathway', 'pathways')}, of which ${CATALOG.counselReviewed} ${CATALOG.counselReviewed === 1 ? 'carries' : 'carry'} a counsel sign-off. ${NOTHING_IS_COUNSEL_REVIEWED ? 'That is why every recommendation-class output is blocked today' : 'Only the signed-off records may enter a recommendation'} — by design, not by accident. No government integration is provisioned, and no application in this product holds an account, a sign-in or a database.`,
-            `El catálogo incluye ${CATALOG.pathways} vías, de las cuales ${CATALOG.counselReviewed} ${CATALOG.counselReviewed === 1 ? 'cuenta' : 'cuentan'} con validación de letrado. ${NOTHING_IS_COUNSEL_REVIEWED ? 'Por eso hoy todo resultado de clase recomendación está bloqueado' : 'Solo los registros validados pueden formar parte de una recomendación'}: por diseño, no por descuido. No hay ninguna integración pública aprovisionada, y ninguna aplicación de este producto tiene cuenta, inicio de sesión ni base de datos.`,
+            `The day counter above is real and complete. The rest of the catalog is small: ${plural(CATALOG.pathways, 'pathway', 'pathways')} ship, of which ${CATALOG.counselReviewed} ${CATALOG.counselReviewed === 1 ? 'carries' : 'carry'} a counsel sign-off. ${NOTHING_IS_COUNSEL_REVIEWED ? 'That is why every recommendation-class output is blocked today' : 'Only the signed-off records may enter a recommendation'} — by design, not by accident. No government integration is provisioned, and no application in this product holds an account, a sign-in or a database.`,
+            `El cómputo de días de arriba es real y está completo. El resto del catálogo es pequeño: se publican ${CATALOG.pathways} vías, de las cuales ${CATALOG.counselReviewed} ${CATALOG.counselReviewed === 1 ? 'cuenta' : 'cuentan'} con validación de letrado. ${NOTHING_IS_COUNSEL_REVIEWED ? 'Por eso hoy todo resultado de clase recomendación está bloqueado' : 'Solo los registros validados pueden formar parte de una recomendación'}: por diseño, no por descuido. No hay ninguna integración pública aprovisionada, y ninguna aplicación de este producto tiene cuenta, inicio de sesión ni base de datos.`,
           )}
         />
-        {/*
-          The counted figures say how much of the catalog a lawyer has read. They
-          say nothing about how much of either country's law the catalog reaches,
-          and a reader who takes eight records for a map will draw a conclusion
-          about their own case that nothing on this page contradicts. So the
-          coverage boundary is signposted from the first screen, beside the
-          status link, rather than left for whoever scrolls far enough.
-        */}
         <p className={styles.calloutLink}>
           <a href="#status">
             <T text={bi('The full status, with counts', 'El estado completo, con cifras')} />
@@ -158,9 +254,367 @@ export default function HomePage() {
         </p>
       </Callout>
 
+      {/* -------------------------------------------------------------------
+          Three doors
+          ------------------------------------------------------------------- */}
+      <Section
+        id="doors"
+        title={bi('Which of these is you?', '¿Cuál de estos es usted?')}
+        description={bi(
+          'The same engine, gated differently — and priced by the same line. Meridian classifies every output as information, assessment or advice. The first two release to anybody, so they are free forever. Advice needs a licensed representative accountable for it, so it is bought by the professional whose licence covers it. The commercial line and the legal line are the same line, and there is no second paywall behind it.',
+          'El mismo motor, con distinto control, y con el mismo criterio de precio. Meridian clasifica cada resultado como información, evaluación o asesoramiento. Los dos primeros se entregan a cualquiera, de modo que son gratuitos para siempre. El asesoramiento exige un representante colegiado que responda de él, así que lo adquiere la persona profesional cuya colegiación lo ampara. La línea comercial y la línea jurídica son la misma, y detrás no hay un segundo muro de pago.',
+        )}
+      >
+        <Grid>
+          {DOORS.map((door) => (
+            <Card key={door.id}>
+              {/*
+                Order is a scan order, and it is deliberate: who you are, who
+                that means, WHETHER IT EXISTS, what it costs, and only then the
+                detail. The availability badge sits third rather than last
+                because a reader who gives this card ten seconds must not be
+                able to come away thinking they can buy something that is not
+                written. Putting the caveat at the bottom of a long card is the
+                oldest way of technically disclosing it.
+              */}
+              <h3 className={styles.doorWho}>
+                <T text={door.who} />
+              </h3>
+              <p className={styles.doorPersona}>
+                <T text={door.persona} />
+              </p>
+
+              <div className={styles.doorAvailability}>
+                <Badge
+                  tone={door.cta === null ? 'warn' : 'ok'}
+                  label={
+                    door.cta === null
+                      ? bi('Not built yet', 'Aún no construido')
+                      : bi('Working today', 'Funciona hoy')
+                  }
+                />
+                <TProse text={door.availability} />
+              </div>
+
+              <div className={styles.doorPrice}>
+                <h4 className={styles.doorLabel}>
+                  <T text={bi('What it costs', 'Cuánto cuesta')} />
+                </h4>
+                <TProse text={door.price} />
+              </div>
+
+              <div className={styles.doorGets}>
+                <h4 className={styles.doorLabel}>
+                  <T text={bi('What you get', 'Qué obtiene')} />
+                </h4>
+                <ul className={styles.list}>
+                  {door.gets.map((item) => (
+                    <li key={item.en}>
+                      <T text={item} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className={styles.doorBoundary}>
+                <h4 className={styles.doorLabel}>
+                  <T text={bi('Where the boundary falls', 'Dónde queda la frontera')} />
+                </h4>
+                <TProse text={door.boundary} />
+              </div>
+
+              {door.cta !== null ? (
+                <div className={styles.doorCta}>
+                  <ActionLink href={door.cta.href} variant="primary" label={door.cta.label} />
+                </div>
+              ) : null}
+            </Card>
+          ))}
+        </Grid>
+
+        <Grid>
+          {ADJACENT_READERS.map((reader) => (
+            <Card key={reader.title.en} tone="sunken">
+              <h3 className={styles.cardTitle}>
+                <T text={reader.title} />
+              </h3>
+              <TProse text={reader.body} />
+            </Card>
+          ))}
+        </Grid>
+
+        <Callout tone="accent" icon="◆" title={CLINIC_TITLE}>
+          {CLINIC_BODY.map((paragraph) => (
+            <TProse key={paragraph.en} text={paragraph} />
+          ))}
+        </Callout>
+      </Section>
+
+      {/* -------------------------------------------------------------------
+          The demonstration
+          ------------------------------------------------------------------- */}
+      <Section
+        id="worked-example"
+        title={bi(
+          'A missing fact is never a refusal. Watch it happen.',
+          'Un dato ausente nunca es una denegación. Véalo ocurrir.',
+        )}
+        description={bi(
+          'Everything below is computed when this site is built, by running the engine over a pathway in the shipped catalog with an invented set of facts. The verdict, every per-criterion status, the engine’s own trace of each comparison, the citations and the caveats are whatever came back — not copy written to describe them.',
+          'Todo lo que sigue se calcula al compilar este sitio, ejecutando el motor sobre una vía del catálogo publicado con un conjunto inventado de datos. El resultado, cada estado por criterio, el propio rastro del motor de cada comparación, las citas y las advertencias son lo que devolvió: no es texto redactado para describirlos.',
+        )}
+      >
+        <Stack gap="md">
+          <Card tone="sunken">
+            <h3 className={styles.cardTitle}>
+              <T text={bi('The invented applicant', 'La persona solicitante inventada')} />
+            </h3>
+            <TProse
+              text={bi(
+                'Country codes, dates and a few recorded outcomes. No name, no document number, no address — this repository holds no real personal data anywhere, including in its examples.',
+                'Códigos de país, fechas y unos pocos resultados registrados. Sin nombre, sin número de documento, sin domicilio: este repositorio no contiene datos personales reales en ninguna parte, tampoco en sus ejemplos.',
+              )}
+            />
+            <ul className={styles.facts}>
+              {WORKED_FACTS_SHOWN.map((fact) => (
+                <li key={fact.en}>
+                  <T text={fact} />
+                </li>
+              ))}
+            </ul>
+          </Card>
+
+          <Card>
+            <div className={styles.verdict}>
+              <div>
+                <div className={styles.verdictLabel}>
+                  <T text={bi('Verdict', 'Resultado')} />
+                </div>
+                <Badge
+                  tone={VERDICT_TONE[WORKED_REPORT.verdict] ?? 'neutral'}
+                  label={VERDICT_LABEL[WORKED_REPORT.verdict]}
+                />
+              </div>
+              <p className={styles.verdictTally}>
+                <T
+                  text={bi(
+                    `${WORKED_TALLY.met} of ${WORKED_TALLY.total} criteria met, ${WORKED_TALLY.unmet} unmet, ${WORKED_TALLY.unknown} not recorded.`,
+                    `${WORKED_TALLY.met} de ${WORKED_TALLY.total} criterios cumplidos, ${WORKED_TALLY.unmet} incumplidos, ${WORKED_TALLY.unknown} sin datos.`,
+                  )}
+                />
+              </p>
+            </div>
+
+            {/* The figures in this sentence are the counted ones, not written
+                ones: if a criterion is added to the pathway, or the facts stop
+                satisfying one, the sentence moves with the table above it. */}
+            <TProse
+              text={bi(
+                `${WORKED_TALLY.met} of ${WORKED_TALLY.total} criteria are met and the engine still declines to say yes, because ${WORKED_TALLY.unknown === 1 ? 'a fact it needs is' : `${WORKED_TALLY.unknown} facts it needs are`} simply not on file. It does not assume the answer, does not weight it, does not guess. A platform that resolved that silently would tell this person they are eight years closer to Spanish nationality than they may be — and they would act on it.`,
+                `${WORKED_TALLY.met} de ${WORKED_TALLY.total} criterios se cumplen y aun así el motor se niega a decir que sí, porque ${WORKED_TALLY.unknown === 1 ? 'un dato que necesita no consta' : `${WORKED_TALLY.unknown} datos que necesita no constan`}. No supone la respuesta, ni la pondera, ni la adivina. Una plataforma que resolviera eso en silencio le diría a esta persona que está ocho años más cerca de la nacionalidad española de lo que quizá esté, y actuaría en consecuencia.`,
+              )}
+            />
+
+            <ScrollX>
+              <table>
+                <caption className={styles.tableCaption}>
+                  <T
+                    text={bi(
+                      'Every criterion of the pathway, in catalog order — never sorted by outcome, because a sort order is a recommendation.',
+                      'Todos los criterios de la vía, en el orden del catálogo, nunca ordenados por resultado, porque un orden de clasificación es una recomendación.',
+                    )}
+                  />
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">
+                      <T text={bi('Criterion', 'Criterio')} />
+                    </th>
+                    <th scope="col">
+                      <T text={bi('Weight', 'Peso')} />
+                    </th>
+                    <th scope="col">
+                      <T text={bi('Result', 'Resultado')} />
+                    </th>
+                    <th scope="col">
+                      <T text={bi('What the engine compared', 'Qué comparó el motor')} />
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {WORKED_CRITERIA.map((criterion) => (
+                    <tr
+                      key={criterion.id}
+                      className={criterion.id === MISSING_CRITERION_ID ? styles.rowHighlight : undefined}
+                    >
+                      <th scope="row" className={styles.criterionHead}>
+                        <T text={criterion.label} />
+                        <span className={styles.criterionId}>{criterion.id}</span>
+                      </th>
+                      <td>
+                        <Chip>{criterion.weight}</Chip>
+                      </td>
+                      <td>
+                        <Badge
+                          tone={CRITERION_TONE[criterion.status] ?? 'neutral'}
+                          label={CRITERION_LABEL[criterion.status]}
+                        />
+                      </td>
+                      <td>
+                        {/* The engine's own words, verbatim and in the language
+                            it writes them. A paraphrase of a trace is a
+                            different statement, and this column exists so the
+                            comparison can be checked rather than trusted. */}
+                        <span className={styles.trace} lang="en">
+                          {criterion.detail}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </ScrollX>
+
+            <p className={styles.note}>
+              <T
+                text={bi(
+                  'The right-hand column is the engine’s own trace of the comparison it performed, rendered verbatim rather than paraphrased. It is written in English by the engine, which is why it is the one thing on this site that is not bilingual.',
+                  'La columna de la derecha es el propio rastro del motor de la comparación que realizó, reproducido literalmente y no parafraseado. El motor lo escribe en inglés, y por eso es lo único de este sitio que no es bilingüe.',
+                )}
+              />
+            </p>
+          </Card>
+
+          {WORKED_CITATION !== null ? (
+            <Card>
+              <h3 className={styles.cardTitle}>
+                <T
+                  text={bi(
+                    'The rule behind the criterion that could not be decided',
+                    'La norma que respalda el criterio que no pudo decidirse',
+                  )}
+                />
+              </h3>
+              <TProse
+                text={bi(
+                  'Not a footnote and not a link to a summary. Every criterion in the catalog carries the instrument it comes from, the provision inside it, the canonical text, and the date a person last read that text against its source — and the engine refuses to apply a rule that has none.',
+                  'No es una nota al pie ni un enlace a un resumen. Cada criterio del catálogo lleva el instrumento del que procede, el precepto concreto, el texto canónico y la fecha en que una persona contrastó por última vez ese texto con su fuente, y el motor se niega a aplicar una norma que carezca de ello.',
+                )}
+              />
+              <dl className={styles.citation}>
+                <div>
+                  <dt>
+                    <T text={bi('Instrument', 'Instrumento')} />
+                  </dt>
+                  {/*
+                    An instrument name is not translated — it exists only in the
+                    language of the gazette that published it — so the run is
+                    tagged with that language rather than inheriting the
+                    document's English. The tag is derived from the citation's
+                    own jurisdiction instead of being written next to the value,
+                    because the value comes from the catalog and a hard-coded
+                    `lang` would start lying the moment this section is pointed
+                    at a different pathway.
+                  */}
+                  <dd lang={instrumentLang(WORKED_CITATION.jurisdiction)}>
+                    {WORKED_CITATION.instrument}
+                    {WORKED_CITATION.provision !== undefined
+                      ? `, ${WORKED_CITATION.provision}`
+                      : ''}
+                  </dd>
+                </div>
+                <div>
+                  <dt>
+                    <T text={bi('Kind, and jurisdiction', 'Tipo y jurisdicción')} />
+                  </dt>
+                  <dd>
+                    <Chip>{WORKED_CITATION.kind}</Chip> <Chip>{WORKED_CITATION.jurisdiction}</Chip>
+                  </dd>
+                </div>
+                <div>
+                  <dt>
+                    <T text={bi('Last checked against its source', 'Contrastada por última vez')} />
+                  </dt>
+                  <dd>
+                    <CivilDate value={WORKED_CITATION.verifiedOn} />
+                  </dd>
+                </div>
+                {WORKED_CITATION.url !== undefined ? (
+                  <div>
+                    <dt>
+                      <T text={bi('Canonical text', 'Texto canónico')} />
+                    </dt>
+                    <dd className={styles.citationUrl}>
+                      <a href={WORKED_CITATION.url} rel="noreferrer noopener" target="_blank">
+                        {WORKED_CITATION.url}
+                      </a>
+                    </dd>
+                  </div>
+                ) : null}
+              </dl>
+            </Card>
+          ) : null}
+
+          {WORKED_NOTES.length > 0 ? (
+            <Callout
+              tone="warn"
+              icon="⚑"
+              title={bi(
+                'And the caveats the engine attached to its own answer',
+                'Y las advertencias que el motor adjuntó a su propia respuesta',
+              )}
+            >
+              <TProse
+                text={bi(
+                  'These came back with the report. Nobody wrote them for this page, and nobody can suppress them at render time: a rule that rests on administrative practice rather than a statutory threshold has to say so wherever it is applied, and a rule no licensed person has read cannot be built into a recommendation at all.',
+                  'Estas vinieron con el informe. Nadie las redactó para esta página y nadie puede suprimirlas al mostrarla: una norma que se apoya en la práctica administrativa y no en un umbral legal debe declararlo allí donde se aplica, y una norma que ninguna persona colegiada ha leído no puede convertirse en una recomendación.',
+                )}
+              />
+              <ul className={styles.notes}>
+                {WORKED_NOTES.map((note, index) => (
+                  <li key={`${note.code}-${note.citationId ?? index}`}>
+                    <Chip>{note.code}</Chip>{' '}
+                    <span lang="en">{note.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </Callout>
+          ) : null}
+
+          <Callout
+            tone="bad"
+            icon="✕"
+            title={bi(
+              'What is missing from that output, and why',
+              'Qué falta en ese resultado y por qué',
+            )}
+          >
+            <TProse
+              text={bi(
+                'There is no ranking of this applicant’s options, no "best route", no estimate of the chance an application succeeds, and no suggestion of what to do next. None of those is an omission. Each is a recommendation, a recommendation is the regulated act, and no licensed person is accountable for an answer this page gives. The engine’s ranking function exists — and it excludes every unreviewed pathway and attaches the reason, which today is all of them.',
+                'No hay clasificación de las opciones de esta persona, ni «mejor vía», ni estimación de la probabilidad de éxito de una solicitud, ni sugerencia sobre qué hacer a continuación. Ninguna de esas ausencias es un descuido. Cada una es una recomendación, una recomendación es el acto reservado y ninguna persona colegiada responde de una respuesta que dé esta página. La función de clasificación del motor existe, y excluye toda vía no revisada adjuntando el motivo, que hoy son todas.',
+              )}
+            />
+            <p className={styles.calloutLink}>
+              <a href="#advice-boundary">
+                <T
+                  text={bi(
+                    'How the boundary is enforced, in the type system rather than in a disclaimer',
+                    'Cómo se impone la frontera, en el sistema de tipos y no en un descargo de responsabilidad',
+                  )}
+                />
+              </a>
+            </p>
+          </Callout>
+        </Stack>
+      </Section>
+
+      {/* -------------------------------------------------------------------
+          What it is
+          ------------------------------------------------------------------- */}
       <Section
         id="what-it-is"
-        title={bi('What Meridian is', 'Qué es Meridian')}
+        title={bi('What else the engine does', 'Qué más hace el motor')}
         description={bi(
           'Four engines over one shared contract. Each produces a value you can reconstruct by hand from what is on the screen, and each cites the rule it applied.',
           'Cuatro motores sobre un mismo contrato compartido. Cada uno produce un valor que usted puede reconstruir a mano a partir de lo que ve en pantalla, y cada uno cita la norma que aplicó.',
@@ -173,8 +627,8 @@ export default function HomePage() {
             </h3>
             <TProse
               text={bi(
-                'A pathway is a list of criteria, each attached to the instrument and provision it comes from and the date a person last checked that text. Evaluation is three-valued: met, unmet, or not recorded. A missing fact is never a refusal.',
-                'Una vía es una lista de criterios, cada uno vinculado al instrumento y precepto del que procede y a la fecha en que una persona contrastó ese texto por última vez. La evaluación es de tres valores: cumplido, incumplido o sin datos. Un dato ausente nunca es una denegación.',
+                'A pathway is a list of criteria, each attached to the instrument and provision it comes from and the date a person last checked that text. Evaluation is three-valued: met, unmet, or not recorded. You have just watched one run.',
+                'Una vía es una lista de criterios, cada uno vinculado al instrumento y precepto del que procede y a la fecha en que una persona contrastó ese texto por última vez. La evaluación es de tres valores: cumplido, incumplido o sin datos. Acaba de ver una ejecutarse.',
               )}
             />
           </Card>
@@ -209,8 +663,8 @@ export default function HomePage() {
             </h3>
             <TProse
               text={bi(
-                'One ledger of where you were, feeding tax-residency day counts, the Schengen 90/180 allowance, continuous-residence tests and accumulated work. Entry and exit days both count, and every calculation is civil-date arithmetic: there is no timezone anywhere in it to lose a day to.',
-                'Un único registro de dónde estuvo, que alimenta el cómputo fiscal de días, la franquicia Schengen 90/180, las pruebas de residencia continuada y el trabajo acumulado. Los días de entrada y de salida cuentan ambos, y todo el cálculo es aritmética de fechas civiles: no hay ninguna zona horaria en la que perder un día.',
+                'One ledger of where you were, feeding tax-residency day counts, the Schengen 90/180 allowance you have just used, continuous-residence tests and accumulated work. Entry and exit days both count, and every calculation is civil-date arithmetic: there is no timezone anywhere in it to lose a day to.',
+                'Un único registro de dónde estuvo, que alimenta el cómputo fiscal de días, la franquicia Schengen 90/180 que acaba de usar, las pruebas de residencia continuada y el trabajo acumulado. Los días de entrada y de salida cuentan ambos, y todo el cálculo es aritmética de fechas civiles: no hay ninguna zona horaria en la que perder un día.',
               )}
             />
           </Card>
@@ -232,7 +686,13 @@ export default function HomePage() {
             </h3>
             <div className={styles.cardMeta}>
               <Chip>ES</Chip>
-              <Chip>{plural(CATALOG.jurisdictions.find((j) => j.code === 'ES')?.pathways ?? 0, 'pathway', 'pathways')}</Chip>
+              <Chip>
+                {plural(
+                  CATALOG.jurisdictions.find((j) => j.code === 'ES')?.pathways ?? 0,
+                  'pathway',
+                  'pathways',
+                )}
+              </Chip>
             </div>
             <TProse
               text={bi(
@@ -248,7 +708,13 @@ export default function HomePage() {
             </h3>
             <div className={styles.cardMeta}>
               <Chip>CA</Chip>
-              <Chip>{plural(CATALOG.jurisdictions.find((j) => j.code === 'CA')?.pathways ?? 0, 'pathway', 'pathways')}</Chip>
+              <Chip>
+                {plural(
+                  CATALOG.jurisdictions.find((j) => j.code === 'CA')?.pathways ?? 0,
+                  'pathway',
+                  'pathways',
+                )}
+              </Chip>
             </div>
             <TProse
               text={bi(
@@ -351,11 +817,7 @@ export default function HomePage() {
             <TProse text={COVERAGE_OUT_OF_SCOPE} />
           </Callout>
 
-          <Callout
-            tone="accent"
-            icon="§"
-            title={bi('Who to ask instead', 'A quién preguntar en su lugar')}
-          >
+          <Callout tone="accent" icon="§" title={bi('Who to ask instead', 'A quién preguntar en su lugar')}>
             <TProse text={COVERAGE_WHERE_TO_ASK} />
           </Callout>
         </Stack>
@@ -365,8 +827,8 @@ export default function HomePage() {
         id="advice-boundary"
         title={bi('The advice boundary', 'La frontera del asesoramiento')}
         description={bi(
-          'Meridian is software. Regulated immigration advice requires an authorised representative attached to the matter, and this platform enforces that in the type system rather than in a disclaimer nobody reads.',
-          'Meridian es software. El asesoramiento migratorio reservado exige un representante autorizado vinculado al expediente, y esta plataforma lo impone en el sistema de tipos y no en un descargo de responsabilidad que nadie lee.',
+          'Meridian is software. Regulated immigration advice requires an authorised representative attached to the matter, and this platform enforces that in the type system rather than in a disclaimer nobody reads. It is also, exactly, the line the pricing follows.',
+          'Meridian es software. El asesoramiento migratorio reservado exige un representante autorizado vinculado al expediente, y esta plataforma lo impone en el sistema de tipos y no en un descargo de responsabilidad que nadie lee. Es también, exactamente, la línea que sigue el precio.',
         )}
       >
         <Stack gap="md">
@@ -378,9 +840,31 @@ export default function HomePage() {
           />
           <TProse
             text={bi(
-              'So every output is classified where it is produced, never where it is displayed, and it can only ever be moved down. There are exactly three classes.',
-              'Por eso cada resultado se clasifica donde se produce, nunca donde se muestra, y solo puede moverse hacia abajo. Hay exactamente tres clases.',
+              'So every output is classified where it is produced, never where it is displayed, and it can only ever be moved down. There are exactly three classes, and the first two are what you have been using on this page for free.',
+              'Por eso cada resultado se clasifica donde se produce, nunca donde se muestra, y solo puede moverse hacia abajo. Hay exactamente tres clases, y las dos primeras son las que ha estado usando gratis en esta página.',
             )}
+          />
+          {/*
+            The verdicts in the fourth column below are not copy. Each is the
+            return value of `canRelease` from `@meridian/core` — the same gate
+            the engine calls — asked at build time about a reader with no
+            representative attached, and rendered along with the gate's own
+            reason for withholding. This sentence branches on the same values,
+            so the page cannot go on describing a boundary the code has stopped
+            enforcing.
+          */}
+          <TProse
+            text={
+              FREE_CLASSES_ARE_THE_UNREGULATED_ONES
+                ? bi(
+                    'The fourth column is not a description of the gate. It is the gate: each verdict is what `canRelease` returned when this site was built, asked about a reader with nobody on the hook, and the refusal text is the gate’s own.',
+                    'La cuarta columna no describe el control: es el control. Cada veredicto es lo que devolvió `canRelease` al compilar este sitio, preguntado por una persona lectora sin nadie que responda por ella, y el texto de la negativa es el suyo propio.',
+                  )
+                : bi(
+                    'WARNING: the release gate is no longer withholding advice from an unrepresented reader. The fourth column below is what `canRelease` actually returned when this site was built. Treat this as a defect in the platform rather than as a feature.',
+                    'ADVERTENCIA: el control de divulgación ya no retiene el asesoramiento frente a una persona lectora sin representante. La cuarta columna refleja lo que devolvió `canRelease` al compilar este sitio. Considérelo un defecto de la plataforma y no una funcionalidad.',
+                  )
+            }
           />
 
           <ScrollX>
@@ -388,8 +872,8 @@ export default function HomePage() {
               <caption className={styles.tableCaption}>
                 <T
                   text={bi(
-                    'The three output classes, and what reaches an applicant with no representative attached',
-                    'Las tres clases de resultado y lo que llega a un solicitante sin representante vinculado',
+                    'The three output classes, what reaches an applicant with no representative attached, and what each costs',
+                    'Las tres clases de resultado, lo que llega a un solicitante sin representante vinculado y cuánto cuesta cada una',
                   )}
                 />
               </caption>
@@ -406,6 +890,9 @@ export default function HomePage() {
                   </th>
                   <th scope="col">
                     <T text={bi('Without a representative', 'Sin representante')} />
+                  </th>
+                  <th scope="col">
+                    <T text={bi('Price', 'Precio')} />
                   </th>
                 </tr>
               </thead>
@@ -431,7 +918,10 @@ export default function HomePage() {
                     />
                   </td>
                   <td>
-                    <Badge tone="ok" label={bi('Released', 'Se entrega')} />
+                    <GateVerdict decision={releaseOf('information')} />
+                  </td>
+                  <td>
+                    <TInline text={bi('Free, forever', 'Gratis, siempre')} />
                   </td>
                 </tr>
                 <tr>
@@ -449,13 +939,16 @@ export default function HomePage() {
                   <td>
                     <T
                       text={bi(
-                        '“You have 610 recorded days of residence; the rule states 730.”',
-                        '«Tiene 610 días de residencia registrados; la norma exige 730.»',
+                        '“You have 610 recorded days of residence; the rule states 730.” The counter at the top of this page.',
+                        '«Tiene 610 días de residencia registrados; la norma exige 730.» El cómputo del principio de esta página.',
                       )}
                     />
                   </td>
                   <td>
-                    <Badge tone="ok" label={bi('Released', 'Se entrega')} />
+                    <GateVerdict decision={releaseOf('assessment')} />
+                  </td>
+                  <td>
+                    <TInline text={bi('Free, forever', 'Gratis, siempre')} />
                   </td>
                 </tr>
                 <tr>
@@ -479,7 +972,15 @@ export default function HomePage() {
                     />
                   </td>
                   <td>
-                    <Badge tone="warn" label={bi('Withheld, and named', 'Se retiene, y se indica')} />
+                    <GateVerdict decision={releaseOf('advice')} />
+                  </td>
+                  <td>
+                    <TInline
+                      text={bi(
+                        'Bought by the licensee accountable for it',
+                        'Lo adquiere el colegiado que responde de ello',
+                      )}
+                    />
                   </td>
                 </tr>
               </tbody>
@@ -489,10 +990,7 @@ export default function HomePage() {
           <Callout
             tone="accent"
             icon="§"
-            title={bi(
-              'Withholding is stated, never silent',
-              'La retención se declara, nunca es silenciosa',
-            )}
+            title={bi('Withholding is stated, never silent', 'La retención se declara, nunca es silenciosa')}
           >
             <TProse
               text={bi(
@@ -522,10 +1020,7 @@ export default function HomePage() {
           <Grid>
             <Card>
               <h3 className={styles.cardTitle}>
-                <Badge
-                  tone="bad"
-                  label={bi('No custody of your credential', 'Sin custodia de su credencial')}
-                />
+                <Badge tone="bad" label={bi('No custody of your credential', 'Sin custodia de su credencial')} />
               </h3>
               <TProse
                 text={bi(
@@ -571,10 +1066,7 @@ export default function HomePage() {
 
             <Card>
               <h3 className={styles.cardTitle}>
-                <Badge
-                  tone="ok"
-                  label={bi('Assisted handoff instead', 'En su lugar, entrega asistida')}
-                />
+                <Badge tone="ok" label={bi('Assisted handoff instead', 'En su lugar, entrega asistida')} />
               </h3>
               <TProse
                 text={bi(
@@ -737,6 +1229,14 @@ export default function HomePage() {
               <li>
                 <T
                   text={bi(
+                    'The day counter at the top of this page, and the tools in the portal. Nothing entered in them is transmitted or stored.',
+                    'El cómputo de días del principio de esta página y las herramientas del portal. Nada de lo que se introduce en ellos se transmite ni se almacena.',
+                  )}
+                />
+              </li>
+              <li>
+                <T
+                  text={bi(
                     'Civil-date arithmetic with no timezone and no Date object anywhere in the stack.',
                     'Aritmética de fechas civiles sin zonas horarias y sin ningún objeto Date en toda la pila.',
                   )}
@@ -747,14 +1247,6 @@ export default function HomePage() {
                   text={bi(
                     'Presence ledger, Schengen 90/180, tax day counts, continuous residence and accumulated work.',
                     'Registro de presencia, Schengen 90/180, cómputo fiscal de días, residencia continuada y trabajo acumulado.',
-                  )}
-                />
-              </li>
-              <li>
-                <T
-                  text={bi(
-                    'Machine-readable travel-document parsing and check-digit verification to ICAO Doc 9303.',
-                    'Lectura de documentos de viaje de lectura mecánica y verificación de dígitos de control conforme al Doc 9303 de OACI.',
                   )}
                 />
               </li>
@@ -777,8 +1269,8 @@ export default function HomePage() {
               <li>
                 <T
                   text={bi(
-                    'No account, no sign-in and no database in any of the applications. Nothing a reader enters is stored, because there is nowhere yet to store it.',
-                    'Ninguna de las aplicaciones tiene cuenta, inicio de sesión ni base de datos. Nada de lo que introduzca quien lee se almacena, porque todavía no hay dónde almacenarlo.',
+                    'No account, no sign-in and no database in any of the applications. Everything described above as a paid capability depends on those, so none of it can be bought today.',
+                    'Ninguna de las aplicaciones tiene cuenta, inicio de sesión ni base de datos. Todo lo descrito arriba como función de pago depende de eso, de modo que nada de ello puede contratarse hoy.',
                   )}
                 />
               </li>
@@ -793,8 +1285,8 @@ export default function HomePage() {
               <li>
                 <T
                   text={bi(
-                    'Every screen renders from sample data declared in the application’s own source, and every figure on it is computed when the site is built rather than fetched from a service.',
-                    'Cada pantalla se dibuja a partir de datos de ejemplo declarados en el propio código de la aplicación, y cada cifra se calcula al compilar el sitio en lugar de obtenerse de un servicio.',
+                    'Every screen in the portal renders from sample data declared in the application’s own source, and every catalog figure on this page is computed when the site is built rather than fetched from a service.',
+                    'Cada pantalla del portal se dibuja a partir de datos de ejemplo declarados en el propio código de la aplicación, y cada cifra de catálogo de esta página se calcula al compilar el sitio en lugar de obtenerse de un servicio.',
                   )}
                 />
               </li>
@@ -849,67 +1341,17 @@ export default function HomePage() {
             </ul>
           </Card>
         </Grid>
-      </Section>
-
-      <Section
-        id="audiences"
-        title={bi('Who it is for', 'Para quién es')}
-        description={bi(
-          'The same engine, gated differently, because the regulator draws the line by who is accountable rather than by who is paying.',
-          'El mismo motor, con distinto control, porque el regulador traza la línea según quién responde y no según quién paga.',
-        )}
-      >
-        <Grid>
-          <Card>
-            <h3 className={styles.cardTitle}>
-              <T text={bi('Licensed firms and consultancies', 'Despachos y consultoras colegiados')} />
-            </h3>
-            <TProse
-              text={bi(
-                'A practitioner inside a firm gets every class of output, including the ranked comparison an applicant cannot be shown, because their licensee is accountable for the judgement and the engine is a tool in their hands. What they get is the arithmetic and the citations behind each figure, not a black box they would have to defend.',
-                'Una persona profesional dentro de un despacho obtiene todas las clases de resultado, incluida la comparación ordenada que no puede mostrarse a un solicitante, porque su colegiado responde del criterio y el motor es una herramienta en sus manos. Lo que obtiene es la aritmética y las citas detrás de cada cifra, no una caja negra que tendría que defender.',
-              )}
-            />
-          </Card>
-
-          <Card>
-            <h3 className={styles.cardTitle}>
-              <T text={bi('Individuals', 'Particulares')} />
-            </h3>
-            <TProse
-              text={bi(
-                'You get your own day counts, your document sequence, and what each cited rule makes of your recorded facts — with the arithmetic shown. You do not get a recommendation unless a representative is attached to your matter, and where one is withheld the page names it rather than leaving a gap.',
-                'Obtiene su propio cómputo de días, la secuencia de su documentación y qué dice de sus datos registrados cada norma citada, con la aritmética a la vista. No obtiene una recomendación salvo que haya un representante vinculado a su expediente, y cuando se retiene alguna la página lo indica en lugar de dejar un hueco.',
-              )}
-            />
-          </Card>
-
-          <Card>
-            <h3 className={styles.cardTitle}>
-              <T text={bi('Employers moving staff', 'Empresas que trasladan personal')} />
-            </h3>
-            <TProse
-              text={bi(
-                'Presence and document status for people you are relocating, on the same terms as the individual: information and assessment, and no recommendation unless a representative is on the matter. An employer is not a licensee, and the boundary does not move because the reader is a company.',
-                'Presencia y estado documental de las personas que traslada, en las mismas condiciones que un particular: información y evaluación, y ninguna recomendación salvo que haya un representante en el expediente. Una empresa no es un colegiado, y la frontera no se mueve porque quien lee sea una sociedad.',
-              )}
-            />
-          </Card>
-        </Grid>
 
         <div className={styles.closing}>
           <ActionLink
-            href={PORTAL_URL}
+            href={`${PORTAL_URL}/tools`}
             variant="primary"
-            label={bi('Open the applicant portal', 'Abrir el portal del solicitante')}
+            label={bi('Open the free tools', 'Abrir las herramientas gratuitas')}
           />
           <ActionLink
             href={REPO_URL}
             newTab
-            label={bi(
-              'Read the source, including the catalog',
-              'Ver el código fuente, catálogo incluido',
-            )}
+            label={bi('Read the source, including the catalog', 'Ver el código fuente, catálogo incluido')}
           />
         </div>
       </Section>

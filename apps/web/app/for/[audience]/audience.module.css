@@ -1,0 +1,39 @@
+.problem {
+  max-width: var(--measure);
+  font-size: 1.0625rem;
+}
+
+/* The gate's own refusal, quoted rather than paraphrased. A paraphrase of a
+   compliance determination is a different statement. */
+.quote {
+  margin: var(--space-3) 0 0;
+  border-left: 3px solid var(--info-border);
+  padding-left: var(--space-4);
+  font-size: 0.9375rem;
+  max-width: var(--measure);
+}
+
+.tier {
+  max-width: 34rem;
+}
+
+.limits {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: var(--measure);
+}
+
+.limitsNote {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.footLink {
+  margin: 0;
+  font-weight: 600;
+}

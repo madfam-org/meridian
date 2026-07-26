@@ -1,0 +1,135 @@
+.tier {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.name {
+  font-size: 1.25rem;
+}
+
+.premise {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--fg-muted);
+}
+
+.priceRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-4) 0;
+}
+
+.priceValue {
+  font-size: 1.0625rem;
+  font-weight: 650;
+}
+
+.unit {
+  margin-left: auto;
+}
+
+.priceNote {
+  flex-basis: 100%;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+}
+
+.availability {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.blockedOn {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.subheading {
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--fg-subtle);
+  margin-bottom: var(--space-2);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+/* The Spanish half of an uppercased label keeps its own casing: small-caps
+   Spanish reads as shouting rather than as a label. */
+.subheading :global(span[lang='es']) {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.count {
+  margin-left: auto;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  color: var(--fg-muted);
+}
+
+.whoBody {
+  font-size: 0.9375rem;
+}
+
+.capabilities {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.capability {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: 0.9375rem;
+}
+
+.capabilityName {
+  min-width: 0;
+}
+
+.notes {
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.note {
+  font-size: 0.875rem;
+}

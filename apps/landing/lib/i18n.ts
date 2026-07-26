@@ -38,16 +38,18 @@ export const UI = {
   ),
   skipToContent: bi('Skip to main content', 'Saltar al contenido principal'),
 
-  navWhatItIs: bi('What it is', 'Qué es'),
-  navCorridors: bi('Corridors', 'Corredores'),
+  /* First, and pointing at the working instrument rather than at prose about
+     it. A reader who follows exactly one link from this header should land on
+     something that answers a question about their own travel history. */
+  navCalculator: bi('Try the day counter', 'Pruebe el cómputo de días'),
+  navDoors: bi('Who it is for', 'Para quién es'),
+  navProof: bi('See it refuse', 'Véalo negarse'),
   /* Immediately after the corridors, because that is where a reader forms the
      impression this corrects: the corridor cards are the most flattering part of
      the page and say nothing about how small the sample is. */
   navCoverage: bi('What it does not cover', 'Qué no cubre'),
   navBoundary: bi('The advice boundary', 'La frontera del asesoramiento'),
-  navRefused: bi('What we refuse', 'Lo que rechazamos'),
   navStatus: bi('Status', 'Estado'),
-  navAudiences: bi('Who it is for', 'Para quién es'),
   openPortal: bi('Open the portal', 'Abrir el portal'),
   readTheSource: bi('Read the source', 'Ver el código fuente'),
 

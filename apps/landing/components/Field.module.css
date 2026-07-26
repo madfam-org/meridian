@@ -1,0 +1,199 @@
+/*
+ * Form controls.
+ *
+ * The same visual language the rest of the site already uses rather than a
+ * second one: the label is the small uppercase run from `.factLabel` in
+ * Layout.module.css, control borders are `--border-strong`, and the focus ring
+ * comes from `globals.css` and is never overridden here.
+ *
+ * The error state carries three signals — a glyph, the word "Error", and a
+ * border colour — because the colour is the least reliable of the three.
+ */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.fieldRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+/*
+ * Each field in a wrapping row takes at least 9rem and grows to fill. Below
+ * roughly 24rem of available width the three controls of a trip stack instead
+ * of being squeezed, which is what keeps a 375px screen free of sideways
+ * scrolling.
+ */
+.fieldRow > .field {
+  flex: 1 1 9rem;
+}
+
+.label {
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+/* The Spanish half keeps sentence case: uppercasing distorts accented
+   characters and reads as shouting in the second language. */
+.label :global(span[lang='es']) {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.required {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--fg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-2);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.error {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+  color: var(--bad-fg);
+  background: var(--bad-bg);
+  border: 1px solid var(--bad-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  max-width: var(--measure);
+}
+
+.errorGlyph {
+  font-weight: 700;
+}
+
+.errorWord {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+.errorText {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+.control {
+  font: inherit;
+  font-size: 0.9375rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--fg);
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.fieldInvalid .control {
+  border-color: var(--bad-fg);
+  /* A second ring, so the invalid state survives a forced-colours mode that
+     discards author colours. */
+  box-shadow: 0 0 0 1px var(--bad-fg);
+}
+
+.dateControl {
+  /* Safari on iOS lays a date input out at its intrinsic width and ignores
+     `width: 100%` unless the appearance is reset. */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.select {
+  /* Wider than one line of the longest State name, so the choice is readable
+     without opening the list. */
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.button {
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--fg);
+  cursor: pointer;
+  min-width: 0;
+}
+
+.button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  color: var(--fg-subtle);
+  border-color: var(--border);
+}
+
+.buttonPrimary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+/* On the accent fill the muted grey of the Spanish half drops below an
+   accessible ratio, so both languages inherit the button's own foreground. */
+.buttonPrimary :global(span[lang='es']) {
+  color: inherit;
+  opacity: 0.88;
+}
+
+.buttonQuiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--fg-muted);
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.875rem;
+}
+
+.buttonQuiet:hover:not(:disabled) {
+  background: var(--surface-sunken);
+  color: var(--fg);
+  border-color: var(--border);
+}

@@ -1,0 +1,53 @@
+.summary {
+  border: 2px solid var(--bad-fg);
+  border-radius: var(--radius);
+  background: var(--bad-bg);
+  color: var(--bad-fg);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: var(--measure);
+}
+
+/*
+ * The region is focused programmatically, so it must show a ring like anything
+ * else the keyboard can reach. `:focus` rather than `:focus-visible`: this
+ * element is never focused by a pointer, and a browser that declines to treat a
+ * scripted focus as "visible" would leave the reader with no indication of
+ * where they now are.
+ */
+.summary:focus {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.title {
+  font-size: 1.05rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  color: inherit;
+}
+
+.glyph {
+  font-weight: 700;
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.25rem;
+  max-width: 100%;
+}
+
+.link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.link:hover {
+  color: inherit;
+  text-decoration-thickness: 2px;
+}

@@ -145,4 +145,21 @@
   .main {
     padding: var(--space-5) var(--space-4) var(--space-6);
   }
+
+  /*
+   * On a phone the six bilingual section links wrap onto three rows and take
+   * roughly a fifth of the screen before anything on the page has been read.
+   * The links all stay — a Spanish reader navigating an English-only header on
+   * a site that claims to be bilingual is worse than a tall header, and that
+   * trade was already settled at 52rem — but the type and the padding come
+   * down, which buys back most of the height without removing anything.
+   */
+  .nav {
+    gap: 0;
+  }
+
+  .navLink {
+    padding: var(--space-1) var(--space-2);
+    font-size: 0.75rem;
+  }
 }

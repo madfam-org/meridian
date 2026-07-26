@@ -127,6 +127,9 @@ importers:
       '@meridian/pathways':
         specifier: workspace:*
         version: link:../../packages/pathways
+      '@meridian/presence':
+        specifier: workspace:*
+        version: link:../../packages/presence
       next:
         specifier: 15.1.3
         version: 15.1.3(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
