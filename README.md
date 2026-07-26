@@ -61,9 +61,12 @@ check-no-credential-custody: OK — 273 files scanned, 3 rules,
 3 path exemptions, 2 structural anchors verified.
 
 $ node scripts/check-pathway-citations.mjs
-check-pathway-citations: OK — as of 2026-07-25: 4 catalog files, 8 pathways,
+check-pathway-citations: OK — as of <run date>: 4 catalog files, 8 pathways,
 20 citations, 64 criterion references resolved
 ```
+
+The citations check prints the UTC date it ran on, because staleness is measured
+against it; the counts are what is fixed.
 
 Two of them were additionally proven able to fail: a deliberate violation was
 written into `apps/api/src/`, each script caught it, and the file was removed.

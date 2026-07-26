@@ -189,7 +189,8 @@ incidental:
 
 - `src/main.ts` — the composition root, and **the only file that reads
   `process.env`, constructs a database client or binds a socket.** Everything
-  else takes what it needs as an argument, which is why `tests/harness.ts` can
+  else takes what it needs as an argument, which is why
+  `apps/api/tests/harness.ts` can
   assemble the same application over an in-memory store and a local key pair.
   Keep it that way: a `process.env` read anywhere else is a value no test can
   set.

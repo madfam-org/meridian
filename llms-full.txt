@@ -90,9 +90,12 @@ check-advice-boundary:       OK — gate and producer anchors verified,
                              123 application files read, 16 routes examined
 check-no-credential-custody: OK — 273 files scanned, 3 rules,
                              3 path exemptions, 2 structural anchors verified
-check-pathway-citations:     OK — as of 2026-07-25: 4 catalog files, 8 pathways,
+check-pathway-citations:     OK — as of <run date>: 4 catalog files, 8 pathways,
                              20 citations, 64 criterion references resolved
 ```
+
+The citations check prints the UTC date it ran on, because citation staleness is
+measured against it. The counts are the fixed part.
 
 CI at `.github/workflows/ci.yml` — jobs `policy` (the three guards, before any
 install), `typecheck`, `test`, `build` — plus `build-deploy.yml`, which builds
@@ -485,8 +488,8 @@ standard library or what is already there, and say so in your report.
   if the refusal breaks. The replacement is `buildHandoff`. The decisive
   argument is attribution, not encryption: a submission made with the user's
   credential is legally *the user's act*, performed by someone else, with no
-  record of consent to that act on that day. → `docs/adr/0003`
-- **No advice to an unrepresented applicant.** → `docs/adr/0002`
+  record of consent to that act on that day. → `docs/adr/0003-no-credential-custody.md`
+- **No advice to an unrepresented applicant.** → `docs/adr/0002-advice-boundary-as-a-type.md`
 - **No synthetic success.** No adapter returns a plausible-looking government
   response nobody obtained from a government. `verifyNoSyntheticSuccess()` makes
   it checkable.
