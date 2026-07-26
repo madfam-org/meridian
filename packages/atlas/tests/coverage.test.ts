@@ -270,13 +270,22 @@ describe('computeCoverage — against the atlas as shipped', () => {
     expect(report.structural.byStatus.counsel_reviewed).toBe(0);
   });
 
-  it('covers no stock at all today, and says so rather than rounding up', () => {
-    // ES and CA are the only encoded jurisdictions and no stock row runs between
-    // them, so weighted coverage is exactly zero while structural coverage is
-    // not. The divergence is the point of having two numbers.
-    expect(report.weighted.coveredStock).toBe(0);
-    expect(report.weighted.coveredFraction).toBe(0);
-    expect(report.structural.encodedFraction).toBeGreaterThan(0);
+  it('covers a sliver of stock, far below its structural share, and says so', () => {
+    // Three encoded jurisdictions — ES, CA, US — and `covered` requires BOTH
+    // ends of a corridor to be encoded. So the only rows that count are the ones
+    // running between those three, and the largest corridor in the world,
+    // Mexico to the United States, is NOT among them: Mexico appears in the
+    // catalog only as an origin and no Mexican inbound pathway is encoded.
+    //
+    // This is the divergence the two numbers exist to expose. Structural
+    // coverage rose when the United States was encoded; weighted coverage
+    // barely moved, because encoding a destination does not by itself cover the
+    // people arriving at it under this rule. Whether "both ends" is the right
+    // test is a live design question — see the destination-side figure the
+    // report prints separately and deliberately refuses to call coverage.
+    expect(report.weighted.coveredStock).toBeGreaterThan(0);
+    expect(report.weighted.coveredFraction).toBeLessThan(0.01);
+    expect(report.weighted.coveredFraction).toBeLessThan(report.structural.encodedFraction);
   });
 
   it('accounts for well under the whole world, and reports the shortfall', () => {

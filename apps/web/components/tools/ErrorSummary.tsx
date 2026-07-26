@@ -29,9 +29,9 @@
 
 import { useEffect, useRef } from 'react';
 
-import { bi, type Bi } from '@/lib/i18n';
+import type { Bi, Locale } from '@/lib/i18n';
+import { bi, translator } from '@/lib/i18n';
 import type { FieldIssue } from '@/lib/tools/validation';
-import { T } from '@/components/Bilingual';
 
 import styles from './ErrorSummary.module.css';
 
@@ -46,6 +46,7 @@ export interface ErrorSummaryProps {
    * away from it.
    */
   readonly focusKey: number;
+  readonly locale: Locale;
 }
 
 const DEFAULT_TITLE: Bi = bi(
@@ -53,7 +54,14 @@ const DEFAULT_TITLE: Bi = bi(
   'No se comprobó este formulario, porque:',
 );
 
-export function ErrorSummary({ id = 'error-summary', title, issues, focusKey }: ErrorSummaryProps) {
+export function ErrorSummary({
+  id = 'error-summary',
+  title,
+  issues,
+  focusKey,
+  locale,
+}: ErrorSummaryProps) {
+  const t = translator(locale);
   const ref = useRef<HTMLDivElement>(null);
   const lastFocused = useRef(0);
 
@@ -81,13 +89,13 @@ export function ErrorSummary({ id = 'error-summary', title, issues, focusKey }: 
         <span aria-hidden="true" className={styles.glyph}>
           ✕
         </span>
-        <T text={title ?? DEFAULT_TITLE} />
+        {t(title ?? DEFAULT_TITLE)}
       </h2>
       <ul className={styles.list}>
         {issues.map((issue) => (
           <li key={`${issue.fieldId}-${issue.message.en}`}>
             <a className={styles.link} href={`#${issue.fieldId}`}>
-              <T text={issue.message} />
+              {t(issue.message)}
             </a>
           </li>
         ))}

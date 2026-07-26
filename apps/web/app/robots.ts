@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 
+import { LOCALES, localizedPath } from '@/lib/i18n';
 import { SELF_URL } from '@/lib/links';
 
 /**
@@ -25,6 +26,13 @@ import { SELF_URL } from '@/lib/links';
  * it is written now for the state that lasts: a person's own matter is not
  * indexable material, whoever the person turns out to be.
  *
+ * **Every locale variant of that prefix is disallowed**, derived rather than
+ * typed: `/matters` and `/es/matters` are the same person's file at two
+ * addresses, and a rule that named only one would leave the other indexable.
+ * `localizedPath` is the same function the pages build their links with, so a
+ * locale added to `LOCALES` is covered here on the next build instead of
+ * quietly opening a hole.
+ *
  * `robots.txt` is a request to a well-behaved crawler and nothing more. It is
  * not access control, and it is not being used as any: when those routes hold a
  * real record they will sit behind authentication, and this file will still be
@@ -32,7 +40,13 @@ import { SELF_URL } from '@/lib/links';
  */
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: [{ userAgent: '*', allow: '/', disallow: '/matters' }],
+    rules: [
+      {
+        userAgent: '*',
+        allow: '/',
+        disallow: LOCALES.map((locale) => localizedPath('/matters', locale)),
+      },
+    ],
     sitemap: `${SELF_URL}/sitemap.xml`,
   };
 }

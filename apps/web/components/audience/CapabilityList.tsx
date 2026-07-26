@@ -1,9 +1,9 @@
 import Link from 'next/link';
 
-import { bi, type Bi } from '@/lib/i18n';
+import type { Bi, Locale } from '@/lib/i18n';
+import { bi, localizedPath, translator } from '@/lib/i18n';
 import { CAPABILITIES, releasableToUnrepresented, type CapabilityId } from '@/lib/audiences';
 import { Badge } from '@/components/Badge';
-import { T, TInline } from '@/components/Bilingual';
 import { disclosureClassView } from '@/components/DisclosureNotice';
 
 import styles from './CapabilityList.module.css';
@@ -54,7 +54,14 @@ const ALL_REFUSED: Bi = bi(
   'Preguntado al compilar, para todas las jurisdicciones del catálogo: el control de divulgación deniega todos estos a un lector sin representante vinculado. Cada uno necesita una persona con licencia que responda de él.',
 );
 
-export function CapabilityList({ ids }: { readonly ids: readonly CapabilityId[] }) {
+export function CapabilityList({
+  ids,
+  locale,
+}: {
+  readonly ids: readonly CapabilityId[];
+  readonly locale: Locale;
+}) {
+  const t = translator(locale);
   const releases = ids.map((id) => releasableToUnrepresented(CAPABILITIES[id].produces));
   const mixed = new Set(releases).size > 1;
 
@@ -71,45 +78,39 @@ export function CapabilityList({ ids }: { readonly ids: readonly CapabilityId[] 
               <div className={styles.head}>
                 <h3 className={styles.name}>
                   {capability.href !== undefined && capability.state === 'shipped' ? (
-                    <Link href={capability.href}>
-                      <T text={capability.name} />
-                    </Link>
+                    <Link href={localizedPath(capability.href, locale)}>{t(capability.name)}</Link>
                   ) : (
-                    <T text={capability.name} />
+                    t(capability.name)
                   )}
                 </h3>
                 <div className={styles.badges}>
-                  <Badge tone={view.tone} label={view.label} />
+                  <Badge tone={view.tone} label={t(view.label)} />
                   <Badge
                     tone={capability.state === 'shipped' ? 'ok' : 'warn'}
-                    label={
+                    label={t(
                       capability.state === 'shipped'
                         ? bi('Built', 'Construido')
-                        : bi('Not built', 'No construido')
-                    }
+                        : bi('Not built', 'No construido'),
+                    )}
                   />
                 </div>
               </div>
 
-              <p className={styles.detail}>
-                <T text={capability.detail} />
-              </p>
+              <p className={styles.detail}>{t(capability.detail)}</p>
 
               {mixed ? (
                 <p className={styles.release}>
                   <span aria-hidden="true" className={styles.releaseMark}>
                     §
                   </span>{' '}
-                  <T text={ungated ? RELEASED : REFUSED} />
+                  {t(ungated ? RELEASED : REFUSED)}
                 </p>
               ) : null}
 
               {capability.caveat === undefined ? null : (
                 <p className={styles.caveat}>
-                  <span className={styles.caveatLabel}>
-                    <TInline text={bi('Limit', 'Límite')} />
-                  </span>{' '}
-                  <T text={capability.caveat} />
+                  <span className={styles.caveatLabel}>{t('Limit', 'Límite')}</span>{' '}
+                  {t(capability.caveat)}
                 </p>
               )}
             </li>
@@ -122,7 +123,7 @@ export function CapabilityList({ ids }: { readonly ids: readonly CapabilityId[] 
           <span aria-hidden="true" className={styles.releaseMark}>
             §
           </span>{' '}
-          <T text={releases[0] === true ? ALL_RELEASED : ALL_REFUSED} />
+          {t(releases[0] === true ? ALL_RELEASED : ALL_REFUSED)}
         </p>
       )}
     </>

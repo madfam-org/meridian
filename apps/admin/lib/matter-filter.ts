@@ -21,7 +21,7 @@ import {
   type MatterStatus,
 } from '@meridian/core';
 import { MATTER_STATUS_ORDER } from '@/lib/caseload';
-import { applicantName, findApplicant, type FirmRecords, type MatterRecord } from '@/lib/records';
+import { findApplicant, type FirmRecords, type MatterRecord } from '@/lib/records';
 
 export type OpenState = 'live' | 'closed';
 
@@ -101,8 +101,19 @@ export function matterFilterToParams(filter: MatterFilter): Record<string, strin
   };
 }
 
+/**
+ * The searchable text of one matter.
+ *
+ * Built from the record's own fields rather than from `applicantName`, which now
+ * takes a locale so that a *missing* applicant reads correctly in the reader's
+ * language. That is right for display and wrong here: a search index whose
+ * contents change with the interface language would make the same query return
+ * different matters to two colleagues, and "Unknown applicant" is not something
+ * anybody searches for. A person's name is the same string in both locales, so
+ * reading the fields directly loses nothing.
+ */
 function haystackFor(records: FirmRecords, record: MatterRecord): string {
-  const applicant = applicantName(findApplicant(records, record.matter.applicantId));
+  const applicant = findApplicant(records, record.matter.applicantId);
   return [
     record.reference,
     record.title,
@@ -110,7 +121,7 @@ function haystackFor(records: FirmRecords, record: MatterRecord): string {
     record.matter.pathwayId,
     record.matter.targetJurisdiction,
     record.matter.claimedNationality,
-    applicant,
+    applicant === null ? '' : `${applicant.familyName} ${applicant.givenNames} ${applicant.reference}`,
   ]
     .join(' ')
     .toLowerCase();

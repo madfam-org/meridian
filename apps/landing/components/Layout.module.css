@@ -28,10 +28,6 @@
   max-width: 22ch;
 }
 
-.pageHeader h1 :global(span[lang='es']) {
-  font-size: 0.66em;
-}
-
 .lead {
   max-width: var(--measure);
   font-size: 1.0625rem;
@@ -73,16 +69,6 @@
   background: var(--accent-hover);
   border-color: var(--accent-hover);
   color: var(--accent-fg);
-}
-
-/*
- * On the accent fill the muted grey of the Spanish half drops below an
- * accessible ratio, so inside a primary action both languages inherit the
- * link's own foreground.
- */
-.actionPrimary :global(span[lang='es']) {
-  color: inherit;
-  opacity: 0.88;
 }
 
 .section {
@@ -175,12 +161,6 @@
   letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--fg-muted);
-}
-
-.factLabel :global(span[lang='es']) {
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 500;
 }
 
 .factValue {

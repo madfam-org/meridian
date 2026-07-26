@@ -21,18 +21,17 @@
  *  - **Required is stated in words.** `aria-required` plus a visible marker,
  *    not a bare asterisk. `aria-required` rather than the HTML `required`
  *    attribute, because the form carries `noValidate`: the browser's own
- *    validation bubble is monolingual, never appears in the error summary, and
- *    vanishes on the next keystroke. Announcing the constraint while owning the
- *    message is the whole point.
+ *    validation bubble speaks the browser's UI language rather than the page's,
+ *    never appears in the error summary, and vanishes on the next keystroke.
+ *    Announcing the constraint while owning the message is the whole point.
  *  - **Focus is visible.** Inherited from `globals.css`, which never removes
  *    the ring; nothing here overrides it.
  */
 
 import type { ChangeEvent, ReactNode } from 'react';
 
-import { bi, type Bi } from '@/lib/i18n';
+import { bi, translator, type Locale } from '@/lib/i18n';
 import { cx } from '@/lib/ui';
-import { T } from '@/components/Bilingual';
 
 import styles from './Field.module.css';
 
@@ -47,23 +46,31 @@ interface ControlAttributes {
 interface FieldShellProps {
   /** DOM id of the control. The error summary links to it; keep it stable. */
   readonly id: string;
-  readonly label: Bi;
-  readonly hint?: Bi;
+  /**
+   * The served locale. A field's label, hint and error arrive already in one
+   * language — the caller chose it — but the "required" marker is the control's
+   * own word about itself, so it needs the locale to say it in.
+   */
+  readonly locale: Locale;
+  readonly label: string;
+  readonly hint?: string;
   /** Present only when this field is in error. */
-  readonly error?: Bi;
+  readonly error?: string;
   readonly required?: boolean;
   readonly children: (attributes: ControlAttributes) => ReactNode;
 }
 
-const REQUIRED_MARKER: Bi = bi('required', 'obligatorio');
+const REQUIRED_MARKER = bi('required', 'obligatorio');
 
 /**
- * Spelled identically in both languages, so rendered once as plain text. "Error
- * · Error" would be noise on screen and a duplicate announcement in a reader.
+ * Spelled identically in English and Spanish, so it needs no translator and
+ * takes no locale. Kept as a constant rather than written inline so that the
+ * day a locale spells it differently there is one place to change.
  */
 const ERROR_WORD = 'Error';
 
-function FieldShell({ id, label, hint, error, required, children }: FieldShellProps) {
+function FieldShell({ id, locale, label, hint, error, required, children }: FieldShellProps) {
+  const t = translator(locale);
   const hintId = hint !== undefined ? `${id}-hint` : undefined;
   const errorId = error !== undefined ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter((v): v is string => v !== undefined).join(' ');
@@ -78,17 +85,13 @@ function FieldShell({ id, label, hint, error, required, children }: FieldShellPr
   return (
     <div className={cx(styles.field, error !== undefined && styles.fieldInvalid)}>
       <label className={styles.label} htmlFor={id}>
-        <T text={label} />
-        {required === true ? (
-          <span className={styles.required}>
-            <T text={REQUIRED_MARKER} />
-          </span>
-        ) : null}
+        {label}
+        {required === true ? <span className={styles.required}>{t(REQUIRED_MARKER)}</span> : null}
       </label>
 
       {hint !== undefined && hintId !== undefined ? (
         <p className={styles.hint} id={hintId}>
-          <T text={hint} />
+          {hint}
         </p>
       ) : null}
 
@@ -98,9 +101,7 @@ function FieldShell({ id, label, hint, error, required, children }: FieldShellPr
             ✕
           </span>
           <span className={styles.errorWord}>{ERROR_WORD}</span>
-          <span className={styles.errorText}>
-            <T text={error} />
-          </span>
+          <span className={styles.errorText}>{error}</span>
         </p>
       ) : null}
 
@@ -111,9 +112,10 @@ function FieldShell({ id, label, hint, error, required, children }: FieldShellPr
 
 interface CommonProps {
   readonly id: string;
-  readonly label: Bi;
-  readonly hint?: Bi;
-  readonly error?: Bi;
+  readonly locale: Locale;
+  readonly label: string;
+  readonly hint?: string;
+  readonly error?: string;
   readonly required?: boolean;
 }
 
@@ -190,7 +192,7 @@ export function Actions({ children }: { readonly children: ReactNode }) {
 }
 
 export interface ButtonProps {
-  readonly label: Bi;
+  readonly label: string;
   readonly onClick?: () => void;
   readonly type?: 'button' | 'submit';
   readonly variant?: 'primary' | 'secondary' | 'quiet';
@@ -229,7 +231,7 @@ export function Button({
       disabled={disabled}
       aria-controls={controls}
     >
-      <T text={label} />
+      {label}
     </button>
   );
 }

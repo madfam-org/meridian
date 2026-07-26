@@ -35,6 +35,9 @@ importers:
       '@meridian/govtech':
         specifier: workspace:*
         version: link:../../packages/govtech
+      '@meridian/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@meridian/pathways':
         specifier: workspace:*
         version: link:../../packages/pathways
@@ -124,6 +127,9 @@ importers:
       '@meridian/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@meridian/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@meridian/pathways':
         specifier: workspace:*
         version: link:../../packages/pathways
@@ -158,6 +164,9 @@ importers:
       '@meridian/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@meridian/i18n':
+        specifier: workspace:*
+        version: link:../../packages/i18n
       '@meridian/mrtd':
         specifier: workspace:*
         version: link:../../packages/mrtd
@@ -239,6 +248,15 @@ importers:
       zod:
         specifier: ^3.24.1
         version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.1)
+
+  packages/i18n:
     devDependencies:
       typescript:
         specifier: ^5.7.2

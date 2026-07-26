@@ -49,6 +49,16 @@
   font-weight: 500;
 }
 
+/*
+ * `<cite>` is italic by default in every browser. An instrument name is a
+ * verbatim legal reference a reader will compare character by character against
+ * a gazette, and italicising it is a typographic opinion about a string that
+ * must not be restyled into something that reads as emphasis.
+ */
+.instrumentName {
+  font-style: normal;
+}
+
 .provision {
   color: var(--fg-muted);
   font-weight: 400;
@@ -100,11 +110,6 @@
   border-radius: var(--radius-sm);
   color: var(--warn-fg);
   font-size: 0.875rem;
-}
-
-.caveat :global(span[lang='es']) {
-  color: inherit;
-  opacity: 0.85;
 }
 
 .caveatLead {

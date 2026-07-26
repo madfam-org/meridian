@@ -23,16 +23,15 @@
 
 import type { ReactNode } from 'react';
 
-import type { Bi } from '@/lib/i18n';
 import { cx } from '@/lib/ui';
-import { TInline } from '@/components/Bilingual';
 
 import styles from './Actions.module.css';
 
 export type ToolButtonVariant = 'primary' | 'secondary' | 'clear';
 
 export interface ToolButtonProps {
-  readonly label: Bi;
+  /** Already resolved to the served locale by the caller. */
+  readonly label: string;
   readonly variant?: ToolButtonVariant;
   readonly type?: 'button' | 'submit';
   readonly onClick?: () => void;
@@ -63,7 +62,7 @@ export function ToolButton({
       disabled={disabled}
       aria-controls={controls}
     >
-      <TInline text={label} />
+      {label}
     </button>
   );
 }
@@ -84,14 +83,15 @@ export function ToolActionGroup({
   children,
 }: {
   readonly id: string;
-  readonly label: Bi;
+  /** Already resolved to the served locale by the caller. */
+  readonly label: string;
   readonly children: ReactNode;
 }) {
   const labelId = `${id}-label`;
   return (
     <div className={styles.group} role="group" aria-labelledby={labelId}>
       <span className={styles.groupLabel} id={labelId}>
-        <TInline text={label} />
+        {label}
       </span>
       <div className={styles.groupButtons}>{children}</div>
     </div>

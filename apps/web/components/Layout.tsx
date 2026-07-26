@@ -1,14 +1,17 @@
 import type { ReactNode } from 'react';
 
-import type { Bi } from '@/lib/i18n';
 import { cx } from '@/lib/ui';
-import { T, TProse } from '@/components/Bilingual';
 
 import styles from './Layout.module.css';
 
 /**
  * Structural primitives. No status meaning, no legal meaning — these decide
  * where a thing sits on the page and nothing else.
+ *
+ * Every piece of text here arrives already resolved to the served locale. These
+ * components hold no copy of their own, so giving them a `Locale` would make
+ * them ask a question they have no reason to ask; the page that owns the words
+ * runs `t` on them and passes strings.
  */
 
 export function Page({ children }: { readonly children: ReactNode }) {
@@ -22,20 +25,18 @@ export function PageHeader({
   aside,
 }: {
   readonly eyebrow?: ReactNode;
-  readonly title: Bi;
-  readonly lead?: Bi;
+  readonly title: string;
+  readonly lead?: string;
   readonly aside?: ReactNode;
 }) {
   return (
     <header className={styles.pageHeader}>
       {eyebrow !== undefined ? <div className={styles.eyebrow}>{eyebrow}</div> : null}
       <div className={styles.pageHeaderRow}>
-        <h1>
-          <T text={title} />
-        </h1>
+        <h1>{title}</h1>
         {aside !== undefined ? <div className={styles.pageHeaderAside}>{aside}</div> : null}
       </div>
-      {lead !== undefined ? <TProse text={lead} className={styles.lead} /> : null}
+      {lead !== undefined ? <p className={styles.lead}>{lead}</p> : null}
     </header>
   );
 }
@@ -53,8 +54,8 @@ export function Section({
   children,
 }: {
   readonly id: string;
-  readonly title: Bi;
-  readonly description?: Bi;
+  readonly title: string;
+  readonly description?: string;
   readonly actions?: ReactNode;
   readonly children: ReactNode;
 }) {
@@ -62,13 +63,11 @@ export function Section({
   return (
     <section className={styles.section} aria-labelledby={headingId} id={id}>
       <div className={styles.sectionHead}>
-        <h2 id={headingId}>
-          <T text={title} />
-        </h2>
+        <h2 id={headingId}>{title}</h2>
         {actions !== undefined ? <div className={styles.sectionActions}>{actions}</div> : null}
       </div>
       {description !== undefined ? (
-        <TProse text={description} className={styles.sectionDescription} />
+        <p className={styles.sectionDescription}>{description}</p>
       ) : null}
       {children}
     </section>
@@ -129,14 +128,12 @@ export function Fact({
   label,
   children,
 }: {
-  readonly label: Bi;
+  readonly label: string;
   readonly children: ReactNode;
 }) {
   return (
     <div className={styles.fact}>
-      <dt className={styles.factLabel}>
-        <T text={label} />
-      </dt>
+      <dt className={styles.factLabel}>{label}</dt>
       <dd className={styles.factValue}>{children}</dd>
     </div>
   );
@@ -158,17 +155,13 @@ export function Figure({
   tone,
 }: {
   readonly value: number | string;
-  readonly unit?: Bi;
+  readonly unit?: string;
   readonly tone?: 'plain' | 'strong';
 }) {
   return (
     <span className={cx(styles.figure, tone === 'strong' && styles.figureStrong)}>
       <span className={styles.figureValue}>{value}</span>
-      {unit !== undefined ? (
-        <span className={styles.figureUnit}>
-          <T text={unit} />
-        </span>
-      ) : null}
+      {unit !== undefined ? <span className={styles.figureUnit}>{unit}</span> : null}
     </span>
   );
 }
@@ -179,10 +172,6 @@ export function ScrollX({ children }: { readonly children: ReactNode }) {
 }
 
 /** An honest empty state. Never styled as an error; absence of data is normal. */
-export function Empty({ text }: { readonly text: Bi }) {
-  return (
-    <p className={styles.empty}>
-      <T text={text} />
-    </p>
-  );
+export function Empty({ text }: { readonly text: string }) {
+  return <p className={styles.empty}>{text}</p>;
 }

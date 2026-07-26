@@ -25,21 +25,20 @@
 
 import { useEffect, useRef, type ReactNode } from 'react';
 
-import type { Bi } from '@/lib/i18n';
 import { Badge, type Tone } from '@/components/Badge';
-import { T } from '@/components/Bilingual';
 
 import styles from './ResultPanel.module.css';
 
 export interface ResultPanelProps {
   /** DOM id of the region. Also the base for its heading id. */
   readonly id: string;
-  readonly title: Bi;
+  /** Already resolved to the served locale by the caller, as is every string here. */
+  readonly title: string;
   /** The one-line verdict, rendered as a badge beside the title. */
-  readonly verdict: Bi;
+  readonly verdict: string;
   readonly tone: Tone;
   /** A sentence stating what the verdict does and does not mean. */
-  readonly lead?: Bi;
+  readonly lead?: string;
   /**
    * Increment once per produced result. A change moves focus here; any other
    * re-render does not.
@@ -70,25 +69,15 @@ export function ResultPanel({
   const headingId = `${id}-heading`;
 
   return (
-    <section
-      className={styles.panel}
-      id={id}
-      ref={ref}
-      tabIndex={-1}
-      aria-labelledby={headingId}
-    >
+    <section className={styles.panel} id={id} ref={ref} tabIndex={-1} aria-labelledby={headingId}>
       <div className={styles.head}>
         <h2 className={styles.title} id={headingId}>
-          <T text={title} />
+          {title}
         </h2>
         <Badge tone={tone} label={verdict} />
       </div>
 
-      {lead !== undefined ? (
-        <p className={styles.lead}>
-          <T text={lead} />
-        </p>
-      ) : null}
+      {lead !== undefined ? <p className={styles.lead}>{lead}</p> : null}
 
       <div className={styles.body}>{children}</div>
     </section>
@@ -106,21 +95,17 @@ export function ResultBlock({
   children,
 }: {
   readonly id: string;
-  readonly title: Bi;
-  readonly description?: Bi;
+  readonly title: string;
+  readonly description?: string;
   readonly children: ReactNode;
 }) {
   const headingId = `${id}-heading`;
   return (
     <section className={styles.block} id={id} aria-labelledby={headingId}>
       <h3 className={styles.blockTitle} id={headingId}>
-        <T text={title} />
+        {title}
       </h3>
-      {description !== undefined ? (
-        <p className={styles.blockDescription}>
-          <T text={description} />
-        </p>
-      ) : null}
+      {description !== undefined ? <p className={styles.blockDescription}>{description}</p> : null}
       {children}
     </section>
   );

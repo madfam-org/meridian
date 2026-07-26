@@ -1,8 +1,8 @@
 import Link from 'next/link';
 
-import { bi } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+import { localizedPath, translator } from '@/lib/i18n';
 import { type AudienceDefinition } from '@/lib/audiences';
-import { T, TInline } from '@/components/Bilingual';
 
 import styles from './AudienceCards.module.css';
 
@@ -20,11 +20,14 @@ import styles from './AudienceCards.module.css';
 export function AudienceCards({
   audiences,
   currentId,
+  locale,
 }: {
   readonly audiences: readonly AudienceDefinition[];
   /** Omit the reader's current page from its own list of doors. */
   readonly currentId?: string;
+  readonly locale: Locale;
 }) {
+  const t = translator(locale);
   const shown = audiences.filter((audience) => audience.id !== currentId);
   if (shown.length === 0) return null;
 
@@ -33,16 +36,12 @@ export function AudienceCards({
       {shown.map((audience) => (
         <li className={styles.card} key={audience.id}>
           <h3 className={styles.name}>
-            <Link href={audience.href}>
-              <T text={audience.door} />
-            </Link>
+            <Link href={localizedPath(audience.href, locale)}>{t(audience.door)}</Link>
           </h3>
-          <p className={styles.who}>
-            <T text={audience.who} />
-          </p>
+          <p className={styles.who}>{t(audience.who)}</p>
           <p className={styles.link}>
-            <Link href={audience.href}>
-              <TInline text={audience.name} />
+            <Link href={localizedPath(audience.href, locale)}>
+              {t(audience.name)}
               <span aria-hidden="true"> →</span>
             </Link>
           </p>
@@ -53,16 +52,15 @@ export function AudienceCards({
 }
 
 /** A single line back to the pricing page, for the foot of an audience page. */
-export function PricingLink() {
+export function PricingLink({ locale }: { readonly locale: Locale }) {
+  const t = translator(locale);
   return (
     <p className={styles.pricingLink}>
-      <Link href="/pricing">
-        <TInline
-          text={bi(
-            'Every tier, what it includes, and what is not available yet',
-            'Todos los niveles, qué incluyen y qué aún no está disponible',
-          )}
-        />
+      <Link href={localizedPath('/pricing', locale)}>
+        {t(
+          'Every tier, what it includes, and what is not available yet',
+          'Todos los niveles, qué incluyen y qué aún no está disponible',
+        )}
         <span aria-hidden="true"> →</span>
       </Link>
     </p>

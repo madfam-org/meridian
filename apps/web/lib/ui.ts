@@ -6,6 +6,8 @@
  * only decides how an already-computed value is spelled on screen.
  */
 
+import type { Locale } from '@/lib/i18n';
+
 /**
  * Join class names, dropping anything falsy.
  *
@@ -23,9 +25,27 @@ export function plural(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
 
-/** `5 days` — the common case. */
-export function days(n: number): string {
-  return plural(n, 'day', 'days');
+/**
+ * `5 days` / `5 días` — the commonest unit on the site, and the reason this
+ * helper takes a locale rather than being a constant.
+ *
+ * Both languages agree on when to use the singular, so one branch covers both.
+ * The number is never spelled out: a day count is a figure a reader checks
+ * against their own documents, and "ninety" is harder to compare than "90".
+ */
+export function days(n: number, locale: Locale): string {
+  return locale === 'en' ? plural(n, 'day', 'days') : plural(n, 'día', 'días');
+}
+
+/**
+ * How long ago something was, in days: `5 days ago` / `hace 5 días`.
+ *
+ * Separate from {@link days} because the two languages put the marker on
+ * opposite sides of the figure, and building the phrase by concatenating a
+ * translated word onto a translated count is how "hace 5 days" happens.
+ */
+export function agedDays(n: number, locale: Locale): string {
+  return locale === 'en' ? `${days(n, 'en')} ago` : `hace ${days(n, 'es')}`;
 }
 
 /**

@@ -1,5 +1,5 @@
 /**
- * Domain state to visual tone.
+ * Domain state to visual tone, and domain state to words.
  *
  * One file, so that "what colour is `awaiting_authority`" has exactly one answer
  * across six screens. Each mapping is a total function over a closed union, with
@@ -12,6 +12,12 @@
  * a problem trains people to ignore the colour. Waiting on the firm's own review
  * is `warn`, because that one is theirs to move. A refusal by policy is its own
  * tone rather than a red one, because it is a settled decision and not a fault.
+ *
+ * Every badge now takes a `locale`, and the words come from `lib/labels.ts`
+ * rather than from a `humanise()` over the enum token. That helper turned
+ * `awaiting_authority` into "Awaiting authority", which was passable English and
+ * no Spanish at all: a Spanish page rendering "Awaiting authority" would be the
+ * same defect the bilingual pages had, only one-sided.
  */
 
 import type {
@@ -24,8 +30,18 @@ import type { CapabilityState } from '@meridian/govtech';
 import type { PathwayStatus, ReviewStatus } from '@meridian/pathways';
 import type { DeadlineSeverity } from '@/lib/caseload';
 import type { LicenceStanding, VerificationStanding } from '@/lib/roster';
+import type { Locale } from '@/lib/i18n';
+import { UI, fill, pick } from '@/lib/i18n';
+import {
+  CAPABILITY_STATE_LABEL,
+  MATTER_STATUS_LABEL,
+  PATHWAY_STATUS_LABEL,
+  REVIEW_STATUS_LABEL,
+  STALENESS_LABEL,
+  TASK_STATUS_LABEL,
+  credentialLabel,
+} from '@/lib/labels';
 import { Badge, type Tone } from '@/components/ui';
-import { humanise } from '@/lib/format';
 
 export function matterStatusTone(status: MatterStatus): Tone {
   switch (status) {
@@ -50,8 +66,14 @@ export function matterStatusTone(status: MatterStatus): Tone {
   }
 }
 
-export function MatterStatusBadge({ status }: { status: MatterStatus }) {
-  return <Badge tone={matterStatusTone(status)}>{humanise(status)}</Badge>;
+export function MatterStatusBadge({
+  status,
+  locale,
+}: {
+  status: MatterStatus;
+  locale: Locale;
+}) {
+  return <Badge tone={matterStatusTone(status)}>{pick(MATTER_STATUS_LABEL[status], locale)}</Badge>;
 }
 
 export function taskStatusTone(status: TaskStatus): Tone {
@@ -71,8 +93,8 @@ export function taskStatusTone(status: TaskStatus): Tone {
   }
 }
 
-export function TaskStatusBadge({ status }: { status: TaskStatus }) {
-  return <Badge tone={taskStatusTone(status)}>{humanise(status)}</Badge>;
+export function TaskStatusBadge({ status, locale }: { status: TaskStatus; locale: Locale }) {
+  return <Badge tone={taskStatusTone(status)}>{pick(TASK_STATUS_LABEL[status], locale)}</Badge>;
 }
 
 export function severityTone(severity: DeadlineSeverity): Tone {
@@ -109,26 +131,28 @@ export function stalenessTone(band: Staleness): Tone {
  * "Fresh · -479d" would read as a defect and invite somebody to clamp it, which
  * is how a page ends up claiming a rule was verified on a date it was not.
  */
-export function StalenessBadge({ band, ageDays }: { band: Staleness; ageDays: number }) {
+export function StalenessBadge({
+  band,
+  ageDays,
+  locale,
+}: {
+  band: Staleness;
+  ageDays: number;
+  locale: Locale;
+}) {
   if (ageDays < 0) {
     return (
-      <Badge tone="info" title="The reference date precedes the verification date.">
-        Verified {Math.abs(ageDays)}d later
+      <Badge tone="info" title={pick(UI.stalenessVerifiedLaterTitle, locale)}>
+        {fill(UI.stalenessVerifiedLater, locale, { days: Math.abs(ageDays) })}
       </Badge>
     );
   }
-  const label =
-    band === 'fresh'
-      ? `Fresh · ${ageDays}d`
-      : band === 'aging'
-        ? `Aging · ${ageDays}d`
-        : `Stale · ${ageDays}d`;
   return (
-    <Badge
-      tone={stalenessTone(band)}
-      title="Verified within 90 days is fresh, 91–180 aging, over 180 stale."
-    >
-      {label}
+    <Badge tone={stalenessTone(band)} title={pick(UI.stalenessBandTitle, locale)}>
+      {fill(UI.stalenessWithAge, locale, {
+        band: pick(STALENESS_LABEL[band], locale),
+        days: ageDays,
+      })}
     </Badge>
   );
 }
@@ -144,8 +168,8 @@ export function reviewStatusTone(status: ReviewStatus): Tone {
   }
 }
 
-export function ReviewStatusBadge({ status }: { status: ReviewStatus }) {
-  return <Badge tone={reviewStatusTone(status)}>{humanise(status)}</Badge>;
+export function ReviewStatusBadge({ status, locale }: { status: ReviewStatus; locale: Locale }) {
+  return <Badge tone={reviewStatusTone(status)}>{pick(REVIEW_STATUS_LABEL[status], locale)}</Badge>;
 }
 
 export function pathwayStatusTone(status: PathwayStatus): Tone {
@@ -159,8 +183,10 @@ export function pathwayStatusTone(status: PathwayStatus): Tone {
   }
 }
 
-export function PathwayStatusBadge({ status }: { status: PathwayStatus }) {
-  return <Badge tone={pathwayStatusTone(status)}>{humanise(status)}</Badge>;
+export function PathwayStatusBadge({ status, locale }: { status: PathwayStatus; locale: Locale }) {
+  return (
+    <Badge tone={pathwayStatusTone(status)}>{pick(PATHWAY_STATUS_LABEL[status], locale)}</Badge>
+  );
 }
 
 export function capabilityStateTone(state: CapabilityState): Tone {
@@ -178,8 +204,16 @@ export function capabilityStateTone(state: CapabilityState): Tone {
   }
 }
 
-export function CapabilityStateBadge({ state }: { state: CapabilityState }) {
-  return <Badge tone={capabilityStateTone(state)}>{humanise(state)}</Badge>;
+export function CapabilityStateBadge({
+  state,
+  locale,
+}: {
+  state: CapabilityState;
+  locale: Locale;
+}) {
+  return (
+    <Badge tone={capabilityStateTone(state)}>{pick(CAPABILITY_STATE_LABEL[state], locale)}</Badge>
+  );
 }
 
 export function licenceStandingTone(standing: LicenceStanding): Tone {
@@ -211,29 +245,20 @@ export function verificationTone(standing: VerificationStanding): Tone {
 }
 
 /**
- * Credential display names.
+ * A representative's standing, rendered in the language its own regulator uses.
  *
- * `humanise` would render `rcic` as "Rcic", which is not what the College calls
- * its licensees and reads to a practitioner as a typo. The regulated standings
- * are a closed set with real names, so they get real names — and the mapping is
- * total, so adding a credential type to `@meridian/core` breaks the build here
- * rather than shipping a mangled label on the roster.
+ * The `lang` this carries is not the page locale and is not decoration — see the
+ * note on `credentialLabel` in `lib/labels.ts`. Rendering it through a component
+ * rather than as a bare string is what puts the attribute on an element instead
+ * of leaving each call site to remember it.
  */
-export function credentialLabel(credential: RepresentativeCredential): string {
-  switch (credential) {
-    case 'rcic':
-      return 'RCIC';
-    case 'canadian_lawyer':
-      return 'Canadian lawyer';
-    case 'canadian_paralegal':
-      return 'Canadian paralegal';
-    case 'quebec_notary':
-      return 'Quebec notary';
-    case 'spanish_abogado':
-      return 'Abogado colegiado';
-    case 'spanish_gestor':
-      return 'Gestor administrativo';
-    case 'other_regulated':
-      return 'Other regulated standing';
-  }
+export function CredentialName({
+  credential,
+  locale,
+}: {
+  credential: RepresentativeCredential;
+  locale: Locale;
+}) {
+  const label = credentialLabel(credential, locale);
+  return <span lang={label.lang}>{label.text}</span>;
 }

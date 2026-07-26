@@ -34,7 +34,7 @@
 
 import { MERIDIAN_PATHWAY_CATALOG } from '@meridian/pathways';
 
-import { bi, type Bi } from '@/lib/i18n';
+import { bi, type LocalizedText } from '@/lib/i18n';
 
 const CATALOG_IDS: ReadonlySet<string> = new Set(MERIDIAN_PATHWAY_CATALOG.map((p) => p.id));
 
@@ -42,7 +42,7 @@ export interface UncoveredRoute {
   readonly key: string;
   /** ISO 3166-1 alpha-2, matching `Pathway['jurisdiction']`. */
   readonly jurisdiction: string;
-  readonly name: Bi;
+  readonly name: LocalizedText;
   /** Ids that, once all present in the catalog, retire this entry. */
   readonly closedBy: readonly string[];
 }
@@ -169,27 +169,27 @@ export const JURISDICTIONS_WITHOUT_REGISTER: readonly string[] = [
   .sort()
   .filter((code) => !REGISTER.some((entry) => entry.jurisdiction === code));
 
-export const COVERAGE_TITLE: Bi = bi(
+export const COVERAGE_TITLE: LocalizedText = bi(
   'What Meridian does not cover, named',
   'Qué no cubre Meridian, con nombre y apellidos',
 );
 
-export const COVERAGE_LEAD: Bi = bi(
+export const COVERAGE_LEAD: LocalizedText = bi(
   'The catalog is a deliberate sample of two corridors, not a map of either country’s immigration system. That distinction is invisible from a result screen: a route Meridian has never encoded produces the same silence as a route somebody does not qualify for. So the significant omissions are listed rather than implied, and an eligibility result anywhere in this product that comes back unmet or undecidable is a statement about these records — not a finding that the person has no route.',
   'El catálogo es una muestra deliberada de dos corredores, no un mapa del sistema migratorio de ninguno de los dos países. Esa diferencia es invisible desde una pantalla de resultados: una vía que Meridian nunca ha codificado produce el mismo silencio que una vía cuyos requisitos no se cumplen. Por eso las omisiones importantes se enumeran en lugar de insinuarse, y un resultado de elegibilidad no cumplido o no decidible en cualquier parte de este producto es una afirmación sobre estos registros, no la constatación de que esa persona carezca de vía.',
 );
 
-export const COVERAGE_OUT_OF_SCOPE: Bi = bi(
+export const COVERAGE_OUT_OF_SCOPE: LocalizedText = bi(
   'Asylum, refugee status, subsidiary protection and humanitarian applications are out of scope permanently, not merely unbuilt. They turn on an assessment of an individual account and of risk rather than on criteria a program can check, and a self-serve eligibility tool is the wrong instrument for a person who is at risk. Meridian will not encode them.',
   'El asilo, el estatuto de refugiado, la protección subsidiaria y las solicitudes por razones humanitarias quedan fuera de alcance de forma permanente, no simplemente sin construir. Dependen de la valoración del relato individual y del riesgo, no de criterios que un programa pueda comprobar, y una herramienta de autoconsulta es el instrumento equivocado para quien está en peligro. Meridian no las codificará.',
 );
 
-export const COVERAGE_WHERE_TO_ASK: Bi = bi(
+export const COVERAGE_WHERE_TO_ASK: LocalizedText = bi(
   'Anyone whose route is on this list, or who is not sure whether it is, needs a person who is accountable for the answer rather than this product: in Spain a lawyer admitted to a Colegio de Abogados, and in Canada the representatives s. 91(2) of the Immigration and Refugee Protection Act permits — a lawyer or other member in good standing of a provincial law society, including a paralegal, a notary of the Chambre des notaires du Québec, or a licensee of the College of Immigration and Citizenship Consultants. Meridian names no firm and takes nothing from anybody for a referral.',
   'Quien tenga su vía en esta lista, o no sepa con certeza si la tiene, necesita una persona que responda de la respuesta y no este producto: en España, un abogado colegiado; en Canadá, los representantes que permite el art. 91(2) de la Immigration and Refugee Protection Act, esto es, un abogado u otro colegiado de un law society provincial, incluidos los paralegals, un notario de la Chambre des notaires du Québec o un colegiado del College of Immigration and Citizenship Consultants. Meridian no nombra ningún despacho ni cobra nada de nadie por una derivación.',
 );
 
-export const COVERAGE_NOT_EXHAUSTIVE: Bi = bi(
+export const COVERAGE_NOT_EXHAUSTIVE: LocalizedText = bi(
   'This list names the routes we know we have left out. It is not a complete inventory of what is missing, and a route’s absence from it is not a sign that Meridian covers that route.',
   'Esta lista enumera las vías que sabemos que hemos dejado fuera. No es un inventario completo de lo que falta, y que una vía no aparezca en ella no significa que Meridian la cubra.',
 );

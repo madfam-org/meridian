@@ -23,9 +23,10 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { CHORD_TIMEOUT_MS, QUICK_FILTER_ATTRIBUTE } from '@/components/constants';
 import { CONSOLE_ROUTES } from '@/components/routes';
+import { localizedPath, publicPath, splitLocalePath } from '@/lib/i18n';
 
 function isEditable(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -36,6 +37,10 @@ function isEditable(target: EventTarget | null): boolean {
 
 export function KeyboardNav({ asOfQuery }: { asOfQuery: string }) {
   const router = useRouter();
+  // A chord must not change the reader's language. Deriving the locale from the
+  // current path rather than taking it as a prop keeps it correct after a client
+  // navigation, which is the only kind this component ever performs.
+  const { locale } = splitLocalePath(publicPath(usePathname()));
   const armedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -57,7 +62,7 @@ export function KeyboardNav({ asOfQuery }: { asOfQuery: string }) {
         disarm();
         if (route !== undefined) {
           event.preventDefault();
-          router.push(`${route.href}${asOfQuery}`);
+          router.push(`${localizedPath(route.href, locale)}${asOfQuery}`);
         }
         return;
       }
@@ -83,7 +88,7 @@ export function KeyboardNav({ asOfQuery }: { asOfQuery: string }) {
       document.removeEventListener('keydown', onKeyDown);
       disarm();
     };
-  }, [router, asOfQuery]);
+  }, [router, asOfQuery, locale]);
 
   return null;
 }

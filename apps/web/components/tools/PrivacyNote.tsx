@@ -17,6 +17,8 @@
  * client component uses it.
  */
 
+import type { Locale } from '@/lib/i18n';
+import { translator } from '@/lib/i18n';
 import { cx } from '@/lib/ui';
 import {
   PRIVACY_LEAD,
@@ -24,7 +26,6 @@ import {
   PRIVACY_SOURCE_INVITATION,
   PRIVACY_TITLE,
 } from '@/lib/tools/privacy';
-import { T } from '@/components/Bilingual';
 
 import styles from './PrivacyNote.module.css';
 
@@ -38,13 +39,16 @@ export interface PrivacyNoteProps {
   readonly sourceHref?: string;
   /** Repository-relative path, shown as the link text. */
   readonly sourceLabel?: string;
+  readonly locale: Locale;
 }
 
 export function PrivacyNote({
   variant = 'full',
   sourceHref,
   sourceLabel,
+  locale,
 }: PrivacyNoteProps) {
+  const t = translator(locale);
   return (
     <aside
       className={cx(styles.note, variant === 'compact' && styles.compact)}
@@ -55,26 +59,22 @@ export function PrivacyNote({
         <span aria-hidden="true" className={styles.mark}>
           ◈
         </span>
-        <T text={PRIVACY_TITLE} />
+        {t(PRIVACY_TITLE)}
       </h2>
 
-      <p className={styles.lead}>
-        <T text={PRIVACY_LEAD} />
-      </p>
+      <p className={styles.lead}>{t(PRIVACY_LEAD)}</p>
 
       {variant === 'full' ? (
         <ul className={styles.points}>
           {PRIVACY_POINTS.map((point) => (
-            <li key={point.en}>
-              <T text={point} />
-            </li>
+            <li key={point.en}>{t(point)}</li>
           ))}
         </ul>
       ) : null}
 
       {variant === 'full' && sourceHref !== undefined ? (
         <div className={styles.source}>
-          <T text={PRIVACY_SOURCE_INVITATION} />
+          {t(PRIVACY_SOURCE_INVITATION)}
           <p className={styles.sourceLink}>
             <a href={sourceHref} rel="noreferrer noopener" target="_blank">
               <code>{sourceLabel ?? sourceHref}</code>

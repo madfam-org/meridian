@@ -329,9 +329,10 @@ svg {
 
 /*
  * The skip link hides itself by translating a full multiple of its own height,
- * not by a fixed negative offset. The label is bilingual and wraps to two lines
- * on a narrow screen, and a hard `top: -3rem` left the second line poking into
- * the viewport above the header. A percentage transform cannot drift that way
+ * not by a fixed negative offset. The label wraps to two lines on a narrow
+ * screen — "Saltar al contenido principal" is longer than its English
+ * counterpart — and a hard `top: -3rem` left the second line poking into the
+ * viewport above the header. A percentage transform cannot drift that way
  * however long the text becomes.
  */
 .skipLink {
@@ -353,15 +354,6 @@ svg {
 .skipLink:focus {
   transform: translateY(0);
   color: var(--accent-fg);
-}
-
-/*
- * Bilingual runs default to a muted grey for the Spanish half. On the accent
- * fill that grey drops below an accessible ratio, so inside the skip link both
- * languages inherit the link's own foreground.
- */
-.skipLink span {
-  color: inherit;
 }
 
 @media (prefers-reduced-motion: reduce) {

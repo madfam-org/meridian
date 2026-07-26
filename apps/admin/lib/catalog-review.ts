@@ -46,6 +46,8 @@ import {
   type Pathway,
   type PathwayStatus,
 } from '@meridian/pathways';
+import type { Locale } from '@/lib/i18n';
+import { COUNTS, UI, countOf, fill, pick } from '@/lib/i18n';
 import type { MatterRecord } from '@/lib/records';
 
 export interface CitationStanding {
@@ -216,8 +218,14 @@ export function queueTotals(reviews: readonly PathwayReview[]): QueueTotals {
 
 export interface SignOffCheck {
   readonly id: string;
+  /** In the reader's language. */
   readonly label: string;
   readonly met: boolean | null;
+  /**
+   * In the reader's language, except when it quotes the catalog linter. The
+   * linter's message is reproduced exactly as CI will print it, because a
+   * reviewer is going to have to match it against a build log.
+   */
   readonly detail: string;
 }
 
@@ -253,6 +261,7 @@ export function previewSignOff(
   pathway: Pathway,
   reviewedBy: string | null,
   asOf: IsoDate,
+  locale: Locale,
 ): SignOffPreview {
   const trimmed = reviewedBy?.trim() ?? '';
   const reviewer = trimmed.length > 0 ? trimmed : null;
@@ -261,33 +270,39 @@ export function previewSignOff(
 
   checks.push({
     id: 'not_already_reviewed',
-    label: 'Record is not already signed off',
+    label: pick(UI.checkNotAlreadyReviewed, locale),
     met: !isCounselReviewed(pathway),
     detail: isCounselReviewed(pathway)
-      ? `Already counsel_reviewed by ${pathway.reviewedBy ?? 'an unnamed reviewer'} on ${pathway.reviewedOn ?? 'an unrecorded date'}.`
-      : `Current review status is ${pathway.reviewStatus}.`,
+      ? fill(UI.checkAlreadyReviewedDetail, locale, {
+          reviewer: pathway.reviewedBy ?? pick(UI.checkUnnamedReviewer, locale),
+          date: pathway.reviewedOn ?? pick(UI.catalogRecordUnrecordedDate, locale),
+        })
+      : // The status token is the catalog's own value, quoted rather than
+        // translated: the reviewer is going to type it into a TypeScript file.
+        fill(UI.checkCurrentStatusDetail, locale, { status: pathway.reviewStatus }),
   });
 
   checks.push({
     id: 'reviewer_named',
-    label: 'A named reviewer is attached',
+    label: pick(UI.checkReviewerNamed, locale),
     met: reviewer !== null,
     detail:
       reviewer !== null
-        ? `Sign-off would be attributed to ${reviewer}.`
-        : 'The schema rejects counsel_reviewed without both reviewedBy and reviewedOn — an '
-          + 'unattributed review is not a review.',
+        ? fill(UI.checkReviewerNamedDetail, locale, { reviewer })
+        : pick(UI.checkNoReviewerDetail, locale),
   });
 
   const staleCitations = pathway.citations.filter((c) => staleness(c, asOf) === 'stale');
   checks.push({
     id: 'no_stale_citations',
-    label: 'No citation is stale',
+    label: pick(UI.checkNoStaleCitations, locale),
     met: staleCitations.length === 0,
     detail:
       staleCitations.length === 0
-        ? `All ${pathway.citations.length} citations were verified within the last 180 days as at ${asOf}.`
-        : `${staleCitations.map((c) => c.id).join(', ')} must be re-read against the source first.`,
+        ? fill(UI.checkNoStaleDetail, locale, { count: pathway.citations.length, date: asOf })
+        : fill(UI.checkStaleDetail, locale, {
+            ids: staleCitations.map((c) => c.id).join(', '),
+          }),
   });
 
   const currentErrors = validateCatalog(catalog, asOf).issues.filter(
@@ -295,21 +310,23 @@ export function previewSignOff(
   );
   checks.push({
     id: 'no_integrity_errors',
-    label: 'Record passes the catalog linter today',
+    label: pick(UI.checkPassesLinter, locale),
     met: currentErrors.length === 0,
     detail:
       currentErrors.length === 0
-        ? 'No error-severity integrity issues against this record.'
-        : `${currentErrors.length} error-severity ${currentErrors.length === 1 ? 'issue' : 'issues'} must be cleared first.`,
+        ? pick(UI.checkNoErrorsDetail, locale)
+        : fill(UI.checkErrorsDetail, locale, {
+            issues: countOf(locale, currentErrors.length, COUNTS.issue),
+          }),
   });
 
   let candidateErrors: IntegrityIssue[] = [];
   if (reviewer === null) {
     checks.push({
       id: 'candidate_validates',
-      label: 'Signed-off record would validate',
+      label: pick(UI.checkCandidateValidates, locale),
       met: null,
-      detail: 'Cannot be evaluated until a reviewer is named.',
+      detail: pick(UI.checkCandidateNoReviewer, locale),
     });
   } else {
     const candidate: Pathway = {
@@ -324,12 +341,15 @@ export function previewSignOff(
     );
     checks.push({
       id: 'candidate_validates',
-      label: 'Signed-off record would validate',
+      label: pick(UI.checkCandidateValidates, locale),
       met: candidateErrors.length === 0,
       detail:
         candidateErrors.length === 0
-          ? 'The catalog validates with this record marked counsel_reviewed.'
-          : candidateErrors.map((i) => `${i.code}: ${i.message}`).join(' · '),
+          ? pick(UI.checkCandidateOkDetail, locale)
+          : // The linter's own message, verbatim and in its own language. It is
+            // the text CI will print, and a translation of it would not match
+            // what the reviewer sees in the pull request.
+            candidateErrors.map((i) => `${i.code}: ${i.message}`).join(' · '),
     });
   }
 

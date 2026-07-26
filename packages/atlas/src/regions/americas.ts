@@ -198,7 +198,7 @@ export const AMERICAS_JURISDICTIONS: readonly Jurisdiction[] = [
     name: { en: "United States of America", es: "Estados Unidos de América" },
     region: "americas",
     autonomy: "autonomous",
-    researchStatus: "researched",
+    researchStatus: "encoded",
     blocs: ["cusma"],
     inbound: [
       "family_reunification",

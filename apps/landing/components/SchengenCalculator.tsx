@@ -39,7 +39,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 
-import { bi, type Bi } from '@/lib/i18n';
+import { bi, translator, type Locale, type LocalizedText } from '@/lib/i18n';
 import { plural } from '@/lib/ui';
 import { PORTAL_URL, REPO_URL } from '@/lib/links';
 import {
@@ -56,7 +56,7 @@ import {
   EMPTY_ANSWERS,
   FIELD,
   NEXT_STAY_KEY,
-  STATE_OPTIONS,
+  stateOptions,
   answersFromExample,
   atStayLimit,
   blankStayRow,
@@ -66,10 +66,10 @@ import {
   type SchengenAnswers,
   type StayRow,
 } from '@/lib/schengen-form';
-import { issueFor, type FieldIssue } from '@/lib/validation';
+import { messageFor, type FieldIssue } from '@/lib/validation';
 
 import { Badge, Chip } from '@/components/Badge';
-import { T, TInline, TProse } from '@/components/Bilingual';
+import { Instrument, Prose } from '@/components/Text';
 import { Actions, Button, DateField, FieldRow, SelectField } from '@/components/Field';
 import { ErrorSummary } from '@/components/ErrorSummary';
 
@@ -83,12 +83,13 @@ const RESULT_HEADING_ID = 'sch-result-heading';
  * line above the fields. Its consequence — that a same-day trip is one day
  * rather than none — is spelled out below the rows, where there is room.
  */
-const ENDPOINTS_NOTE: Bi = bi(
+const ENDPOINTS_NOTE: LocalizedText = bi(
   'Both the day you arrived and the day you left count as days of presence.',
   'Tanto el día de llegada como el de salida cuentan como días de presencia.',
 );
 
-export function SchengenCalculator() {
+export function SchengenCalculator({ locale }: { readonly locale: Locale }) {
+  const t = translator(locale);
   const [answers, setAnswers] = useState<SchengenAnswers>(EMPTY_ANSWERS);
   const [nextKey, setNextKey] = useState(NEXT_STAY_KEY);
   const [issues, setIssues] = useState<readonly FieldIssue[]>([]);
@@ -189,9 +190,9 @@ export function SchengenCalculator() {
         server log, and a reader who is not told will reasonably assume the
         opposite — so the headline sits beside the input rather than in a
         footer. The four supporting properties are real and worth reading, and
-        they are also four lines of bilingual text between a visitor and the
-        first field, which is the wrong trade on the one screen that has to
-        prove the product works. `<details>` is the honest compromise: nothing
+        they are also four paragraphs between a visitor and the first field,
+        which is the wrong trade on the one screen that has to prove the
+        product works. `<details>` is the honest compromise: nothing
         is hidden, nothing is a tooltip, and the disclosure triangle is
         keyboard-operable and announced by every screen reader without a line
         of script.
@@ -201,52 +202,40 @@ export function SchengenCalculator() {
           <span aria-hidden="true" className={styles.privacyGlyph}>
             ◆
           </span>
-          <TInline
-            text={bi(
-              'Runs in your browser. Nothing you type is transmitted or stored.',
-              'Se ejecuta en su navegador. Nada de lo que escriba se transmite ni se almacena.',
-            )}
-          />
+          {t(
+            'Runs in your browser. Nothing you type is transmitted or stored.',
+            'Se ejecuta en su navegador. Nada de lo que escriba se transmite ni se almacena.',
+          )}
         </h3>
         <details className={styles.privacyDetails}>
           <summary className={styles.privacySummary}>
-            <TInline
-              text={bi('How to check that yourself', 'Cómo comprobarlo usted mismo')}
-            />
+            {t('How to check that yourself', 'Cómo comprobarlo usted mismo')}
           </summary>
           <ul className={styles.privacyPoints}>
             <li>
-              <T
-                text={bi(
-                  'The counter is ordinary JavaScript loaded with this page. It makes no network request with your dates.',
-                  'El cómputo es JavaScript corriente cargado con esta página. No realiza ninguna petición de red con sus fechas.',
-                )}
-              />
+              {t(
+                'The counter is ordinary JavaScript loaded with this page. It makes no network request with your dates.',
+                'El cómputo es JavaScript corriente cargado con esta página. No realiza ninguna petición de red con sus fechas.',
+              )}
             </li>
             <li>
-              <T
-                text={bi(
-                  'Nothing is saved — not in local storage, not in a cookie, not in the address bar. Reload and it is gone.',
-                  'No se guarda nada: ni en el almacenamiento local, ni en una cookie, ni en la barra de direcciones. Al recargar desaparece.',
-                )}
-              />
+              {t(
+                'Nothing is saved — not in local storage, not in a cookie, not in the address bar. Reload and it is gone.',
+                'No se guarda nada: ni en el almacenamiento local, ni en una cookie, ni en la barra de direcciones. Al recargar desaparece.',
+              )}
             </li>
             <li>
-              <T
-                text={bi(
-                  'There is no analytics, no telemetry and no third-party script in this site. Once the page has loaded you can disconnect from the network and it still works.',
-                  'Este sitio no tiene analítica, ni telemetría, ni scripts de terceros. Una vez cargada la página puede desconectarse de la red y seguirá funcionando.',
-                )}
-              />
+              {t(
+                'There is no analytics, no telemetry and no third-party script in this site. Once the page has loaded you can disconnect from the network and it still works.',
+                'Este sitio no tiene analítica, ni telemetría, ni scripts de terceros. Una vez cargada la página puede desconectarse de la red y seguirá funcionando.',
+              )}
             </li>
           </ul>
           <p className={styles.privacySource}>
-            <T
-              text={bi(
-                'You do not have to take our word for it — the source is public:',
-                'No tiene por qué creernos sin más: el código es público:',
-              )}
-            />{' '}
+            {t(
+              'You do not have to take our word for it — the source is public:',
+              'No tiene por qué creernos sin más: el código es público:',
+            )}{' '}
             <a
               href={`${REPO_URL}/blob/main/apps/landing/components/SchengenCalculator.tsx`}
               rel="noreferrer noopener"
@@ -268,26 +257,22 @@ export function SchengenCalculator() {
       */}
       <noscript>
         <p className={styles.noscript}>
-          <T
-            text={bi(
-              'This counter needs JavaScript, because the arithmetic runs on your own device rather than on a server. With scripting off the form below will not answer. That is also the reason nothing you type is ever transmitted.',
-              'Este cómputo necesita JavaScript, porque la aritmética se ejecuta en su propio dispositivo y no en un servidor. Con el scripting desactivado, el formulario de abajo no responderá. Esa es también la razón por la que nada de lo que escriba se transmite nunca.',
-            )}
-          />
+          {t(
+            'This counter needs JavaScript, because the arithmetic runs on your own device rather than on a server. With scripting off the form below will not answer. That is also the reason nothing you type is ever transmitted.',
+            'Este cómputo necesita JavaScript, porque la aritmética se ejecuta en su propio dispositivo y no en un servidor. Con el scripting desactivado, el formulario de abajo no responderá. Esa es también la razón por la que nada de lo que escriba se transmite nunca.',
+          )}
         </p>
       </noscript>
 
-      <ErrorSummary issues={issues} focusKey={errorFocusKey} />
+      <ErrorSummary locale={locale} issues={issues} focusKey={errorFocusKey} />
 
-      {/* `noValidate`: the browser's own validation messages are monolingual,
-          never appear in the error summary, and vanish on the next keystroke.
-          The messages here are ours, in both languages, and listed in one
-          place. */}
+      {/* `noValidate`: the browser's own validation messages appear in the
+          browser's UI language rather than this document's, never appear in the
+          error summary, and vanish on the next keystroke. The messages here are
+          ours, in the served locale, and listed in one place. */}
       <form className={styles.form} onSubmit={onSubmit} noValidate>
         <fieldset className={styles.group}>
-          <legend className={styles.legend}>
-            <T text={bi('Your trips', 'Sus viajes')} />
-          </legend>
+          <legend className={styles.legend}>{t('Your trips', 'Sus viajes')}</legend>
 
           {/*
             One line before the fields, not four paragraphs. The rest of the
@@ -296,9 +281,7 @@ export function SchengenCalculator() {
             and a wall of preamble on the first screen is how an instrument
             turns back into a brochure.
           */}
-          <p className={styles.hint}>
-            <T text={ENDPOINTS_NOTE} />
-          </p>
+          <p className={styles.hint}>{t(ENDPOINTS_NOTE)}</p>
 
           <ul className={styles.trips}>
             {answers.stays.map((row, index) => {
@@ -309,31 +292,34 @@ export function SchengenCalculator() {
                 <li className={styles.trip} key={row.key}>
                   <fieldset className={styles.tripFields}>
                     <legend className={styles.tripLegend}>
-                      <T text={bi(`Trip ${index + 1}`, `Viaje ${index + 1}`)} />
+                      {t(`Trip ${index + 1}`, `Viaje ${index + 1}`)}
                     </legend>
 
                     <FieldRow>
                       <SelectField
+                        locale={locale}
                         id={countryId}
-                        label={bi('State', 'Estado')}
-                        error={issueFor(countryId, issues)}
+                        label={t('State', 'Estado')}
+                        error={messageFor(countryId, issues, locale)}
                         required
-                        options={STATE_OPTIONS}
+                        options={stateOptions(locale)}
                         value={row.country}
                         onChange={(value) => updateStay(row.key, { country: value })}
                       />
                       <DateField
+                        locale={locale}
                         id={startId}
-                        label={bi('Day you arrived', 'Día de llegada')}
-                        error={issueFor(startId, issues)}
+                        label={t('Day you arrived', 'Día de llegada')}
+                        error={messageFor(startId, issues, locale)}
                         required
                         value={row.start}
                         onChange={(value) => updateStay(row.key, { start: value })}
                       />
                       <DateField
+                        locale={locale}
                         id={endId}
-                        label={bi('Day you left', 'Día de salida')}
-                        error={issueFor(endId, issues)}
+                        label={t('Day you left', 'Día de salida')}
+                        error={messageFor(endId, issues, locale)}
                         required
                         value={row.end}
                         onChange={(value) => updateStay(row.key, { end: value })}
@@ -343,7 +329,7 @@ export function SchengenCalculator() {
                     <Actions>
                       <Button
                         variant="quiet"
-                        label={bi(`Remove trip ${index + 1}`, `Quitar el viaje ${index + 1}`)}
+                        label={t(`Remove trip ${index + 1}`, `Quitar el viaje ${index + 1}`)}
                         onClick={() => removeStay(row.key)}
                       />
                     </Actions>
@@ -356,62 +342,50 @@ export function SchengenCalculator() {
           <div className={styles.tripFooter}>
             <Actions>
               <Button
-                label={bi('Add a trip', 'Añadir un viaje')}
+                label={t('Add a trip', 'Añadir un viaje')}
                 onClick={addStay}
                 disabled={stayCount >= MAX_STAYS}
               />
             </Actions>
             <p className={styles.tripCount}>
-              <T
-                text={bi(
-                  `${stayCount} of ${MAX_STAYS} rows`,
-                  `${stayCount} de ${MAX_STAYS} filas`,
-                )}
-              />
+              {t(`${stayCount} of ${MAX_STAYS} rows`, `${stayCount} de ${MAX_STAYS} filas`)}
             </p>
           </div>
 
           <p className={styles.hint}>
-            <T
-              text={bi(
-                'Both endpoints counting is why a trip that lands and leaves on the same day is one day and not none, and why a same-day return carries the same date twice.',
-                'Que cuenten ambos extremos es la razón de que un viaje que llega y sale el mismo día sea un día y no ninguno, y de que una ida y vuelta en el día lleve dos veces la misma fecha.',
-              )}
-            />
+            {t(
+              'Both endpoints counting is why a trip that lands and leaves on the same day is one day and not none, and why a same-day return carries the same date twice.',
+              'Que cuenten ambos extremos es la razón de que un viaje que llega y sale el mismo día sea un día y no ninguno, y de que una ida y vuelta en el día lleve dos veces la misma fecha.',
+            )}
           </p>
 
           <p className={styles.hint}>
-            <T
-              text={bi(
-                'Only Schengen States are offered, because only they consume the allowance — time anywhere else does not need to be entered. Membership is resolved day by day, so a stay in Croatia before 2023-01-01 charges nothing.',
-                'Solo se ofrecen Estados Schengen, porque solo ellos consumen la franquicia: el tiempo en cualquier otro lugar no hace falta introducirlo. La pertenencia se resuelve día a día, de modo que una estancia en Croacia antes del 01-01-2023 no imputa nada.',
-              )}
-            />
+            {t(
+              'Only Schengen States are offered, because only they consume the allowance — time anywhere else does not need to be entered. Membership is resolved day by day, so a stay in Croatia before 2023-01-01 charges nothing.',
+              'Solo se ofrecen Estados Schengen, porque solo ellos consumen la franquicia: el tiempo en cualquier otro lugar no hace falta introducirlo. La pertenencia se resuelve día a día, de modo que una estancia en Croacia antes del 01-01-2023 no imputa nada.',
+            )}
           </p>
 
           <p className={styles.hint}>
-            <T
-              text={bi(
-                'Enter short stays only. If you hold a residence permit or long-stay visa issued by one of these States, days at home in that State are not short stays and do not belong here — the fuller tool in the portal takes that case, and this one would report an overstay for somebody sitting in their own flat.',
-                'Introduzca solo estancias cortas. Si tiene una autorización de residencia o un visado de larga duración expedidos por uno de estos Estados, los días en casa en ese Estado no son estancia corta y no corresponden aquí: la herramienta completa del portal contempla ese caso, y esta señalaría una estancia irregular a quien está en su propio piso.',
-              )}
-            />
+            {t(
+              'Enter short stays only. If you hold a residence permit or long-stay visa issued by one of these States, days at home in that State are not short stays and do not belong here — the fuller tool in the portal takes that case, and this one would report an overstay for somebody sitting in their own flat.',
+              'Introduzca solo estancias cortas. Si tiene una autorización de residencia o un visado de larga duración expedidos por uno de estos Estados, los días en casa en ese Estado no son estancia corta y no corresponden aquí: la herramienta completa del portal contempla ese caso, y esta señalaría una estancia irregular a quien está en su propio piso.',
+            )}
           </p>
         </fieldset>
 
         <fieldset className={styles.group}>
-          <legend className={styles.legend}>
-            <T text={bi('The day to measure', 'El día que se mide')} />
-          </legend>
+          <legend className={styles.legend}>{t('The day to measure', 'El día que se mide')}</legend>
 
           <DateField
+            locale={locale}
             id={FIELD.reference}
-            label={bi('Measure the window ending on', 'Medir la ventana que termina el')}
-            hint={bi(
+            label={t('Measure the window ending on', 'Medir la ventana que termina el')}
+            hint={t(
               `The rule asks the question afresh for every day of a stay, against the ${SCHENGEN_WINDOW_DAYS} days ending on and including that day. There is no reset date and no annual allowance. This page reads no clock, so the field is pre-filled with ${EMPTY_ANSWERS.referenceDate}, the date this build computes as at; if you are reading later, set today.`,
               `La norma plantea la pregunta de nuevo para cada día de estancia, frente a los ${SCHENGEN_WINDOW_DAYS} días que terminan en ese día, incluido. No hay fecha de reinicio ni franquicia anual. Esta página no consulta ningún reloj, de modo que el campo viene rellenado con ${EMPTY_ANSWERS.referenceDate}, la fecha a la que calcula esta compilación; si lee esto más tarde, ponga hoy.`,
             )}
-            error={issueFor(FIELD.reference, issues)}
+            error={messageFor(FIELD.reference, issues, locale)}
             required
             value={answers.referenceDate}
             onChange={(value) => setAnswers((p) => ({ ...p, referenceDate: value }))}
@@ -422,45 +396,39 @@ export function SchengenCalculator() {
           <Button
             type="submit"
             variant="primary"
-            label={bi('Count my days', 'Contar mis días')}
+            label={t('Count my days', 'Contar mis días')}
             // Only once the region exists: `aria-controls` pointing at an absent
             // id is a dangling reference, not a relationship.
             controls={count !== null ? RESULT_ID : undefined}
           />
-          <Button variant="secondary" label={bi('Clear', 'Borrar')} onClick={clearAll} />
+          <Button variant="secondary" label={t('Clear', 'Borrar')} onClick={clearAll} />
         </Actions>
 
         <div className={styles.examples}>
           <p className={styles.examplesLead} id="sch-examples-label">
-            <T
-              text={bi(
-                'Or load an invented itinerary. Each is a case a hand calculation gets wrong.',
-                'O cargue un itinerario inventado. Cada uno es un caso que un cálculo a mano falla.',
-              )}
-            />
+            {t(
+              'Or load an invented itinerary. Each is a case a hand calculation gets wrong.',
+              'O cargue un itinerario inventado. Cada uno es un caso que un cálculo a mano falla.',
+            )}
           </p>
           <ul className={styles.exampleList} aria-labelledby="sch-examples-label">
             {SCHENGEN_EXAMPLES.map((example) => (
               <li key={example.id}>
-                <Button label={example.label} onClick={() => loadExample(example)} />
-                <span className={styles.exampleNote}>
-                  <T text={example.note} />
-                </span>
+                <Button label={t(example.label)} onClick={() => loadExample(example)} />
+                <span className={styles.exampleNote}>{t(example.note)}</span>
               </li>
             ))}
           </ul>
           <p className={styles.hint}>
-            <T
-              text={bi(
-                'The itineraries are country codes and dates, nothing else. No name, no document number, no date of birth: Meridian carries no real personal data anywhere, including in its examples.',
-                'Los itinerarios son códigos de país y fechas, nada más. Sin nombre, sin número de documento, sin fecha de nacimiento: Meridian no contiene datos personales reales en ninguna parte, tampoco en sus ejemplos.',
-              )}
-            />
+            {t(
+              'The itineraries are country codes and dates, nothing else. No name, no document number, no date of birth: Meridian carries no real personal data anywhere, including in its examples.',
+              'Los itinerarios son códigos de país y fechas, nada más. Sin nombre, sin número de documento, sin fecha de nacimiento: Meridian no contiene datos personales reales en ninguna parte, tampoco en sus ejemplos.',
+            )}
           </p>
         </div>
       </form>
 
-      {count !== null ? <CountResult count={count} /> : null}
+      {count !== null ? <CountResult count={count} locale={locale} /> : null}
     </div>
   );
 }
@@ -469,7 +437,7 @@ export function SchengenCalculator() {
 // The answer
 // ---------------------------------------------------------------------------
 
-const OUTCOME_LABEL: Record<SchengenCount['outcome'], Bi> = {
+const OUTCOME_LABEL: Record<SchengenCount['outcome'], LocalizedText> = {
   within: bi('Inside the allowance', 'Dentro de la franquicia'),
   over: bi('Over the allowance', 'Por encima de la franquicia'),
   undetermined: bi('The record cannot decide', 'El registro no puede decidirlo'),
@@ -481,7 +449,14 @@ const OUTCOME_TONE = {
   undetermined: 'review',
 } as const;
 
-function CountResult({ count }: { readonly count: SchengenCount }) {
+function CountResult({
+  count,
+  locale,
+}: {
+  readonly count: SchengenCount;
+  readonly locale: Locale;
+}) {
+  const t = translator(locale);
   // Every trip the reader entered appears, including the ones that charged
   // nothing. Dropping a row because it contributed zero would leave somebody
   // scanning the table for a trip they know they took, and the reason a trip
@@ -494,23 +469,21 @@ function CountResult({ count }: { readonly count: SchengenCount }) {
       aria-labelledby={RESULT_HEADING_ID}
     >
       <h3 className={styles.resultHeading} id={RESULT_HEADING_ID}>
-        <T text={bi('What the rule makes of your dates', 'Qué dicen las normas de sus fechas')} />
+        {t('What the rule makes of your dates', 'Qué dicen las normas de sus fechas')}
       </h3>
 
       <div className={styles.headline}>
         <p className={styles.headlineFigure}>
           <span className={styles.headlineNumber}>{count.daysUsed}</span>
           <span className={styles.headlineOf}>
-            <T
-              text={bi(
-                `of your ${SCHENGEN_MAX_DAYS} days used`,
-                `de sus ${SCHENGEN_MAX_DAYS} días consumidos`,
-              )}
-            />
+            {t(
+              `of your ${SCHENGEN_MAX_DAYS} days used`,
+              `de sus ${SCHENGEN_MAX_DAYS} días consumidos`,
+            )}
           </span>
         </p>
         <div className={styles.headlineBadge}>
-          <Badge tone={OUTCOME_TONE[count.outcome]} label={OUTCOME_LABEL[count.outcome]} />
+          <Badge tone={OUTCOME_TONE[count.outcome]} label={t(OUTCOME_LABEL[count.outcome])} />
         </div>
         {/*
           Three branches, not two.
@@ -524,64 +497,48 @@ function CountResult({ count }: { readonly count: SchengenCount }) {
           is over the limit.
         */}
         <p className={styles.headlineDetail}>
-          <T
-            text={
-              count.outcome === 'undetermined'
+          {t(
+            count.outcome === 'undetermined'
+              ? bi(
+                  `Somewhere between ${count.daysUsed} and ${count.daysUsedIfAmbiguousCounted} days are consumed on ${count.referenceDate}, and the upper end is past the ${SCHENGEN_MAX_DAYS}. Which it is depends on days this record cannot resolve — see below.`,
+                  `Se consumen entre ${count.daysUsed} y ${count.daysUsedIfAmbiguousCounted} días el ${count.referenceDate}, y el extremo superior supera los ${SCHENGEN_MAX_DAYS}. Cuál de los dos depende de días que este registro no puede resolver: véase más abajo.`,
+                )
+              : count.daysOverLimit > 0
                 ? bi(
-                    `Somewhere between ${count.daysUsed} and ${count.daysUsedIfAmbiguousCounted} days are consumed on ${count.referenceDate}, and the upper end is past the ${SCHENGEN_MAX_DAYS}. Which it is depends on days this record cannot resolve — see below.`,
-                    `Se consumen entre ${count.daysUsed} y ${count.daysUsedIfAmbiguousCounted} días el ${count.referenceDate}, y el extremo superior supera los ${SCHENGEN_MAX_DAYS}. Cuál de los dos depende de días que este registro no puede resolver: véase más abajo.`,
+                    `That is ${plural(count.daysOverLimit, 'day', 'days')} beyond the allowance on ${count.referenceDate}.`,
+                    `${count.daysOverLimit === 1 ? 'Es' : 'Son'} ${plural(count.daysOverLimit, 'día', 'días')} por encima de la franquicia el ${count.referenceDate}.`,
                   )
-                : count.daysOverLimit > 0
-                  ? bi(
-                      `That is ${plural(count.daysOverLimit, 'day', 'days')} beyond the allowance on ${count.referenceDate}.`,
-                      `${count.daysOverLimit === 1 ? 'Es' : 'Son'} ${plural(count.daysOverLimit, 'día', 'días')} por encima de la franquicia el ${count.referenceDate}.`,
-                    )
-                  : bi(
-                      `${plural(count.daysRemaining, 'day', 'days')} of the allowance ${count.daysRemaining === 1 ? 'remains' : 'remain'} unused on ${count.referenceDate}.`,
-                      `${count.daysRemaining === 1 ? 'Queda' : 'Quedan'} ${plural(count.daysRemaining, 'día', 'días')} de franquicia sin consumir el ${count.referenceDate}.`,
-                    )
-            }
-          />
+                : bi(
+                    `${plural(count.daysRemaining, 'day', 'days')} of the allowance ${count.daysRemaining === 1 ? 'remains' : 'remain'} unused on ${count.referenceDate}.`,
+                    `${count.daysRemaining === 1 ? 'Queda' : 'Quedan'} ${plural(count.daysRemaining, 'día', 'días')} de franquicia sin consumir el ${count.referenceDate}.`,
+                  ),
+          )}
         </p>
       </div>
 
       <p className={styles.window}>
-        <T
-          text={bi(
-            `Measured over the ${SCHENGEN_WINDOW_DAYS} days from ${count.window.start} to ${count.window.end}, both included.`,
-            `Medido sobre los ${SCHENGEN_WINDOW_DAYS} días del ${count.window.start} al ${count.window.end}, ambos incluidos.`,
-          )}
-        />
+        {t(
+          `Measured over the ${SCHENGEN_WINDOW_DAYS} days from ${count.window.start} to ${count.window.end}, both included.`,
+          `Medido sobre los ${SCHENGEN_WINDOW_DAYS} días del ${count.window.start} al ${count.window.end}, ambos incluidos.`,
+        )}
       </p>
 
-      <h4 className={styles.subHeading}>
-        <T text={bi('The arithmetic', 'La aritmética')} />
-      </h4>
+      <h4 className={styles.subHeading}>{t('The arithmetic', 'La aritmética')}</h4>
 
       <div className={styles.scrollX}>
         <table className={styles.workingTable}>
           <caption className={styles.tableCaption}>
-            <T
-              text={bi(
-                'Every trip you entered, how many of its days fell inside the window, and how many of those charged against the allowance.',
-                'Cada viaje que introdujo, cuántos de sus días quedaron dentro de la ventana y cuántos de ellos se imputaron a la franquicia.',
-              )}
-            />
+            {t(
+              'Every trip you entered, how many of its days fell inside the window, and how many of those charged against the allowance.',
+              'Cada viaje que introdujo, cuántos de sus días quedaron dentro de la ventana y cuántos de ellos se imputaron a la franquicia.',
+            )}
           </caption>
           <thead>
             <tr>
-              <th scope="col">
-                <T text={bi('Trip', 'Viaje')} />
-              </th>
-              <th scope="col">
-                <T text={bi('Days in the trip', 'Días del viaje')} />
-              </th>
-              <th scope="col">
-                <T text={bi('Inside the window', 'Dentro de la ventana')} />
-              </th>
-              <th scope="col">
-                <T text={bi('Charged', 'Imputados')} />
-              </th>
+              <th scope="col">{t('Trip', 'Viaje')}</th>
+              <th scope="col">{t('Days in the trip', 'Días del viaje')}</th>
+              <th scope="col">{t('Inside the window', 'Dentro de la ventana')}</th>
+              <th scope="col">{t('Charged', 'Imputados')}</th>
             </tr>
           </thead>
           <tbody>
@@ -589,7 +546,7 @@ function CountResult({ count }: { readonly count: SchengenCount }) {
               <tr key={stay.id}>
                 <th scope="row" className={styles.rowHead}>
                   <span className={styles.tripName}>
-                    <Chip>{stay.country}</Chip> <TInline text={stay.countryName} />
+                    <Chip>{stay.country}</Chip> {t(stay.countryName)}
                   </span>
                   <span className={styles.tripDates}>
                     <time dateTime={stay.range.start}>{stay.range.start}</time>
@@ -601,14 +558,12 @@ function CountResult({ count }: { readonly count: SchengenCount }) {
                       {stay.uncounted.map((reason) => (
                         <li key={`${stay.id}-${reason.key}`}>
                           <span className={styles.reasonDays}>
-                            <T
-                              text={bi(
-                                `${plural(reason.days, 'day', 'days')} not charged`,
-                                `${plural(reason.days, 'día', 'días')} sin imputar`,
-                              )}
-                            />
+                            {t(
+                              `${plural(reason.days, 'day', 'days')} not charged`,
+                              `${plural(reason.days, 'día', 'días')} sin imputar`,
+                            )}
                           </span>{' '}
-                          <T text={reason.text} />
+                          {t(reason.text)}
                         </li>
                       ))}
                     </ul>
@@ -623,12 +578,7 @@ function CountResult({ count }: { readonly count: SchengenCount }) {
           <tfoot>
             <tr>
               <th scope="row" className={styles.rowHead}>
-                <T
-                  text={bi(
-                    'Total, with any day counted once',
-                    'Total, contando cada día una sola vez',
-                  )}
-                />
+                {t('Total, with any day counted once', 'Total, contando cada día una sola vez')}
               </th>
               <td className={styles.num} />
               <td className={styles.num} />
@@ -641,33 +591,27 @@ function CountResult({ count }: { readonly count: SchengenCount }) {
       </div>
 
       <p className={styles.note}>
-        <T
-          text={bi(
-            'The total is taken over the merged days rather than by adding the column up, because a person cannot spend a day twice: two trips that overlap are a mistake in the record, and summing them would invent an overstay out of it.',
-            'El total se toma sobre los días fusionados y no sumando la columna, porque nadie puede pasar dos veces el mismo día: dos viajes que se solapan son un error del registro, y sumarlos inventaría una estancia irregular.',
-          )}
-        />
+        {t(
+          'The total is taken over the merged days rather than by adding the column up, because a person cannot spend a day twice: two trips that overlap are a mistake in the record, and summing them would invent an overstay out of it.',
+          'El total se toma sobre los días fusionados y no sumando la columna, porque nadie puede pasar dos veces el mismo día: dos viajes que se solapan son un error del registro, y sumarlos inventaría una estancia irregular.',
+        )}
       </p>
 
       {count.ambiguous.length > 0 ? (
         <div className={styles.ambiguous}>
           <h4 className={styles.subHeading}>
-            <T
-              text={bi(
-                'Some of these days cannot be resolved by arithmetic',
-                'Algunos de estos días no puede resolverlos la aritmética',
-              )}
-            />
+            {t(
+              'Some of these days cannot be resolved by arithmetic',
+              'Algunos de estos días no puede resolverlos la aritmética',
+            )}
           </h4>
           <ul className={styles.reasons}>
             {count.ambiguous.map((period) => (
               <li key={period.key}>
-                <T
-                  text={bi(
-                    `${plural(period.daysInsideWindow, 'day', 'days')} in ${period.countryName.en} fall between ${period.partialSince} and ${period.since}, while accession was still staged. Whether they consumed the allowance depends on how the border was crossed, which no record here holds. Meridian does not charge them and does not assert they are free: the total would be ${count.daysUsedIfAmbiguousCounted} if every one of them charged.`,
-                    `${plural(period.daysInsideWindow, 'día', 'días')} en ${period.countryName.es} caen entre el ${period.partialSince} y el ${period.since}, con la adhesión aún escalonada. Que consumieran o no la franquicia depende de cómo se cruzó la frontera, dato que aquí no consta. Meridian no los imputa ni afirma que estén libres: el total sería ${count.daysUsedIfAmbiguousCounted} si todos ellos se imputaran.`,
-                  )}
-                />
+                {t(
+                  `${plural(period.daysInsideWindow, 'day', 'days')} in ${period.countryName.en} fall between ${period.partialSince} and ${period.since}, while accession was still staged. Whether they consumed the allowance depends on how the border was crossed, which no record here holds. Meridian does not charge them and does not assert they are free: the total would be ${count.daysUsedIfAmbiguousCounted} if every one of them charged.`,
+                  `${plural(period.daysInsideWindow, 'día', 'días')} en ${period.countryName.es} caen entre el ${period.partialSince} y el ${period.since}, con la adhesión aún escalonada. Que consumieran o no la franquicia depende de cómo se cruzó la frontera, dato que aquí no consta. Meridian no los imputa ni afirma que estén libres: el total sería ${count.daysUsedIfAmbiguousCounted} si todos ellos se imputaran.`,
+                )}
               </li>
             ))}
           </ul>
@@ -676,22 +620,24 @@ function CountResult({ count }: { readonly count: SchengenCount }) {
 
       <div className={styles.citation}>
         <h4 className={styles.subHeading}>
-          <T text={bi('The rule this measured against', 'La norma frente a la que se midió')} />
+          {t('The rule this measured against', 'La norma frente a la que se midió')}
         </h4>
-        <p className={styles.citationInstrument} lang="en">
-          {SCHENGEN_CITATION.instrument}
-          {SCHENGEN_CITATION.provision !== undefined ? `, ${SCHENGEN_CITATION.provision}` : ''}
+        {/*
+          The instrument's name and provision, verbatim in both locales and
+          marked with the language they are in. "Reglamento (UE) 2016/399" is
+          not what a reader would search EUR-Lex for from this page, and a
+          translated statute title is a mis-citation rather than a translation.
+        */}
+        <p className={styles.citationInstrument}>
+          <Instrument source={SCHENGEN_CITATION} />
         </p>
         <p className={styles.citationMeta}>
-          <Chip>{SCHENGEN_CITATION.kind}</Chip>{' '}
-          <Chip>{SCHENGEN_CITATION.jurisdiction}</Chip>{' '}
+          <Chip>{SCHENGEN_CITATION.kind}</Chip> <Chip>{SCHENGEN_CITATION.jurisdiction}</Chip>{' '}
           <span className={styles.citationVerified}>
-            <T
-              text={bi(
-                `last checked against its source on ${SCHENGEN_CITATION.verifiedOn}`,
-                `contrastada con su fuente por última vez el ${SCHENGEN_CITATION.verifiedOn}`,
-              )}
-            />
+            {t(
+              `last checked against its source on ${SCHENGEN_CITATION.verifiedOn}`,
+              `contrastada con su fuente por última vez el ${SCHENGEN_CITATION.verifiedOn}`,
+            )}
           </span>
         </p>
         {SCHENGEN_CITATION.url !== undefined ? (
@@ -701,6 +647,15 @@ function CountResult({ count }: { readonly count: SchengenCount }) {
             </a>
           </p>
         ) : null}
+        {/*
+          The note is `@meridian/presence`'s own restatement of what art. 6(1)
+          and 6(2) provide, and of what this count does not model. It is left in
+          the language the package wrote it in and marked as such. A Spanish
+          translation maintained here would be a second, unreviewed statement of
+          a legal rule that would go stale silently the next time the package
+          revised the sentence — and the sentence is the caveat on a day count
+          somebody may act on.
+        */}
         {SCHENGEN_CITATION.note !== undefined ? (
           <p className={styles.citationNote} lang="en">
             {SCHENGEN_CITATION.note}
@@ -710,27 +665,20 @@ function CountResult({ count }: { readonly count: SchengenCount }) {
 
       <div className={styles.boundary}>
         <h4 className={styles.subHeading}>
-          <T
-            text={bi(
-              'What this number is, and what it is not',
-              'Qué es esta cifra y qué no es',
-            )}
-          />
+          {t('What this number is, and what it is not', 'Qué es esta cifra y qué no es')}
         </h4>
-        <TProse
-          text={bi(
+        <Prose>
+          {t(
             'It is an assessment: your own dates measured against a published rule, with the rule named and the working shown so you can check it. It is not permission to travel, not a prediction of what a border officer will do, and not advice about what to do next. Art. 6(1) sets other entry conditions this does not model, and an overstay already in the past is a question for someone licensed to answer it.',
             'Es una evaluación: sus propias fechas medidas frente a una norma publicada, con la norma identificada y el cálculo a la vista para que pueda comprobarlo. No es permiso para viajar, ni una predicción de lo que hará un agente de fronteras, ni asesoramiento sobre qué hacer a continuación. El art. 6(1) fija otras condiciones de entrada que esto no modela, y una estancia irregular ya consumada es una cuestión para alguien con licencia para responderla.',
           )}
-        />
+        </Prose>
         <p className={styles.onward}>
           <a href={`${PORTAL_URL}/tools/schengen`}>
-            <T
-              text={bi(
-                'The fuller version in the portal: the worst day of a planned trip, and the earliest date a stay of a given length fits',
-                'La versión completa en el portal: el peor día de un viaje previsto y la fecha más temprana en que cabe una estancia de una duración dada',
-              )}
-            />
+            {t(
+              'The fuller version in the portal: the worst day of a planned trip, and the earliest date a stay of a given length fits',
+              'La versión completa en el portal: el peor día de un viaje previsto y la fecha más temprana en que cabe una estancia de una duración dada',
+            )}
           </a>
         </p>
       </div>

@@ -73,11 +73,6 @@
   color: var(--fg-muted);
 }
 
-.blockTitle :global(span[lang='es']) {
-  text-transform: none;
-  letter-spacing: 0;
-}
-
 .list {
   margin: 0;
   padding-left: 1.15rem;

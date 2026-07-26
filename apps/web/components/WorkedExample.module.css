@@ -40,8 +40,3 @@
   font-family: var(--font-mono);
   font-weight: 600;
 }
-
-.banner :global(span[lang='es']) {
-  color: inherit;
-  opacity: 0.85;
-}

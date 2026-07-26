@@ -39,7 +39,15 @@ import {
   type FreshnessProjection,
 } from '@meridian/documents';
 import { pathwayById, statusOn, type Pathway } from '@meridian/pathways';
-import { humanise } from '@/lib/format';
+import type { Bi, Locale } from '@/lib/i18n';
+import { COUNTS, UI, countOf, fill, pick } from '@/lib/i18n';
+import {
+  DOCUMENT_KIND_LABEL,
+  MATTER_PHASE_LABEL,
+  MATTER_STATUS_LABEL,
+  TASK_ASSIGNEE_LABEL,
+  TASK_STATUS_LABEL,
+} from '@/lib/labels';
 import type { AuditRecord, FirmRecords, MatterRecord } from '@/lib/records';
 import type { RepresentativeStanding } from '@/lib/roster';
 
@@ -149,9 +157,17 @@ export interface Blocker {
   readonly id: string;
   readonly matterId: string;
   readonly matterReference: string;
+  /**
+   * The firm's own one-line description of the objective, verbatim.
+   *
+   * Record content, not copy: it is rendered in the language it was written in
+   * and never translated. `FirmRecords.recordLanguage` says which language that
+   * is, so the page can mark it.
+   */
   readonly matterTitle: string;
   readonly owner: BlockerOwner;
   readonly code: BlockerCode;
+  /** Already in the reader's language. `blockers()` takes the locale. */
   readonly summary: string;
   readonly detail: string;
   /** When the file entered this state, read off the audit trail. Absent when unrecorded. */
@@ -180,34 +196,44 @@ export function lastStateChange(audit: readonly AuditRecord[], matterId: string)
 }
 
 const STATUS_BLOCKERS: Partial<
-  Record<MatterStatus, { readonly owner: BlockerOwner; readonly code: BlockerCode; readonly summary: string }>
+  Record<
+    MatterStatus,
+    { readonly owner: BlockerOwner; readonly code: BlockerCode; readonly summary: Bi }
+  >
 > = {
   awaiting_applicant: {
     owner: 'applicant',
     code: 'awaiting_applicant',
-    summary: 'Waiting on the applicant.',
+    summary: UI.blockerAwaitingApplicant,
   },
   awaiting_authority: {
     owner: 'authority',
     code: 'awaiting_authority',
-    summary: 'Waiting on the authority. The clock is outside the firm’s control.',
+    summary: UI.blockerAwaitingAuthority,
   },
   awaiting_representative_review: {
     owner: 'representative',
     code: 'awaiting_representative_review',
-    summary: 'Waiting on a licensed human to review before anything leaves the platform.',
+    summary: UI.blockerAwaitingReview,
   },
   draft: {
     owner: 'firm',
     code: 'unstarted_draft',
-    summary: 'Opened as a draft and not yet started.',
+    summary: UI.blockerDraft,
   },
 };
 
+/**
+ * `locale` reaches this far down because a blocker's summary is a sentence, and
+ * a sentence has to be assembled in the language that owns its word order.
+ * Returning a code for the page to translate would move the same table one file
+ * up and lose the interpolated values on the way.
+ */
 export function blockers(
   records: FirmRecords,
   standings: readonly RepresentativeStanding[],
   asOf: IsoDate,
+  locale: Locale,
 ): Blocker[] {
   const out: Blocker[] = [];
   const rosterIds = new Set(records.representatives.map((r) => r.credential.id));
@@ -239,8 +265,15 @@ export function blockers(
         ...base,
         owner: statusBlocker.owner,
         code: statusBlocker.code,
-        summary: statusBlocker.summary,
-        detail: `Status is ${humanise(matter.status).toLowerCase()}, phase ${humanise(matter.phase).toLowerCase()}.`,
+        summary: pick(statusBlocker.summary, locale),
+        // Lower-cased because both labels are sentence-case standing alone and
+        // neither contains a proper noun. `toLocaleLowerCase` rather than
+        // `toLowerCase`, since the console serves two languages and the rule for
+        // which is which is the locale's, not the runtime's default.
+        detail: fill(UI.blockerStatusDetail, locale, {
+          status: pick(MATTER_STATUS_LABEL[matter.status], locale).toLocaleLowerCase(locale),
+          phase: pick(MATTER_PHASE_LABEL[matter.phase], locale).toLocaleLowerCase(locale),
+        }),
       });
     }
 
@@ -250,10 +283,8 @@ export function blockers(
         ...base,
         owner: 'firm',
         code: 'no_representative',
-        summary: 'No representative is accountable for this matter.',
-        detail:
-          'With nobody attached, `canRelease` downgrades every advice-class output on this file to '
-          + 'assessment. The applicant sees their figures and the rule, never a recommendation.',
+        summary: pick(UI.blockerNoRepresentative, locale),
+        detail: pick(UI.blockerNoRepresentativeDetail, locale),
       });
     } else if (!rosterIds.has(matter.representativeId)) {
       out.push({
@@ -261,10 +292,8 @@ export function blockers(
         ...base,
         owner: 'firm',
         code: 'representative_not_on_roster',
-        summary: `Assigned representative ${matter.representativeId} is not on the roster.`,
-        detail:
-          'A dangling assignment is not the same as an unassigned matter: the file looks covered '
-          + 'and is not.',
+        summary: fill(UI.blockerNotOnRoster, locale, { id: matter.representativeId }),
+        detail: pick(UI.blockerNotOnRosterDetail, locale),
       });
     } else if (downgradedMatterIds.has(matter.id)) {
       out.push({
@@ -272,10 +301,8 @@ export function blockers(
         ...base,
         owner: 'firm',
         code: 'advice_downgraded',
-        summary: 'The accountable credential does not currently authorise advice on this file.',
-        detail:
-          'The advice gate refuses release to the applicant through this standing. See the '
-          + 'representative roster for the gate’s own reason.',
+        summary: pick(UI.blockerAdviceDowngraded, locale),
+        detail: pick(UI.blockerAdviceDowngradedDetail, locale),
       });
     }
 
@@ -286,10 +313,8 @@ export function blockers(
         ...base,
         owner: 'firm',
         code: 'pathway_not_in_catalog',
-        summary: `Pathway ${matter.pathwayId} is not in the catalog.`,
-        detail:
-          'No criteria, citations or durations can be resolved for this file. It cannot be '
-          + 'assessed until it is re-pointed at a catalog record.',
+        summary: fill(UI.blockerPathwayMissing, locale, { id: matter.pathwayId }),
+        detail: pick(UI.blockerPathwayMissingDetail, locale),
       });
     } else if (statusOn(pathway, asOf) === 'closed') {
       out.push({
@@ -297,10 +322,8 @@ export function blockers(
         ...base,
         owner: 'representative',
         code: 'pathway_closed',
-        summary: `The route is closed to new applications as at ${asOf}.`,
-        detail:
-          'A closed route does not make an existing holder’s status invalid, but a renewal or a '
-          + 'transition has to be planned against a different record.',
+        summary: fill(UI.blockerPathwayClosed, locale, { date: asOf }),
+        detail: pick(UI.blockerPathwayClosedDetail, locale),
       });
     }
 
@@ -310,8 +333,8 @@ export function blockers(
         ...base,
         owner: 'platform',
         code: 'task_dependency_cycle',
-        summary: 'Task dependencies form a cycle; nothing in it can ever unlock.',
-        detail: `Cycle: ${cycle.join(' → ')}.`,
+        summary: pick(UI.blockerCycle, locale),
+        detail: fill(UI.blockerCycleDetail, locale, { cycle: cycle.join(' → ') }),
       });
     }
   }
@@ -421,11 +444,22 @@ export interface Deadline {
   /** `diffDays(asOf, on)`. Negative once past. */
   readonly daysRemaining: number;
   readonly severity: DeadlineSeverity;
+  /**
+   * In the reader's language, except where it quotes a record — a task's title
+   * is what somebody typed on the file and is reproduced verbatim, which is why
+   * `labelIsRecord` exists rather than the page having to guess.
+   */
   readonly label: string;
+  /** True when `label` is record content rather than console copy. */
+  readonly labelIsRecord: boolean;
   readonly detail: string;
+  /** True when `detail` came from a package that speaks only one language. */
+  readonly detailIsForeign: boolean;
   /** `null` for roster-level deadlines that are not about one file. */
   readonly matterId: string | null;
   readonly matterReference: string | null;
+  /** The firm's own description of the objective. Record content; never translated. */
+  readonly matterTitle: string | null;
   readonly citationIds: readonly string[];
 }
 
@@ -476,12 +510,18 @@ export function documentFreshness(record: MatterRecord, asOf: IsoDate): Document
     }));
 }
 
-function matterDeadlines(record: MatterRecord, asOf: IsoDate): Deadline[] {
+function matterDeadlines(record: MatterRecord, asOf: IsoDate, locale: Locale): Deadline[] {
   const { matter } = record;
   if (isTerminal(matter.status)) return [];
 
   const out: Deadline[] = [];
-  const base = { matterId: matter.id, matterReference: record.reference };
+  const base = {
+    matterId: matter.id,
+    matterReference: record.reference,
+    matterTitle: record.title,
+    labelIsRecord: false,
+    detailIsForeign: false,
+  };
 
   if (record.statusExpiresOn !== undefined) {
     out.push(
@@ -490,8 +530,10 @@ function matterDeadlines(record: MatterRecord, asOf: IsoDate): Deadline[] {
           id: `${matter.id}:authorisation`,
           kind: 'authorisation_expiry',
           on: record.statusExpiresOn,
-          label: 'Current authorisation expires',
-          detail: `${record.title}. Permission to remain in ${matter.targetJurisdiction} lapses on this date.`,
+          label: pick(UI.deadlineAuthorisationLabel, locale),
+          detail: fill(UI.deadlineAuthorisationDetail, locale, {
+            jurisdiction: matter.targetJurisdiction,
+          }),
           citationIds: [],
           ...base,
         },
@@ -507,8 +549,8 @@ function matterDeadlines(record: MatterRecord, asOf: IsoDate): Deadline[] {
           id: `${matter.id}:submission`,
           kind: 'target_submission',
           on: record.targetSubmissionDate,
-          label: 'Planned filing date',
-          detail: `${record.title}. Every freshness projection on this file is measured to this date.`,
+          label: pick(UI.deadlineSubmissionLabel, locale),
+          detail: pick(UI.deadlineSubmissionDetail, locale),
           citationIds: [],
           ...base,
         },
@@ -530,10 +572,16 @@ function matterDeadlines(record: MatterRecord, asOf: IsoDate): Deadline[] {
             id: `${matter.id}:window:${document.id}`,
             kind: 'acceptance_window',
             on: projection.acceptableUntil,
-            label: `${document.kind.replace(/_/g, ' ')} acceptance window closes`,
+            label: fill(UI.deadlineWindowLabel, locale, {
+              document: pick(DOCUMENT_KIND_LABEL[document.kind], locale),
+            }),
+            // `@meridian/documents` writes its rationale in English and nothing
+            // here rewrites it: paraphrasing a package's own account of why a
+            // window closes would put words in its mouth. It is marked instead.
             detail: projection.rationale,
             citationIds: projection.citations.map((c) => c.id),
             ...base,
+            detailIsForeign: true,
           },
           asOf,
         ),
@@ -547,8 +595,13 @@ function matterDeadlines(record: MatterRecord, asOf: IsoDate): Deadline[] {
             id: `${matter.id}:expiry:${document.id}`,
             kind: 'document_expiry',
             on: document.expiresOn,
-            label: `${document.kind.replace(/_/g, ' ')} expires`,
-            detail: `Document ${document.id}, issued by ${document.issuingCountry}.`,
+            label: fill(UI.deadlineExpiryLabel, locale, {
+              document: pick(DOCUMENT_KIND_LABEL[document.kind], locale),
+            }),
+            detail: fill(UI.deadlineDocumentDetail, locale, {
+              id: document.id,
+              country: document.issuingCountry,
+            }),
             citationIds: [],
             ...base,
           },
@@ -567,10 +620,15 @@ function matterDeadlines(record: MatterRecord, asOf: IsoDate): Deadline[] {
           id: `${matter.id}:task:${task.id}`,
           kind: 'task_due',
           on: task.dueOn,
+          // The task title is what somebody wrote on the file. Verbatim.
           label: task.title,
-          detail: `Assigned to the ${humanise(task.assignee).toLowerCase()}; task is ${humanise(task.status).toLowerCase()}.`,
+          detail: fill(UI.deadlineTaskDetail, locale, {
+            assignee: pick(TASK_ASSIGNEE_LABEL[task.assignee], locale).toLocaleLowerCase(locale),
+            status: pick(TASK_STATUS_LABEL[task.status], locale).toLocaleLowerCase(locale),
+          }),
           citationIds: task.citationIds,
           ...base,
+          labelIsRecord: true,
         },
         asOf,
       ),
@@ -583,6 +641,7 @@ function matterDeadlines(record: MatterRecord, asOf: IsoDate): Deadline[] {
 function credentialDeadlines(
   standings: readonly RepresentativeStanding[],
   asOf: IsoDate,
+  locale: Locale,
 ): Deadline[] {
   const out: Deadline[] = [];
   for (const standing of standings) {
@@ -595,15 +654,22 @@ function credentialDeadlines(
           id: `credential:${standing.record.credential.id}`,
           kind: 'credential_expiry',
           on: expiresOn as IsoDate,
-          label: `${standing.record.displayName} — standing in ${standing.record.credential.jurisdiction}`,
-          detail:
-            `Gating ${standing.liveGating.length} live `
-            + `${standing.liveGating.length === 1 ? 'matter' : 'matters'} in `
-            + `${standing.record.credential.jurisdiction}. Once lapsed, advice through this `
-            + 'standing is refused and downgraded to assessment.',
+          // The display name is a person's name. Not translated, and not a
+          // reason to mark the whole label as foreign — the rest is copy.
+          label: fill(UI.deadlineCredentialLabel, locale, {
+            name: standing.record.displayName,
+            jurisdiction: standing.record.credential.jurisdiction,
+          }),
+          labelIsRecord: false,
+          detail: fill(UI.deadlineCredentialDetail, locale, {
+            matters: countOf(locale, standing.liveGating.length, COUNTS.liveMatter),
+            jurisdiction: standing.record.credential.jurisdiction,
+          }),
+          detailIsForeign: false,
           citationIds: [],
           matterId: null,
           matterReference: null,
+          matterTitle: null,
         },
         asOf,
       ),
@@ -623,10 +689,11 @@ export function deadlines(
   records: FirmRecords,
   standings: readonly RepresentativeStanding[],
   asOf: IsoDate,
+  locale: Locale,
 ): Deadline[] {
   const all = [
-    ...records.matters.flatMap((record) => matterDeadlines(record, asOf)),
-    ...credentialDeadlines(standings, asOf),
+    ...records.matters.flatMap((record) => matterDeadlines(record, asOf, locale)),
+    ...credentialDeadlines(standings, asOf, locale),
   ];
   return all.sort((a, b) => {
     if (a.on !== b.on) return a.on < b.on ? -1 : 1;

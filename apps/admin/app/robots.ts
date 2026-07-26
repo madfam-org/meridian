@@ -24,7 +24,18 @@ import type { MetadataRoute } from 'next';
  * crawler that never authenticates should be told in the meantime, and it stays
  * correct afterwards.
  *
+ * `disallow: '/'` already covers both locales — `/es/matters` is under `/` — so
+ * adding a second language added nothing for a crawler to be told. It is worth
+ * saying out loud anyway, because the pages do now emit `hreflang` alternates
+ * naming both variants, and the two are not in conflict: `hreflang` tells a
+ * client that already has one document where its sibling is, while this file
+ * tells a crawler not to fetch either. See `app/sitemap.ts`.
+ *
  * No `sitemap` line: see `app/sitemap.ts` for why there is nothing to point at.
+ *
+ * One `robots.txt` for the host, not one per locale, which is why this file sits
+ * outside the `[locale]` segment and why `middleware.ts` excludes `/robots.txt`
+ * from its rewrite.
  */
 export default function robots(): MetadataRoute.Robots {
   return {

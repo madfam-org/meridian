@@ -10,9 +10,9 @@
   font-weight: 560;
   max-width: 100%;
   /*
-   * Bilingual labels are long, and a badge that overflows its container is a
-   * badge whose second language is unreadable. Wrapping is allowed and the
-   * glyph is pinned to the first line.
+   * Status labels are whole phrases — "Requiere una persona", "Withheld, and
+   * named" — and a badge that overflows its container is a badge nobody can
+   * read. Wrapping is allowed and the glyph is pinned to the first line.
    */
   white-space: normal;
   overflow-wrap: anywhere;
@@ -79,20 +79,4 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
-}
-
-/*
- * A badge sits on a tinted fill, and the muted grey the Spanish half would
- * otherwise take loses contrast against it. Both languages inherit the badge's
- * own status colour; the slight opacity keeps the visual hierarchy without
- * dropping the ratio.
- */
-.badge :global(span[lang='es']) {
-  color: inherit;
-  opacity: 0.82;
-}
-
-.chip :global(span[lang='es']) {
-  color: inherit;
-  opacity: 0.82;
 }

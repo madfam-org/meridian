@@ -28,7 +28,7 @@
 
 import { compareDates, dateRange } from '@meridian/core';
 
-import { bi, type Bi } from '@/lib/i18n';
+import { bi, pick, type Locale } from '@/lib/i18n';
 import {
   DEFAULT_REFERENCE_DATE,
   MAX_STAYS,
@@ -125,22 +125,32 @@ export interface StateOption {
 }
 
 /**
- * Options for a row's State.
+ * Options for a row's State, in the served locale.
  *
- * Names are flattened to a plain string and collapsed to one word where both
- * languages spell the State identically: an `<option>` may hold only text, so
- * the bilingual pair cannot carry its own `lang` attributes here in any case,
- * and a list reading "Austria · Austria" twenty times is harder to scan without
- * being any more bilingual.
+ * A function rather than a constant, because the labels are country names and
+ * those differ between the two languages. An `<option>` may hold only text —
+ * it cannot carry a `lang` attribute on part of itself — so a list that showed
+ * both names would be a list of unmarked language switches, which is exactly
+ * the arrangement this application removed everywhere else.
+ *
+ * The order is the one `SCHENGEN_STATES` was sorted into, which is alphabetical
+ * by English name. Re-sorting per locale would be more correct for a Spanish
+ * reader and is deliberately not done here: the ordering is the same fact in
+ * both languages, and a picker whose row order changes with the language is
+ * harder to help somebody else through over the phone. Alphabetical is a scan
+ * order, not a ranking, in either language.
  */
-function optionLabel(name: Bi): string {
-  return name.en === name.es ? name.en : `${name.en} · ${name.es}`;
+export function stateOptions(locale: Locale): readonly StateOption[] {
+  return [
+    { value: '', label: pick(CHOOSE_A_STATE, locale) },
+    ...SCHENGEN_STATES.map((state) => ({
+      value: state.code,
+      label: pick(state.name, locale),
+    })),
+  ];
 }
 
-export const STATE_OPTIONS: readonly StateOption[] = [
-  { value: '', label: 'Choose a State · Elija un Estado' },
-  ...SCHENGEN_STATES.map((state) => ({ value: state.code, label: optionLabel(state.name) })),
-];
+const CHOOSE_A_STATE = bi('Choose a State', 'Elija un Estado');
 
 // ---------------------------------------------------------------------------
 // Reading the form
@@ -155,9 +165,7 @@ export interface FormReading {
 /** True when a row has been left completely alone. Such rows are skipped. */
 function isBlankRow(row: StayRow): boolean {
   return (
-    row.country.trim().length === 0 &&
-    row.start.trim().length === 0 &&
-    row.end.trim().length === 0
+    row.country.trim().length === 0 && row.start.trim().length === 0 && row.end.trim().length === 0
   );
 }
 
@@ -292,14 +300,12 @@ export interface LoadedExample {
  * row that used to be in that position.
  */
 export function answersFromExample(example: SchengenExample, firstKey: number): LoadedExample {
-  const stays = example.stays.map(
-    (stay, index): StayRow => ({
-      key: stayRowKey(firstKey + index),
-      country: stay.country,
-      start: stay.start,
-      end: stay.end,
-    }),
-  );
+  const stays = example.stays.map((stay, index): StayRow => ({
+    key: stayRowKey(firstKey + index),
+    country: stay.country,
+    start: stay.start,
+    end: stay.end,
+  }));
 
   return {
     answers: {

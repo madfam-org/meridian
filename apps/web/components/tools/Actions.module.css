@@ -29,21 +29,6 @@
   color: var(--accent-fg);
 }
 
-/*
- * A bilingual run styles its Spanish half in the muted foreground, which on the
- * accent fill drops below an accessible contrast ratio — the same problem
- * globals.css already solves for the skip link. Inside a filled button both
- * languages inherit the button's own foreground, and the second language is
- * distinguished by weight instead of by colour.
- */
-.primary :global(span) {
-  color: inherit;
-}
-
-.primary :global(span[lang='es']) {
-  opacity: 0.85;
-}
-
 .primary:hover:not(:disabled) {
   background: var(--accent-hover);
   border-color: var(--accent-hover);
@@ -81,12 +66,6 @@
   text-transform: uppercase;
   color: var(--fg-muted);
   font-weight: 600;
-}
-
-.groupLabel :global(span[lang='es']) {
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 500;
 }
 
 .groupButtons {

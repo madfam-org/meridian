@@ -1,10 +1,10 @@
 import type { Citation, IsoDate, SourceKind } from '@meridian/core';
 import { citationAgeDays, staleness } from '@meridian/core';
 
-import { bi, type Bi } from '@/lib/i18n';
-import { days } from '@/lib/ui';
+import type { Bi, Locale } from '@/lib/i18n';
+import { bi, instrumentLang, translator } from '@/lib/i18n';
+import { agedDays } from '@/lib/ui';
 import { Badge, Chip, PlainBadge } from '@/components/Badge';
-import { T, TInline } from '@/components/Bilingual';
 import { stalenessView } from '@/lib/status';
 
 import styles from './Citations.module.css';
@@ -29,6 +29,25 @@ import styles from './Citations.module.css';
  * `url` is optional and is often absent on purpose. The catalog omits a link
  * rather than guess one, because a wrong canonical link teaches the reader to
  * stop checking.
+ *
+ * ## The instrument name is never translated
+ *
+ * `instrument` and `provision` are the *identity of the source*, not prose about
+ * it. Rendering "Civil Code, art. 22.1" to an English reader is not a
+ * translation but a mis-citation: it names an instrument that does not exist
+ * under that title, and a person who tries to verify it — or a lawyer who tries
+ * to rely on it — will not find it. So both render verbatim in every locale,
+ * whatever language the page around them is in.
+ *
+ * That leaves the accessibility problem this design has to solve rather than
+ * ignore: a Spanish page quoting "Immigration and Refugee Protection Act" would
+ * have a screen reader pronounce English words with Spanish phonetics. The name
+ * therefore carries its own `lang`, matching the instrument rather than the
+ * page — `instrumentLang` derives it from the citation, returning `null` where
+ * it cannot be determined without guessing, in which case no claim is made at
+ * all. An English page marks "Código Civil (España)" as `es` and a Spanish page
+ * marks "Immigration and Refugee Protection Act" as `en`; both directions are
+ * correct, which is why the function takes no locale.
  */
 
 const KIND_LABEL: Record<SourceKind, Bi> = {
@@ -41,20 +60,6 @@ const KIND_LABEL: Record<SourceKind, Bi> = {
   statistics: bi('Official statistics', 'Estadística oficial'),
   secondary: bi('Secondary source', 'Fuente secundaria'),
 };
-
-/**
- * Language of an instrument's own title.
- *
- * A heuristic on the issuing jurisdiction, and only a heuristic: every Spanish
- * instrument in the current catalog is titled in Spanish and everything else is
- * titled in English. It exists so a screen reader does not pronounce "Real
- * Decreto 1004/2015" with English phonemes. If the catalog gains, say, a
- * Québec instrument titled in French, this needs a real field on `Citation`
- * rather than a wider guess here.
- */
-function instrumentLang(citation: Citation): string {
-  return citation.jurisdiction.toUpperCase() === 'ES' ? 'es' : 'en';
-}
 
 export function citationAnchor(id: string): string {
   return `cite-${id}`;
@@ -81,13 +86,38 @@ export function CitationRefs({ ids }: { readonly ids: readonly string[] }) {
   );
 }
 
+/**
+ * The instrument's name and provision, marked with the instrument's own
+ * language.
+ *
+ * `<cite>` is the correct element for the title of a work, and it is what a
+ * reader copying a reference out of the page will land on. `lang` is omitted
+ * entirely — rather than defaulted to the page locale — when `instrumentLang`
+ * declines to answer, because an unmarked run inherits the document language and
+ * makes no claim, while a confidently wrong `lang` mispronounces a statute.
+ */
+export function InstrumentName({ citation }: { readonly citation: Citation }) {
+  const lang = instrumentLang(citation) ?? undefined;
+  return (
+    <cite className={styles.instrumentName} lang={lang}>
+      {citation.instrument}
+      {citation.provision !== undefined ? (
+        <span className={styles.provision}>, {citation.provision}</span>
+      ) : null}
+    </cite>
+  );
+}
+
 export function CitationEntry({
   citation,
   asOf,
+  locale,
 }: {
   readonly citation: Citation;
   readonly asOf: IsoDate;
+  readonly locale: Locale;
 }) {
+  const t = translator(locale);
   const band = staleness(citation, asOf);
   const bandView = stalenessView(band);
   const age = citationAgeDays(citation, asOf);
@@ -96,31 +126,25 @@ export function CitationEntry({
     <li className={styles.entry} id={citationAnchor(citation.id)}>
       <div className={styles.entryHead}>
         <code className={styles.id}>{citation.id}</code>
-        <Chip>{KIND_LABEL[citation.kind].en}</Chip>
+        <Chip>{t(KIND_LABEL[citation.kind])}</Chip>
         <Chip>{citation.jurisdiction}</Chip>
-        <Badge tone={bandView.tone} label={bandView.label} />
+        <Badge tone={bandView.tone} label={t(bandView.label)} />
         {citation.discretionary === true ? (
-          <Badge
-            tone="warn"
-            label={bi('Not a statutory threshold', 'No es un umbral legal')}
-          />
+          <Badge tone="warn" label={t('Not a statutory threshold', 'No es un umbral legal')} />
         ) : null}
       </div>
 
-      <p className={styles.instrument} lang={instrumentLang(citation)}>
-        {citation.instrument}
-        {citation.provision !== undefined ? (
-          <span className={styles.provision}>, {citation.provision}</span>
-        ) : null}
+      <p className={styles.instrument}>
+        <InstrumentName citation={citation} />
       </p>
 
       <p className={styles.meta}>
-        <TInline text={bi('Last verified against the source', 'Última verificación frente a la fuente')} />
+        {t('Last verified against the source', 'Última verificación frente a la fuente')}
         {': '}
         <time dateTime={citation.verifiedOn} className={styles.date}>
           {citation.verifiedOn}
         </time>{' '}
-        <span className={styles.age}>({days(age)} ago)</span>
+        <span className={styles.age}>({agedDays(age, locale)})</span>
       </p>
 
       {citation.url !== undefined ? (
@@ -131,12 +155,10 @@ export function CitationEntry({
         </p>
       ) : (
         <p className={styles.meta}>
-          <T
-            text={bi(
-              'No canonical link is recorded. The catalog omits a URL rather than guess one.',
-              'No consta enlace canónico. El catálogo omite la URL en lugar de suponerla.',
-            )}
-          />
+          {t(
+            'No canonical link is recorded. The catalog omits a URL rather than guess one.',
+            'No consta enlace canónico. El catálogo omite la URL en lugar de suponerla.',
+          )}
         </p>
       )}
 
@@ -144,14 +166,13 @@ export function CitationEntry({
         <div className={citation.discretionary === true ? styles.caveat : styles.note}>
           {citation.discretionary === true ? (
             <p className={styles.caveatLead}>
-              <T
-                text={bi(
-                  'This is administrative practice, not a bright-line statutory threshold. Counsel must verify it for the specific file.',
-                  'Esto es práctica administrativa, no un umbral legal taxativo. Un letrado debe verificarlo para el expediente concreto.',
-                )}
-              />
+              {t(
+                'This is administrative practice, not a bright-line statutory threshold. Counsel must verify it for the specific file.',
+                'Esto es práctica administrativa, no un umbral legal taxativo. Un letrado debe verificarlo para el expediente concreto.',
+              )}
             </p>
           ) : null}
+          {/* The catalog's own note, in the language it was authored in. */}
           <p lang="en">{citation.note}</p>
         </div>
       ) : null}
@@ -162,21 +183,20 @@ export function CitationEntry({
 export function CitationList({
   citations,
   asOf,
+  locale,
 }: {
   readonly citations: readonly Citation[];
   readonly asOf: IsoDate;
+  readonly locale: Locale;
 }) {
+  const t = translator(locale);
   if (citations.length === 0) {
-    return (
-      <p className={styles.meta}>
-        <T text={bi('No sources recorded.', 'No constan fuentes.')} />
-      </p>
-    );
+    return <p className={styles.meta}>{t('No sources recorded.', 'No constan fuentes.')}</p>;
   }
   return (
     <ol className={styles.list}>
       {citations.map((citation) => (
-        <CitationEntry key={citation.id} citation={citation} asOf={asOf} />
+        <CitationEntry locale={locale} key={citation.id} citation={citation} asOf={asOf} />
       ))}
     </ol>
   );
@@ -190,20 +210,25 @@ export function CitationList({
  * screen with no way to check it — which is precisely the state the `Citation`
  * type exists to prevent.
  */
-export function UnresolvedCitation({ id }: { readonly id: string }) {
+export function UnresolvedCitation({
+  id,
+  locale,
+}: {
+  readonly id: string;
+  readonly locale: Locale;
+}) {
+  const t = translator(locale);
   return (
     <li className={styles.entry}>
       <div className={styles.entryHead}>
         <code className={styles.id}>{id}</code>
-        <PlainBadge tone="bad">Unresolved</PlainBadge>
+        <PlainBadge tone="bad">{t('Unresolved', 'Sin resolver')}</PlainBadge>
       </div>
       <p className={styles.meta}>
-        <T
-          text={bi(
-            'This rule cites a source that is not available in this build. Treat the rule as unverified until it resolves.',
-            'Esta norma cita una fuente que no está disponible en esta compilación. Trate la norma como no verificada hasta que se resuelva.',
-          )}
-        />
+        {t(
+          'This rule cites a source that is not available in this build. Treat the rule as unverified until it resolves.',
+          'Esta norma cita una fuente que no está disponible en esta compilación. Trate la norma como no verificada hasta que se resuelva.',
+        )}
       </p>
     </li>
   );

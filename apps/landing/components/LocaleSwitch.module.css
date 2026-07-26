@@ -1,0 +1,55 @@
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.8125rem;
+  line-height: 1.2;
+}
+
+/*
+ * The two options are told apart by three things at once, none of them colour:
+ * the current one is not a link, it is bolder, and it sits in a filled box. The
+ * other is underlined, which survives a forced-colours theme and a greyscale
+ * screen.
+ */
+.current {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  color: var(--fg);
+  font-weight: 700;
+}
+
+.link {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  color: var(--accent);
+  font-weight: 560;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.link:hover {
+  background: var(--surface-sunken);
+  border-color: var(--border);
+}
+
+/*
+ * Available to assistive technology, absent from the screen. Not
+ * `display: none` and not `visibility: hidden`, both of which remove it from
+ * the accessibility tree as well, which would leave the link announced as
+ * nothing at all.
+ */
+.assistive {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

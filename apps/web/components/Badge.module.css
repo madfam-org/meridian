@@ -10,11 +10,11 @@
   font-weight: 560;
   max-width: 100%;
   /*
-   * Bilingual labels are long — "Current at the target submission date ·
-   * Vigente en la fecha objetivo de presentación" does not fit a column on a
-   * narrow screen. Wrapping is allowed and the glyph is pinned to the first
-   * line, because a badge that overflows its container is a badge whose second
-   * language is unreadable.
+   * Status labels are long — "Vigente en la fecha objetivo de presentación"
+   * does not fit a column on a narrow screen, and Spanish runs longer than
+   * English almost everywhere on this site. Wrapping is allowed and the glyph is
+   * pinned to the first line, because a badge that overflows its container is a
+   * badge whose label is unreadable.
    */
   white-space: normal;
   overflow-wrap: anywhere;
@@ -81,20 +81,4 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   white-space: nowrap;
-}
-
-/*
- * Same reason as the skip link: a badge sits on a tinted fill, and the muted
- * grey the Spanish half would otherwise take loses contrast against it. Both
- * languages inherit the badge's own status colour; the slight opacity keeps the
- * visual hierarchy without dropping the ratio.
- */
-.badge :global(span[lang='es']) {
-  color: inherit;
-  opacity: 0.82;
-}
-
-.chip :global(span[lang='es']) {
-  color: inherit;
-  opacity: 0.82;
 }

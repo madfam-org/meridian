@@ -95,11 +95,6 @@
   max-width: var(--measure);
 }
 
-.orphaned :global(span[lang='es']) {
-  color: inherit;
-  opacity: 0.85;
-}
-
 .lockBox {
   border-left: 3px solid var(--border-strong);
   padding: var(--space-2) 0 var(--space-2) var(--space-4);
@@ -111,11 +106,6 @@
   text-transform: uppercase;
   color: var(--fg-muted);
   margin-bottom: var(--space-2);
-}
-
-.lockTitle :global(span[lang='es']) {
-  text-transform: none;
-  letter-spacing: 0;
 }
 
 .lockList {

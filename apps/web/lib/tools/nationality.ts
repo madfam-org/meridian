@@ -46,12 +46,7 @@
  * a silently absent nationality is a wrong answer.
  */
 
-import type {
-  Citation,
-  CountryCode,
-  IsoDate,
-  NationalityAcquisition,
-} from '@meridian/core';
+import type { Citation, CountryCode, IsoDate, NationalityAcquisition } from '@meridian/core';
 import {
   SPAIN_REDUCED_RESIDENCY_NATIONALITIES,
   compareDates,
@@ -78,7 +73,13 @@ import {
 import { bi, type Bi } from '@/lib/i18n';
 import { AS_OF } from '@/lib/sample/common';
 import type { ToolEntry } from '@/lib/tools/registry';
-import { collect, issue, readDateField, readIntegerField, type FieldIssue } from '@/lib/tools/validation';
+import {
+  collect,
+  issue,
+  readDateField,
+  readIntegerField,
+  type FieldIssue,
+} from '@/lib/tools/validation';
 
 /**
  * The civil date the assessment is run as at, and the value the form starts
@@ -176,10 +177,17 @@ const COUNTRY_NAMES: Readonly<Record<string, Bi>> = {
   VE: bi('Venezuela', 'Venezuela'),
 };
 
-/** How a country reads in a `<select>`, where an option may carry only text. */
-export function countryLabel(code: string): string {
+/**
+ * How a country reads in a `<select>`.
+ *
+ * The ISO code stays alongside the name in both languages: it is the value the
+ * criterion actually compares, and a reader scanning twenty Spanish-speaking
+ * countries often recognises the code faster than the spelling.
+ */
+export function countryLabel(code: string): Bi {
   const name = COUNTRY_NAMES[code];
-  return name === undefined ? code : `${name.en} · ${name.es} (${code})`;
+  if (name === undefined) return bi(code, code);
+  return bi(`${name.en} (${code})`, `${name.es} (${code})`);
 }
 
 interface Option {
@@ -197,7 +205,10 @@ interface Option {
  */
 const LISTED_COUNTRY_OPTIONS: readonly Option[] = [...SPAIN_REDUCED_RESIDENCY_NATIONALITIES]
   .map((code) => ({ code, label: countryLabel(code) }))
-  .sort((a, b) => (a.label < b.label ? -1 : a.label > b.label ? 1 : 0))
+  // Sorted on the English half in both locales, deliberately: the order of a
+  // dropdown states nothing, and an order that changed with the language would
+  // move every row under a reader who switches part-way through the form.
+  .sort((a, b) => (a.label.en < b.label.en ? -1 : a.label.en > b.label.en ? 1 : 0))
   .map(({ code, label }) => ({ value: code, label }));
 
 const NOT_ANSWERED_OPTION: Option = {
@@ -270,10 +281,7 @@ export const RESIDENCE_UNDER_OPTIONS: readonly Option[] = [
   NOT_ANSWERED_OPTION,
   {
     value: RESIDENCE_UNDER_CLAIMED,
-    label: bi(
-      'The nationality I would apply under',
-      'La nacionalidad con la que solicitaría',
-    ),
+    label: bi('The nationality I would apply under', 'La nacionalidad con la que solicitaría'),
   },
   {
     value: RESIDENCE_UNDER_SECOND,
@@ -302,8 +310,14 @@ export const STATUS_OPTIONS: readonly Option[] = [
     value: 'permanent_resident',
     label: bi('Long-term residence', 'Residencia de larga duración'),
   },
-  { value: 'student', label: bi('A student stay', 'Una estancia por estudios') },
-  { value: 'visitor', label: bi('A short stay or visit', 'Una estancia corta o visita') },
+  {
+    value: 'student',
+    label: bi('A student stay', 'Una estancia por estudios'),
+  },
+  {
+    value: 'visitor',
+    label: bi('A short stay or visit', 'Una estancia corta o visita'),
+  },
   {
     value: 'irregular',
     label: bi('Present without an authorisation', 'En España sin autorización'),
@@ -474,11 +488,7 @@ interface CountryReading {
  * because that constructor throws on anything that is not two letters and a
  * thrown `RangeError` in a form handler is a blank screen rather than a message.
  */
-function readCountry(
-  selectValue: string,
-  codeFieldId: string,
-  rawCode: string,
-): CountryReading {
+function readCountry(selectValue: string, codeFieldId: string, rawCode: string): CountryReading {
   if (selectValue === UNANSWERED || selectValue === NO_SECOND_NATIONALITY) {
     return { country: null, issue: null };
   }
@@ -544,11 +554,20 @@ export interface AnswersReading {
  * `unknown`.
  */
 export function readNationalityAnswers(answers: NationalityAnswers): AnswersReading {
-  const asOfResult = readDateField(FIELD.assessAsOf, answers.assessAsOf, { required: true });
-  const claimedResult = readCountry(answers.claimed, FIELD.claimedOtherCode, answers.claimedOtherCode);
+  const asOfResult = readDateField(FIELD.assessAsOf, answers.assessAsOf, {
+    required: true,
+  });
+  const claimedResult = readCountry(
+    answers.claimed,
+    FIELD.claimedOtherCode,
+    answers.claimedOtherCode,
+  );
   const secondResult = readCountry(answers.second, FIELD.secondOtherCode, answers.secondOtherCode);
   const sinceResult = readDateField(FIELD.residenceSince, answers.residenceSince);
-  const ageResult = readIntegerField(FIELD.ageYears, answers.ageYears, { min: 0, max: 130 });
+  const ageResult = readIntegerField(FIELD.ageYears, answers.ageYears, {
+    min: 0,
+    max: 130,
+  });
 
   const sameTwice =
     claimedResult.country !== null &&
@@ -643,8 +662,7 @@ export function readNationalityAnswers(answers: NationalityAnswers): AnswersRead
     // `derived.continuousLegalResidenceSince` is only populated when an unbroken
     // run covers `asOf`, which is exactly what art. 22.3's "immediately prior to
     // the application" asks for.
-    residencePeriods:
-      sinceResult.date === null ? undefined : [dateRange(sinceResult.date, asOf)],
+    residencePeriods: sinceResult.date === null ? undefined : [dateRange(sinceResult.date, asOf)],
 
     currentStatus: statusOf(answers.status),
     ageYears: ageResult.value ?? undefined,
@@ -867,10 +885,7 @@ function statusOfCriterion(routes: readonly RouteAssessment[], id: string): Crit
  * The whole legal content of this function is `evaluate(pathway, facts, asOf)`,
  * called twice. Everything around it is joining, grouping and counting.
  */
-export function runNationalityCheck(
-  facts: ApplicantFacts,
-  asOf: IsoDate,
-): NationalityAssessment {
+export function runNationalityCheck(facts: ApplicantFacts, asOf: IsoDate): NationalityAssessment {
   const routes: RouteAssessment[] = ROUTES.map((pathway) => {
     const report = evaluate(pathway, facts, asOf);
     return { pathway, report, criteria: viewCriteria(pathway, report) };
@@ -888,7 +903,8 @@ export function runNationalityCheck(
     byOriginStatus: statusOfCriterion(routes, CRITERION_BY_ORIGIN),
     residenceNationalityStatus: statusOfCriterion(routes, CRITERION_RESIDENCE_NATIONALITY),
     residenceDurationDecided:
-      (twoYears !== null && twoYears !== 'unknown') || (tenYears !== null && tenYears !== 'unknown'),
+      (twoYears !== null && twoYears !== 'unknown') ||
+      (tenYears !== null && tenYears !== 'unknown'),
   };
 }
 

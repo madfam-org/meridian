@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 
-import { bi, type Bi } from '@/lib/i18n';
+import type { Bi, Locale } from '@/lib/i18n';
+import { bi, translator } from '@/lib/i18n';
 import { cx, proportion } from '@/lib/ui';
-import { T } from '@/components/Bilingual';
 import type { Tone } from '@/components/Badge';
 
 import styles from './Working.module.css';
@@ -46,15 +46,16 @@ const TONE_CLASS: Record<Tone, string> = {
 export function Working({
   title = bi('The arithmetic', 'La aritmética'),
   rows,
+  locale,
 }: {
   readonly title?: Bi;
   readonly rows: readonly WorkingRow[];
+  readonly locale: Locale;
 }) {
+  const t = translator(locale);
   return (
     <div className={styles.working}>
-      <h4 className={styles.title}>
-        <T text={title} />
-      </h4>
+      <h4 className={styles.title}>{t(title)}</h4>
       <dl className={styles.rows}>
         {rows.map((row, index) => (
           <div
@@ -68,12 +69,8 @@ export function Working({
             )}
           >
             <dt className={styles.label}>
-              <T text={row.label} />
-              {row.note !== undefined ? (
-                <span className={styles.note}>
-                  <T text={row.note} />
-                </span>
-              ) : null}
+              {t(row.label)}
+              {row.note !== undefined ? <span className={styles.note}>{t(row.note)}</span> : null}
             </dt>
             <dd className={styles.value}>
               {row.op !== undefined ? (

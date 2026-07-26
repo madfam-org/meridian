@@ -160,17 +160,3 @@
   margin: 0;
   font-size: 0.9375rem;
 }
-
-/*
- * Inside a tinted box the Spanish line would otherwise fall back to the global
- * muted grey and lose contrast against the tint. Inheriting the box's own
- * foreground at reduced opacity keeps the ratio while still reading as the
- * secondary line. Same treatment as `Callout.module.css`.
- */
-.boundary :global(span[lang='es']),
-.boundary :global(p[lang='es']),
-.notice :global(span[lang='es']),
-.notice :global(p[lang='es']) {
-  color: inherit;
-  opacity: 0.85;
-}

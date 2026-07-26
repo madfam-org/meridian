@@ -1537,6 +1537,9 @@ const WORKING: FirmRecords = {
   tenantId: TENANT_ID,
   tenantDisplayName: 'Cordillera Movilidad y Extranjería',
   homeJurisdiction: 'ES',
+  // The synthetic records below are authored in English. The console renders in
+  // the reader's language and marks these verbatim; see `FirmRecords.recordLanguage`.
+  recordLanguage: 'en',
   datasetId: 'working',
   datasetDescription:
     'In-process record set. Synthetic records; no real applicant, licence or travel document.',
@@ -1554,6 +1557,9 @@ const EMPTY: FirmRecords = {
   tenantId: TENANT_ID,
   tenantDisplayName: 'Cordillera Movilidad y Extranjería',
   homeJurisdiction: 'ES',
+  // The synthetic records below are authored in English. The console renders in
+  // the reader's language and marks these verbatim; see `FirmRecords.recordLanguage`.
+  recordLanguage: 'en',
   datasetId: 'empty',
   datasetDescription: 'In-process record set with no records. A tenant that has not opened a file.',
   representatives: [],

@@ -23,6 +23,10 @@ import * as ca from '../src/catalog/ca.js';
 import * as esArraigo from '../src/catalog/es-arraigo.js';
 import * as esFamilyNationality from '../src/catalog/es-family-nationality.js';
 import * as esWorkStudy from '../src/catalog/es-work-study.js';
+import * as usEmployment from '../src/catalog/us-employment.js';
+import * as usFamily from '../src/catalog/us-family.js';
+import * as usNonimmigrant from '../src/catalog/us-nonimmigrant.js';
+import * as usStatusBars from '../src/catalog/us-status-bars.js';
 import * as es from '../src/catalog/es.js';
 import {
   catalogSourceOf,
@@ -49,6 +53,10 @@ const MODULE_NAMESPACES: Record<string, Record<string, unknown>> = {
   'ca-provincial-quebec': caProvincialQuebec,
   'ca-work-study': caWorkStudy,
   'ca-family-pilots': caFamilyPilots,
+  'us-family': usFamily,
+  'us-employment': usEmployment,
+  'us-nonimmigrant': usNonimmigrant,
+  'us-status-bars': usStatusBars,
 };
 
 /** Duck-typing rather than a zod parse: this must catch a *malformed* export too. */
@@ -108,12 +116,17 @@ describe('catalog assembly', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('counts 49 pathways: 26 Spanish, 23 Canadian, and no third jurisdiction', () => {
-    expect(MERIDIAN_PATHWAY_CATALOG).toHaveLength(49);
+  it('counts 84 pathways: 26 Spanish, 23 Canadian, 35 American, and no fourth jurisdiction', () => {
+    // Pinned deliberately, and it fails in both directions. A drop means a
+    // module stopped being spread into the catalog and its routes went
+    // invisible; a rise that nobody updated this line for means a jurisdiction
+    // arrived without anyone deciding it had. Neither should pass quietly.
+    expect(MERIDIAN_PATHWAY_CATALOG).toHaveLength(84);
     expect(pathwaysForJurisdiction('ES')).toHaveLength(26);
     expect(pathwaysForJurisdiction('CA')).toHaveLength(23);
+    expect(pathwaysForJurisdiction('US')).toHaveLength(35);
     expect(new Set(MERIDIAN_PATHWAY_CATALOG.map((p) => p.jurisdiction))).toEqual(
-      new Set(['ES', 'CA']),
+      new Set(['ES', 'CA', 'US']),
     );
   });
 

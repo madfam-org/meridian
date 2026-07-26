@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 
-import type { Bi } from '@/lib/i18n';
 import { cx } from '@/lib/ui';
-import { T, TProse } from '@/components/Bilingual';
+import { Prose } from '@/components/Text';
 
 import styles from './Layout.module.css';
 
@@ -22,8 +21,8 @@ export function PageHeader({
   actions,
 }: {
   readonly eyebrow?: ReactNode;
-  readonly title: Bi;
-  readonly lead?: Bi;
+  readonly title: string;
+  readonly lead?: string;
   readonly actions?: ReactNode;
 }) {
   return (
@@ -36,10 +35,8 @@ export function PageHeader({
      */
     <div className={styles.pageHeader}>
       {eyebrow !== undefined ? <div className={styles.eyebrow}>{eyebrow}</div> : null}
-      <h1>
-        <T text={title} />
-      </h1>
-      {lead !== undefined ? <TProse text={lead} className={styles.lead} /> : null}
+      <h1>{title}</h1>
+      {lead !== undefined ? <Prose className={styles.lead}>{lead}</Prose> : null}
       {actions !== undefined ? <div className={styles.actions}>{actions}</div> : null}
     </div>
   );
@@ -59,20 +56,18 @@ export function Section({
   children,
 }: {
   readonly id: string;
-  readonly title: Bi;
-  readonly description?: Bi;
+  readonly title: string;
+  readonly description?: string;
   readonly children: ReactNode;
 }) {
   const headingId = `${id}-heading`;
   return (
     <section className={styles.section} aria-labelledby={headingId} id={id}>
       <div className={styles.sectionHead}>
-        <h2 id={headingId}>
-          <T text={title} />
-        </h2>
+        <h2 id={headingId}>{title}</h2>
       </div>
       {description !== undefined ? (
-        <TProse text={description} className={styles.sectionDescription} />
+        <Prose className={styles.sectionDescription}>{description}</Prose>
       ) : null}
       {children}
     </section>
@@ -129,12 +124,16 @@ export function Facts({ children }: { readonly children: ReactNode }) {
   return <dl className={styles.facts}>{children}</dl>;
 }
 
-export function Fact({ label, children }: { readonly label: Bi; readonly children: ReactNode }) {
+export function Fact({
+  label,
+  children,
+}: {
+  readonly label: string;
+  readonly children: ReactNode;
+}) {
   return (
     <div className={styles.fact}>
-      <dt className={styles.factLabel}>
-        <T text={label} />
-      </dt>
+      <dt className={styles.factLabel}>{label}</dt>
       <dd className={styles.factValue}>{children}</dd>
     </div>
   );
@@ -156,17 +155,13 @@ export function Figure({
   tone,
 }: {
   readonly value: number | string;
-  readonly unit?: Bi;
+  readonly unit?: string;
   readonly tone?: 'plain' | 'strong';
 }) {
   return (
     <span className={cx(styles.figure, tone === 'strong' && styles.figureStrong)}>
       <span className={styles.figureValue}>{value}</span>
-      {unit !== undefined ? (
-        <span className={styles.figureUnit}>
-          <T text={unit} />
-        </span>
-      ) : null}
+      {unit !== undefined ? <span className={styles.figureUnit}>{unit}</span> : null}
     </span>
   );
 }
@@ -192,7 +187,7 @@ export function ActionLink({
   newTab = false,
 }: {
   readonly href: string;
-  readonly label: Bi;
+  readonly label: string;
   readonly variant?: 'primary' | 'secondary';
   readonly newTab?: boolean;
 }) {
@@ -203,7 +198,7 @@ export function ActionLink({
       href={href}
       {...external}
     >
-      <T text={label} />
+      {label}
     </a>
   );
 }

@@ -113,6 +113,40 @@
   align-items: center;
   gap: var(--sp-3);
   margin-left: auto;
+  flex-wrap: wrap;
+}
+
+/* The language switcher sits beside the theme control and is built to match it:
+   a small muted label, then the control. It is a link rather than a select
+   because it has to work with scripting disabled. */
+.localeSwitch {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.localeSwitchLabel {
+  white-space: nowrap;
+}
+
+.localeSwitchLink {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.localeSwitchLink:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+  text-decoration: underline;
 }
 
 .main {

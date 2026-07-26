@@ -10,19 +10,27 @@
  *
  * Each item also shows its keyboard chord. Discoverability is the hard part of
  * keyboard navigation: a shortcut nobody can see is a shortcut nobody uses.
+ *
+ * The locale is read out of the path rather than passed in as a prop. It has to
+ * be: this component re-renders on every client navigation while the layout that
+ * would supply the prop does not, so a prop would go stale the moment a reader
+ * crossed between locales. `publicPath` runs first, because `usePathname()`
+ * under a middleware rewrite may report either the public path or the rewritten
+ * one, and nothing here should have to care which.
  */
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { CONSOLE_ROUTES, activeRoute } from '@/components/routes';
+import { UI, localizedPath, pick, publicPath, splitLocalePath } from '@/lib/i18n';
 import styles from '@/components/shell.module.css';
 
 export function Nav({ asOfQuery }: { asOfQuery: string }) {
-  const pathname = usePathname() ?? '/';
-  const current = activeRoute(pathname);
+  const { locale, path } = splitLocalePath(publicPath(usePathname()));
+  const current = activeRoute(path);
 
   return (
-    <nav className={styles.nav} aria-label="Console sections">
+    <nav className={styles.nav} aria-label={pick(UI.navLabel, locale)}>
       <ul className={styles.navList}>
         {CONSOLE_ROUTES.map((route) => {
           const isCurrent = current !== null && current.href === route.href;
@@ -30,10 +38,10 @@ export function Nav({ asOfQuery }: { asOfQuery: string }) {
             <li key={route.href}>
               <Link
                 className={styles.navLink}
-                href={`${route.href}${asOfQuery}`}
+                href={`${localizedPath(route.href, locale)}${asOfQuery}`}
                 {...(isCurrent ? { 'aria-current': 'page' as const } : {})}
               >
-                {route.label}
+                {pick(route.label, locale)}
                 <span className={styles.navKey} aria-hidden="true">
                   g {route.key}
                 </span>

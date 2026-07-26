@@ -84,9 +84,3 @@
   font-weight: 600;
   color: var(--fg-subtle);
 }
-
-.caveatLabel :global(span[lang='es']) {
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 500;
-}

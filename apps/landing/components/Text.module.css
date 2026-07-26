@@ -1,0 +1,17 @@
+.prose {
+  margin-bottom: var(--space-3);
+}
+
+.prose:last-child {
+  margin-bottom: 0;
+}
+
+/*
+ * `<cite>` is italic by default in every browser. An instrument name is not an
+ * emphasis and the italic form of a long Spanish title with accents is harder
+ * to read at small sizes, so the element is kept for its semantics and its
+ * default styling is dropped.
+ */
+.instrument {
+  font-style: normal;
+}

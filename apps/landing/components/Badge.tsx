@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react';
 
-import type { Bi } from '@/lib/i18n';
 import { cx } from '@/lib/ui';
-import { TInline } from '@/components/Bilingual';
 
 import styles from './Badge.module.css';
 
@@ -43,7 +41,7 @@ export function Badge({
   className,
 }: {
   readonly tone: Tone;
-  readonly label: Bi;
+  readonly label: string;
   readonly className?: string;
 }) {
   return (
@@ -51,7 +49,7 @@ export function Badge({
       <span aria-hidden="true" className={styles.glyph}>
         {GLYPH[tone]}
       </span>
-      <TInline text={label} />
+      <span>{label}</span>
     </span>
   );
 }

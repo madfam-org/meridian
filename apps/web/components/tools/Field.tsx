@@ -40,10 +40,9 @@
 
 import type { ChangeEvent, ReactNode } from 'react';
 
-import type { Bi } from '@/lib/i18n';
-import { bi } from '@/lib/i18n';
+import type { Bi, Locale } from '@/lib/i18n';
+import { bi, translator } from '@/lib/i18n';
 import { cx } from '@/lib/ui';
-import { T } from '@/components/Bilingual';
 
 import styles from './Field.module.css';
 
@@ -61,26 +60,34 @@ export interface FieldControlAttributes {
 export interface FieldProps {
   /** DOM id of the control. Error summaries link to it; keep it stable. */
   readonly id: string;
-  readonly label: Bi;
+  /** Already resolved to the served locale by the caller, as are `hint` and `error`. */
+  readonly label: string;
   /** Guidance shown under the label and read out with the control. */
-  readonly hint?: Bi;
+  readonly hint?: string;
   /** Present only when this field is in error. */
-  readonly error?: Bi;
+  readonly error?: string;
   readonly required?: boolean;
+  /**
+   * The served locale. Needed even though the text above arrives resolved,
+   * because this component owns two words of its own — the required marker and
+   * the word before an error message — and a form whose labels are Spanish and
+   * whose "required" is English is a form that has half-translated itself.
+   */
+  readonly locale: Locale;
   readonly children: (attributes: FieldControlAttributes) => ReactNode;
 }
 
 const REQUIRED_MARKER: Bi = bi('required', 'obligatorio');
 
 /**
- * The word "Error" is spelled identically in both languages, so it is rendered
- * once as plain text rather than through `<T>`. Repeating it as "Error · Error"
- * would be noise in the visual layout and a duplicate announcement in a screen
- * reader.
+ * The word before an error message. Spelled identically in both languages, so
+ * it is a constant rather than a pair — but it is still marked as translated
+ * copy so the next language added has somewhere obvious to change it.
  */
-const ERROR_WORD = 'Error';
+const ERROR_WORD: Bi = bi('Error', 'Error');
 
-export function Field({ id, label, hint, error, required, children }: FieldProps) {
+export function Field({ id, label, hint, error, required, locale, children }: FieldProps) {
+  const t = translator(locale);
   const hintId = hint !== undefined ? `${id}-hint` : undefined;
   const errorId = error !== undefined ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter((v): v is string => v !== undefined).join(' ');
@@ -95,17 +102,13 @@ export function Field({ id, label, hint, error, required, children }: FieldProps
   return (
     <div className={cx(styles.field, error !== undefined && styles.fieldInvalid)}>
       <label className={styles.label} htmlFor={id}>
-        <T text={label} />
-        {required === true ? (
-          <span className={styles.required}>
-            <T text={REQUIRED_MARKER} />
-          </span>
-        ) : null}
+        {label}
+        {required === true ? <span className={styles.required}>{t(REQUIRED_MARKER)}</span> : null}
       </label>
 
       {hint !== undefined && hintId !== undefined ? (
         <p className={styles.hint} id={hintId}>
-          <T text={hint} />
+          {hint}
         </p>
       ) : null}
 
@@ -114,10 +117,8 @@ export function Field({ id, label, hint, error, required, children }: FieldProps
           <span aria-hidden="true" className={styles.errorGlyph}>
             ✕
           </span>
-          <span className={styles.errorWord}>{ERROR_WORD}</span>
-          <span className={styles.errorText}>
-            <T text={error} />
-          </span>
+          <span className={styles.errorWord}>{t(ERROR_WORD)}</span>
+          <span className={styles.errorText}>{error}</span>
         </p>
       ) : null}
 
@@ -129,11 +130,12 @@ export function Field({ id, label, hint, error, required, children }: FieldProps
 /** Props every wrapped control shares with `Field`. */
 interface CommonProps {
   readonly id: string;
-  readonly label: Bi;
-  readonly hint?: Bi;
-  readonly error?: Bi;
+  readonly label: string;
+  readonly hint?: string;
+  readonly error?: string;
   readonly required?: boolean;
   readonly disabled?: boolean;
+  readonly locale: Locale;
 }
 
 export interface TextFieldProps extends CommonProps {
@@ -296,7 +298,11 @@ export function NumberField({
 
 export interface SelectOption {
   readonly value: string;
-  /** Bilingual where the option is Meridian's own wording; plain where it is a code. */
+  /**
+   * A bilingual pair where the option is Meridian's own wording, resolved to the
+   * served locale by the select. A plain string where it is a code or a proper
+   * noun that is not translated in either language.
+   */
   readonly label: Bi | string;
 }
 
@@ -309,17 +315,14 @@ export interface SelectFieldProps extends CommonProps {
 /**
  * A single-choice select.
  *
- * Option text is flattened to `en · es` rather than rendered as two elements:
- * an `<option>` may contain only text, so the bilingual pair cannot carry its
- * own `lang` attributes here. Everything outside the option list still does.
+ * An option may carry only text, so a bilingual pair could never have marked its
+ * two halves with their own `lang` here — the list used to read "Austria ·
+ * Austria" twenty times for that reason. Now one language is served and the
+ * option is simply that language's half. Where the label is a plain string it is
+ * a code or a proper noun that is not translated, and it passes through.
  */
-export function SelectField({
-  value,
-  onChange,
-  options,
-  disabled,
-  ...field
-}: SelectFieldProps) {
+export function SelectField({ value, onChange, options, disabled, ...field }: SelectFieldProps) {
+  const t = translator(field.locale);
   return (
     <Field {...field}>
       {(a) => (
@@ -332,9 +335,7 @@ export function SelectField({
         >
           {options.map((option) => (
             <option key={option.value} value={option.value}>
-              {typeof option.label === 'string'
-                ? option.label
-                : `${option.label.en} · ${option.label.es}`}
+              {typeof option.label === 'string' ? option.label : t(option.label)}
             </option>
           ))}
         </select>
@@ -365,13 +366,17 @@ export function CheckboxField({
   hint,
   error,
   required,
+  locale,
 }: CheckboxFieldProps) {
+  const t = translator(locale);
   const hintId = hint !== undefined ? `${id}-hint` : undefined;
   const errorId = error !== undefined ? `${id}-error` : undefined;
   const describedBy = [hintId, errorId].filter((v): v is string => v !== undefined).join(' ');
 
   return (
-    <div className={cx(styles.field, styles.checkboxField, error !== undefined && styles.fieldInvalid)}>
+    <div
+      className={cx(styles.field, styles.checkboxField, error !== undefined && styles.fieldInvalid)}
+    >
       <div className={styles.checkboxRow}>
         <input
           id={id}
@@ -385,13 +390,13 @@ export function CheckboxField({
           onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.checked)}
         />
         <label className={styles.checkboxLabel} htmlFor={id}>
-          <T text={label} />
+          {label}
         </label>
       </div>
 
       {hint !== undefined && hintId !== undefined ? (
         <p className={styles.hint} id={hintId}>
-          <T text={hint} />
+          {hint}
         </p>
       ) : null}
 
@@ -400,10 +405,8 @@ export function CheckboxField({
           <span aria-hidden="true" className={styles.errorGlyph}>
             ✕
           </span>
-          <span className={styles.errorWord}>{ERROR_WORD}</span>
-          <span className={styles.errorText}>
-            <T text={error} />
-          </span>
+          <span className={styles.errorWord}>{t(ERROR_WORD)}</span>
+          <span className={styles.errorText}>{error}</span>
         </p>
       ) : null}
     </div>

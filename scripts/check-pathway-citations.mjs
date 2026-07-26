@@ -301,6 +301,27 @@ function readCatalogFile(fileName) {
     dateConstants.set(m[1], m[2]);
   }
 
+  // Instrument names are frequently hoisted into a shared constant — one file
+  // declares `const CFR8 = 'Code of Federal Regulations, title 8 …'` and 26
+  // citations reference it. Reading only string literals made every one of those
+  // parse as having no instrument, which is both a false report and, worse, a
+  // silent hole in the duplicate-id check below: two citations sharing an id
+  // cannot be compared on an instrument neither of them appears to have.
+  const stringConstants = new Map();
+  const stringRe =
+    /(?:^|\n)\s*(?:export\s+)?const\s+([A-Za-z0-9_$]+)\s*=\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")\s*;/g;
+  for (let m = stringRe.exec(text); m !== null; m = stringRe.exec(text)) {
+    stringConstants.set(m[1], m[2] ?? m[3] ?? '');
+  }
+
+  /** A field that may be a literal or a reference to a hoisted string constant. */
+  const resolvedField = (body, name) => {
+    const literal = field(body, name);
+    if (literal !== null) return literal;
+    const ref = identifierField(body, name);
+    return ref ? (stringConstants.get(ref) ?? null) : null;
+  };
+
   const citations = new Map(); // const name -> citation
   const pathways = [];
   const aggregates = new Map(); // const name -> [pathway const names]
@@ -334,8 +355,8 @@ function readCatalogFile(fileName) {
       id,
       verifiedOn,
       verifiedOnExpr: literalDate ?? viaConstant ?? '(unreadable)',
-      instrument: field(body, 'instrument'),
-      jurisdiction: field(body, 'jurisdiction'),
+      instrument: resolvedField(body, 'instrument'),
+      jurisdiction: resolvedField(body, 'jurisdiction'),
       file: fileName,
       line: lineOf(text, m.index + 1),
     });

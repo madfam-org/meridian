@@ -31,6 +31,7 @@ COPY packages/presence/package.json ./packages/presence/
 COPY packages/pathways/package.json ./packages/pathways/
 COPY packages/documents/package.json ./packages/documents/
 COPY packages/govtech/package.json ./packages/govtech/
+COPY packages/i18n/package.json ./packages/i18n/
 
 RUN pnpm install --frozen-lockfile
 

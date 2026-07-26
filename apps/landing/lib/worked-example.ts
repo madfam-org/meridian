@@ -38,7 +38,7 @@ import type { ApplicantFacts, Criterion, CriterionResult, EligibilityReport, Pat
 import { MERIDIAN_PATHWAY_CATALOG, evaluate } from '@meridian/pathways';
 
 import { AS_OF } from '@/lib/catalog-facts';
-import { bi, type Bi } from '@/lib/i18n';
+import { bi, type LocalizedText } from '@/lib/i18n';
 
 /**
  * The pathway the demonstration runs against.
@@ -99,7 +99,7 @@ const FACTS: ApplicantFacts = {
 export const WORKED_REPORT: EligibilityReport = evaluate(PATHWAY, FACTS, AS_OF);
 
 /** What the reader was told about the applicant, so the input is not a black box. */
-export const WORKED_FACTS_SHOWN: readonly Bi[] = [
+export const WORKED_FACTS_SHOWN: readonly LocalizedText[] = [
   bi('Holds Mexican nationality, and claims under it', 'Tiene nacionalidad mexicana y solicita al amparo de ella'),
   bi('Residence in Spain is held under that same nationality', 'La residencia en España se ostenta bajo esa misma nacionalidad'),
   bi(
@@ -120,14 +120,14 @@ export const WORKED_FACTS_SHOWN: readonly Bi[] = [
 
 export interface CriterionRow {
   readonly id: string;
-  readonly label: Bi;
+  readonly label: LocalizedText;
   readonly status: CriterionResult['status'];
   readonly weight: Criterion['weight'];
   /** The engine's own trace of the comparison it performed. English, verbatim. */
   readonly detail: string;
   readonly citationIds: readonly string[];
   /** Present on the criterion the demonstration is built around. */
-  readonly guidance: Bi | null;
+  readonly guidance: LocalizedText | null;
 }
 
 function criterionOf(id: string): Criterion | undefined {

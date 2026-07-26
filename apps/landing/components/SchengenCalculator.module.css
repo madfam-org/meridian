@@ -155,10 +155,6 @@
   letter-spacing: -0.01em;
 }
 
-.legend :global(span[lang='es']) {
-  font-size: 0.85em;
-}
-
 .hint {
   margin: 0;
   font-size: 0.875rem;
@@ -204,12 +200,6 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--fg-muted);
-}
-
-.tripLegend :global(span[lang='es']) {
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 500;
 }
 
 .tripFooter {
@@ -335,15 +325,11 @@
   color: var(--fg-muted);
 }
 
-.headlineOf :global(span[lang='es']) {
-  font-size: 0.9em;
-}
-
 /*
  * `flex: 0 1 auto` with `min-width: 0`, never `0 0 auto`.
  *
- * The status labels are bilingual and long — "The record cannot decide · El
- * registro no puede decidirlo" is wider than a 375px screen. A badge that
+ * The status labels are whole phrases — "El registro no puede decidirlo" is
+ * close to a 375px screen on its own. A badge that
  * cannot shrink pushes the whole document sideways, and a page about counting
  * days that scrolls horizontally on a phone is a page nobody finishes reading.
  * The badge itself already wraps and carries `max-width: 100%`; this is what
@@ -509,10 +495,6 @@
   gap: var(--space-2);
   font-size: 0.8125rem;
   color: var(--fg-muted);
-}
-
-.citationVerified :global(span[lang='es']) {
-  color: var(--fg-subtle);
 }
 
 .citationLink {

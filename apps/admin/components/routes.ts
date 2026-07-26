@@ -4,56 +4,76 @@
  * Shared by the navigation, the keyboard shortcuts and the footer legend, so
  * that a shortcut can never point somewhere the navigation does not, and a route
  * added to one is added to all three.
+ *
+ * `href` is the **locale-free** path. Every consumer runs it through
+ * `localizedPath` before it becomes an `href`, which is what keeps a Spanish
+ * reader inside Spanish when they use the navigation or a keyboard chord. A
+ * literal `/es/...` must never appear here: the asymmetry between the two
+ * locales lives in `@meridian/i18n`'s `LOCALE_PREFIX` and nowhere else.
+ *
+ * The keyboard chord is not translated. `g` `m` is a position on a keyboard that
+ * muscle memory learns, and rebinding it per language would mean a bilingual
+ * firm's two caseworkers cannot sit down at each other's screens.
  */
 
+import type { Bi } from '@/lib/i18n';
+import { UI } from '@/lib/i18n';
+
 export interface ConsoleRoute {
+  /** Locale-free. Localise before use. */
   readonly href: string;
-  readonly label: string;
-  /** Second key of the `g`-prefixed navigation chord. */
+  readonly label: Bi;
+  /** Second key of the `g`-prefixed navigation chord. Locale-independent. */
   readonly key: string;
-  readonly description: string;
+  readonly description: Bi;
 }
 
 export const CONSOLE_ROUTES: readonly ConsoleRoute[] = [
   {
     href: '/',
-    label: 'Caseload',
+    label: UI.routeCaseload,
     key: 'o',
-    description: 'Distribution, blockers, and what runs out soonest.',
+    description: UI.routeCaseloadDescription,
   },
   {
     href: '/matters',
-    label: 'Matters',
+    label: UI.routeMatters,
     key: 'm',
-    description: 'Every file, filterable by phase, status, jurisdiction and representative.',
+    description: UI.routeMattersDescription,
   },
   {
     href: '/representatives',
-    label: 'Representatives',
+    label: UI.routeRepresentatives,
     key: 'r',
-    description: 'Standing, expiry, and which matters each credential is gating.',
+    description: UI.routeRepresentativesDescription,
   },
   {
     href: '/catalog',
-    label: 'Catalog review',
+    label: UI.routeCatalog,
     key: 'c',
-    description: 'The review queue between the rules engine and the product.',
+    description: UI.routeCatalogDescription,
   },
   {
     href: '/integrations',
-    label: 'Integrations',
+    label: UI.routeIntegrations,
     key: 'i',
-    description: 'Government adapter capability, honestly stated.',
+    description: UI.routeIntegrationsDescription,
   },
   {
     href: '/audit',
-    label: 'Audit',
+    label: UI.routeAudit,
     key: 'a',
-    description: 'The append-only trail, including every disclosure downgrade.',
+    description: UI.routeAuditDescription,
   },
 ];
 
-/** Longest-prefix match, so `/matters/mat-0001` highlights `Matters`. */
+/**
+ * Longest-prefix match, so `/matters/mat-0001` highlights `Matters`.
+ *
+ * Takes a **locale-free** path. Pass `splitLocalePath(...).path`, not the raw
+ * pathname: `/es/matters` would otherwise match nothing and a Spanish reader
+ * would see a navigation with no current item on every screen.
+ */
 export function activeRoute(pathname: string): ConsoleRoute | null {
   let best: ConsoleRoute | null = null;
   for (const route of CONSOLE_ROUTES) {

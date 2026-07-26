@@ -1,8 +1,8 @@
-import { bi } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+import { translator } from '@/lib/i18n';
 import { cx } from '@/lib/ui';
 import type { PhaseStep } from '@/lib/matter-view';
 import { phaseLabel } from '@/lib/status';
-import { T } from '@/components/Bilingual';
 
 import styles from './PhaseTimeline.module.css';
 
@@ -17,7 +17,14 @@ import styles from './PhaseTimeline.module.css';
  *
  * `aria-current="step"` puts the reader's position in the accessibility tree.
  */
-export function PhaseTimeline({ phases }: { readonly phases: readonly PhaseStep[] }) {
+export function PhaseTimeline({
+  phases,
+  locale,
+}: {
+  readonly phases: readonly PhaseStep[];
+  readonly locale: Locale;
+}) {
+  const t = translator(locale);
   return (
     <ol className={styles.timeline}>
       {phases.map((step, index) => (
@@ -30,31 +37,21 @@ export function PhaseTimeline({ phases }: { readonly phases: readonly PhaseStep[
             {step.position === 'done' ? '✓' : step.position === 'current' ? '▶' : index + 1}
           </div>
           <div className={styles.body}>
-            <span className={styles.name}>
-              <T text={phaseLabel(step.phase)} />
-            </span>
+            <span className={styles.name}>{t(phaseLabel(step.phase))}</span>
             <span className={styles.meta}>
               {step.position === 'current' ? (
-                <span className={styles.positionWord}>
-                  <T text={bi('Current stage', 'Fase actual')} />
-                </span>
+                <span className={styles.positionWord}>{t('Current stage', 'Fase actual')}</span>
               ) : step.position === 'done' ? (
-                <span className={styles.positionWord}>
-                  <T text={bi('Passed', 'Superada')} />
-                </span>
+                <span className={styles.positionWord}>{t('Passed', 'Superada')}</span>
               ) : (
-                <span className={styles.positionWord}>
-                  <T text={bi('Not started', 'Sin empezar')} />
-                </span>
+                <span className={styles.positionWord}>{t('Not started', 'Sin empezar')}</span>
               )}
               {step.taskCount > 0 ? (
                 <span className={styles.counts}>
                   {step.completeCount} / {step.taskCount}
                 </span>
               ) : (
-                <span className={styles.counts}>
-                  <T text={bi('no tasks', 'sin tareas')} />
-                </span>
+                <span className={styles.counts}>{t('no tasks', 'sin tareas')}</span>
               )}
             </span>
           </div>

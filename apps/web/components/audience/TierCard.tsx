@@ -1,9 +1,9 @@
 import Link from 'next/link';
 
-import { bi } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
+import { bi, localizedPath, translator } from '@/lib/i18n';
 import { CAPABILITIES, type Tier } from '@/lib/audiences';
 import { Badge, Chip } from '@/components/Badge';
-import { T, TInline, TProse } from '@/components/Bilingual';
 
 import styles from './TierCard.module.css';
 
@@ -30,7 +30,8 @@ import styles from './TierCard.module.css';
  * derive a popular tier from, and a nudge invented for a product with zero
  * customers is a fabricated one.
  */
-export function TierCard({ tier }: { readonly tier: Tier }) {
+export function TierCard({ tier, locale }: { readonly tier: Tier; readonly locale: Locale }) {
+  const t = translator(locale);
   const capabilities = tier.capabilities.map((id) => CAPABILITIES[id]);
   const shipped = capabilities.filter((c) => c.state === 'shipped').length;
 
@@ -38,84 +39,67 @@ export function TierCard({ tier }: { readonly tier: Tier }) {
     <article className={styles.tier} aria-labelledby={`tier-${tier.id}-heading`}>
       <header className={styles.head}>
         <h3 className={styles.name} id={`tier-${tier.id}-heading`}>
-          <T text={tier.name} />
+          {t(tier.name)}
         </h3>
 
-        <p className={styles.premise}>
-          <T text={tier.premise} />
-        </p>
+        <p className={styles.premise}>{t(tier.premise)}</p>
       </header>
 
       <div className={styles.priceRow}>
         {tier.price === 'no_charge' ? (
           <>
-            <span className={styles.priceValue}>
-              <TInline text={bi('No charge', 'Sin coste')} />
-            </span>
+            <span className={styles.priceValue}>{t('No charge', 'Sin coste')}</span>
             <span className={styles.priceNote}>
-              <T
-                text={bi(
-                  'Permanent. Not a trial, and not a tier that becomes paid later.',
-                  'Permanente. No es una prueba ni un nivel que después pase a ser de pago.',
-                )}
-              />
+              {t(
+                'Permanent. Not a trial, and not a tier that becomes paid later.',
+                'Permanente. No es una prueba ni un nivel que después pase a ser de pago.',
+              )}
             </span>
           </>
         ) : (
           <>
-            <span className={styles.priceValue}>
-              <TInline text={bi('Price not set', 'Precio no fijado')} />
-            </span>
+            <span className={styles.priceValue}>{t('Price not set', 'Precio no fijado')}</span>
             <span className={styles.priceNote}>
-              <T
-                text={bi(
-                  'We have not decided what this costs. Rather than print a plausible-looking figure, this page says so — there is no field in the code that could hold one.',
-                  'No hemos decidido cuánto cuesta. En lugar de imprimir una cifra verosímil, esta página lo dice: no existe en el código ningún campo que pudiera contenerla.',
-                )}
-              />
+              {t(
+                'We have not decided what this costs. Rather than print a plausible-looking figure, this page says so — there is no field in the code that could hold one.',
+                'No hemos decidido cuánto cuesta. En lugar de imprimir una cifra verosímil, esta página lo dice: no existe en el código ningún campo que pudiera contenerla.',
+              )}
             </span>
           </>
         )}
         <span className={styles.unit}>
-          <Chip>
-            <TInline text={tier.unit} />
-          </Chip>
+          <Chip>{t(tier.unit)}</Chip>
         </span>
       </div>
 
       <div className={styles.availability}>
         <Badge
           tone={tier.availableToday ? 'ok' : 'warn'}
-          label={
+          label={t(
             tier.availableToday
               ? bi('Available today', 'Disponible hoy')
-              : bi('Not available yet', 'Aún no disponible')
-          }
+              : bi('Not available yet', 'Aún no disponible'),
+          )}
         />
         {tier.blockedOn.length === 0 ? null : (
           <ul className={styles.blockedOn}>
             {tier.blockedOn.map((item) => (
-              <li key={item.en}>
-                <T text={item} />
-              </li>
+              <li key={item.en}>{t(item)}</li>
             ))}
           </ul>
         )}
       </div>
 
       <div className={styles.who}>
-        <h4 className={styles.subheading}>
-          <TInline text={bi('Who this is for', 'Para quién es')} />
-        </h4>
-        <TProse text={tier.buyer} className={styles.whoBody} />
+        <h4 className={styles.subheading}>{t('Who this is for', 'Para quién es')}</h4>
+        <p className={styles.whoBody}>{t(tier.buyer)}</p>
       </div>
 
       <div className={styles.includes}>
         <h4 className={styles.subheading}>
-          <TInline text={bi('What is included', 'Qué incluye')} />
+          {t('What is included', 'Qué incluye')}
           <span className={styles.count}>
-            {shipped}/{capabilities.length}{' '}
-            <TInline text={bi('built today', 'construido hoy')} />
+            {shipped}/{capabilities.length} {t('built today', 'construido hoy')}
           </span>
         </h4>
         <ul className={styles.capabilities}>
@@ -123,15 +107,13 @@ export function TierCard({ tier }: { readonly tier: Tier }) {
             <li key={capability.id} className={styles.capability}>
               <span className={styles.capabilityName}>
                 {capability.href !== undefined && capability.state === 'shipped' ? (
-                  <Link href={capability.href}>
-                    <T text={capability.name} />
-                  </Link>
+                  <Link href={localizedPath(capability.href, locale)}>{t(capability.name)}</Link>
                 ) : (
-                  <T text={capability.name} />
+                  t(capability.name)
                 )}
               </span>
               {capability.state === 'shipped' ? null : (
-                <Badge tone="warn" label={bi('Not built', 'No construido')} />
+                <Badge tone="warn" label={t('Not built', 'No construido')} />
               )}
             </li>
           ))}
@@ -141,7 +123,7 @@ export function TierCard({ tier }: { readonly tier: Tier }) {
       {tier.notes.length === 0 ? null : (
         <div className={styles.notes}>
           {tier.notes.map((note) => (
-            <TProse key={note.en} text={note} className={styles.note} />
+            <p className={styles.note}>{t(note)}</p>
           ))}
         </div>
       )}

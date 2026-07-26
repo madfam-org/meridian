@@ -1,0 +1,92 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.headerTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.identity {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0 0 var(--space-2);
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.matterId {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.05em 0.4em;
+}
+
+.title {
+  font-size: 1.6rem;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.objective {
+  max-width: var(--measure);
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+
+.repStrip {
+  margin: 0;
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--review-border);
+  border-left-width: 4px;
+  background: var(--review-bg);
+  color: var(--review-fg);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  max-width: none;
+}
+
+.repMark {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  flex: none;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}

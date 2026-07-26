@@ -96,11 +96,6 @@
   letter-spacing: 0.03em;
 }
 
-.positionWord :global(span[lang='es']) {
-  text-transform: none;
-  letter-spacing: 0;
-}
-
 .counts {
   font-family: var(--font-mono);
 }

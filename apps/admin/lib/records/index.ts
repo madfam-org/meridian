@@ -12,6 +12,8 @@
  */
 
 import { audienceFor, type Audience, type Tenant } from '@meridian/core';
+import type { Locale } from '@/lib/i18n';
+import { UI, pick } from '@/lib/i18n';
 import { DATASETS, isDatasetId, type DatasetId } from '@/lib/records/dataset';
 import type {
   ApplicantRecord,
@@ -91,9 +93,18 @@ export function findRepresentative(
   return records.representatives.find((r) => r.credential.id === representativeId) ?? null;
 }
 
-/** `Rivas Peredo, Camila` — family name first, because that is how a file is filed. */
-export function applicantName(applicant: ApplicantRecord | null): string {
-  if (applicant === null) return 'Unknown applicant';
+/**
+ * `Rivas Peredo, Camila` — family name first, because that is how a file is
+ * filed.
+ *
+ * A person's name is never translated or reordered per locale. Only the *absence*
+ * of one is console copy, which is the whole reason this takes a locale: an
+ * English "Unknown applicant" sitting in a Spanish table is a seam, and it
+ * appears exactly where a record is missing, which is where a reader most needs
+ * to understand what they are looking at.
+ */
+export function applicantName(applicant: ApplicantRecord | null, locale: Locale): string {
+  if (applicant === null) return pick(UI.applicantUnknown, locale);
   return `${applicant.familyName}, ${applicant.givenNames}`;
 }
 

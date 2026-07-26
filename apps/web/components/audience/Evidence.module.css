@@ -20,21 +20,16 @@
   border-bottom: 1px solid var(--border);
 }
 
-/* Deliberately not `nowrap`. A bilingual column label is two languages long,
-   and pinning it to one line pushes the table past its container on a desktop
-   viewport — which turns the scroll wrapper from a small-screen safety net into
-   something every reader has to use. */
+/* Deliberately not `nowrap`. Pinning a column label to one line pushes the
+   table past its container on a desktop viewport — which turns the scroll
+   wrapper from a small-screen safety net into something every reader has to
+   use. */
 .table thead th {
   font-size: 0.75rem;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--fg-subtle);
   border-bottom: 1px solid var(--border-strong);
-}
-
-.table thead th :global(span[lang='es']) {
-  text-transform: none;
-  letter-spacing: 0;
 }
 
 .table tbody tr:last-child th,
@@ -89,12 +84,6 @@
   font-weight: 600;
   color: var(--fg-subtle);
   margin-bottom: var(--space-2);
-}
-
-.subheading :global(span[lang='es']) {
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 500;
 }
 
 .quoteBlock {
@@ -171,12 +160,6 @@
   text-transform: uppercase;
   font-weight: 600;
   color: var(--fg-subtle);
-}
-
-.figures dt :global(span[lang='es']) {
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 500;
 }
 
 .figures dd {

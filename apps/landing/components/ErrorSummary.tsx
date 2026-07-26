@@ -27,23 +27,25 @@
 
 import { useEffect, useRef } from 'react';
 
-import { bi, type Bi } from '@/lib/i18n';
-import { T } from '@/components/Bilingual';
+import { bi, translator, type Locale } from '@/lib/i18n';
 import type { FieldIssue } from '@/lib/validation';
 
 import styles from './ErrorSummary.module.css';
 
-const DEFAULT_TITLE: Bi = bi(
-  'Nothing was counted, because:',
-  'No se contó nada, porque:',
-);
+const DEFAULT_TITLE = bi('Nothing was counted, because:', 'No se contó nada, porque:');
 
 export function ErrorSummary({
   id = 'sch-error-summary',
+  locale,
   issues,
   focusKey,
 }: {
   readonly id?: string;
+  readonly locale: Locale;
+  /**
+   * Every issue carries both halves, because it is produced by form-reading
+   * code that has no view of the page. Resolution happens here, once.
+   */
   readonly issues: readonly FieldIssue[];
   /**
    * Increment once per failed submit. A change moves focus here; a re-render
@@ -52,6 +54,7 @@ export function ErrorSummary({
    */
   readonly focusKey: number;
 }) {
+  const t = translator(locale);
   const ref = useRef<HTMLDivElement>(null);
   const lastFocused = useRef(0);
 
@@ -79,13 +82,13 @@ export function ErrorSummary({
         <span aria-hidden="true" className={styles.glyph}>
           ✕
         </span>
-        <T text={DEFAULT_TITLE} />
+        {t(DEFAULT_TITLE)}
       </h3>
       <ul className={styles.list}>
         {issues.map((entry) => (
           <li key={`${entry.fieldId}-${entry.message.en}`}>
             <a className={styles.link} href={`#${entry.fieldId}`}>
-              <T text={entry.message} />
+              {t(entry.message)}
             </a>
           </li>
         ))}

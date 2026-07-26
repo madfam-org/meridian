@@ -159,23 +159,17 @@ const CHOOSE_STATE: Bi = bi('Choose a State', 'Elija un Estado');
  * person to type their whole life for nothing.
  *
  * Alphabetical by English name. That is the order a person scans a list in, not
- * a ranking of anything.
+ * a ranking of anything, and it is stable across locales so a reader who
+ * switches language does not find the list reshuffled underneath them.
  *
- * Names are flattened to a plain string rather than passed as a `Bi`, and
- * collapsed to one word where both languages spell the State identically. An
- * `<option>` may contain only text, so the pair cannot carry its own `lang`
- * attributes here in any case, and a list reading "Austria · Austria" twenty
- * times is harder to scan without being any more bilingual.
+ * The name is passed through as the pair the membership table holds; the select
+ * renders whichever half the page is serving.
  */
-function stateOptionLabel(name: Bi): string {
-  return name.en === name.es ? name.en : `${name.en} · ${name.es}`;
-}
-
 export const STATE_OPTIONS: readonly SelectOption[] = [
   { value: '', label: CHOOSE_STATE },
   ...SCHENGEN_STATES.map((state): SelectOption => ({
     value: state.code,
-    label: stateOptionLabel(state.name),
+    label: state.name,
   })),
 ];
 
@@ -295,8 +289,12 @@ function readPlanned(answers: SchengenAnswers): PlannedReading {
   const rawEnd = answers.plannedEnd.trim();
   if (rawStart.length === 0 && rawEnd.length === 0) return { issues: [], range: null };
 
-  const start = readDateField(FIELD.plannedStart, answers.plannedStart, { required: true });
-  const end = readDateField(FIELD.plannedEnd, answers.plannedEnd, { required: true });
+  const start = readDateField(FIELD.plannedStart, answers.plannedStart, {
+    required: true,
+  });
+  const end = readDateField(FIELD.plannedEnd, answers.plannedEnd, {
+    required: true,
+  });
   const issues = collect([start.issue, end.issue]);
   if (issues.length > 0 || start.date === null || end.date === null) {
     return { issues, range: null };
@@ -357,7 +355,9 @@ function readProposed(answers: SchengenAnswers): ProposedReading {
     min: 1,
     max: MAX_PROPOSED_STAY_DAYS,
   });
-  const from = readDateField(FIELD.proposedFrom, answers.proposedFrom, { required: true });
+  const from = readDateField(FIELD.proposedFrom, answers.proposedFrom, {
+    required: true,
+  });
   const issues = collect([days.issue, from.issue]);
   if (issues.length > 0 || days.value === null || from.date === null) {
     return { issues, days: null, notBefore: null };
@@ -390,7 +390,9 @@ export function readSchengenForm(answers: SchengenAnswers): FormReading {
     );
   }
 
-  const reference = readDateField(FIELD.reference, answers.referenceDate, { required: true });
+  const reference = readDateField(FIELD.reference, answers.referenceDate, {
+    required: true,
+  });
   if (reference.issue !== null) issues.push(reference.issue);
 
   const planned = readPlanned(answers);

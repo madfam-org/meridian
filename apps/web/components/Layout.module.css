@@ -140,12 +140,6 @@
   color: var(--fg-muted);
 }
 
-.factLabel :global(span[lang='es']) {
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 500;
-}
-
 .factValue {
   margin: var(--space-1) 0 0;
   overflow-wrap: anywhere;

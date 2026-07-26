@@ -18,15 +18,93 @@
  * Fact paths are printed verbatim for the same reason. `derived.continuousLegalResidenceDays`
  * is not pretty, but it names the exact field the engine reads, and a reviewer
  * asking "measured from what?" needs the real name to ask about.
+ *
+ * ## Both languages, same literalism
+ *
+ * The phrasing is bilingual because a Spanish-speaking reviewer signing off a
+ * Spanish pathway is the whole point of the queue, and a rule they cannot read
+ * is a rule they cannot review. The phrase table lives in this file rather than
+ * in `lib/i18n.ts` deliberately: each entry is the rendering of one operator and
+ * belongs beside the `case` that emits it, where a reviewer of *this file* can
+ * check that `gte` still says `≥` in both halves and that neither half has
+ * quietly acquired a softening word.
+ *
+ * What is translated is the connective tissue — "is recorded", "at least one
+ * entry in", "all of". What is never translated is the operator symbol, the
+ * fact path, or the operand: `≥ 730` is `≥ 730` in both languages, because a
+ * threshold rendered differently in two places is a threshold nobody can
+ * reconcile.
  */
 
 import { walkSpecs, type EvaluatorSpec } from '@meridian/pathways';
+import type { Bi, Locale } from '@/lib/i18n';
+import { bi, fill, pick } from '@/lib/i18n';
 
 /** One line of the rendered rule, with its nested operands beneath it. */
 export interface SpecNode {
   readonly text: string;
   readonly children: readonly SpecNode[];
 }
+
+/**
+ * How each operator reads. `{path}`, `{value}`, `{other}` and `{scale}` are
+ * substituted verbatim from the record and never localised.
+ */
+const PHRASE = {
+  isPresent: bi('{path} is recorded', '{path} está registrado'),
+  isTrue: bi('{path} is true', '{path} es verdadero'),
+  isFalse: bi('{path} is false', '{path} es falso'),
+  equals: bi('{path} equals {value}', '{path} es igual a {value}'),
+  oneOf: bi('{path} is one of: {values}', '{path} es uno de: {values}'),
+  comparison: bi('{path} {operator} {value}', '{path} {operator} {value}'),
+  setContainsAny: bi(
+    '{path} contains any of: {values}',
+    '{path} contiene alguno de: {values}',
+  ),
+  setContainsField: bi(
+    '{path} contains the value found at {other}',
+    '{path} contiene el valor hallado en {other}',
+  ),
+  equalsField: bi(
+    '{path} equals the value found at {other}',
+    '{path} es igual al valor hallado en {other}',
+  ),
+  dateBefore: bi('{path} is before {value}', '{path} es anterior a {value}'),
+  dateOnOrBefore: bi(
+    '{path} is on or before {value}',
+    '{path} es igual o anterior a {value}',
+  ),
+  dateAfter: bi('{path} is after {value}', '{path} es posterior a {value}'),
+  dateOnOrAfter: bi(
+    '{path} is on or after {value}',
+    '{path} es igual o posterior a {value}',
+  ),
+  ordinalAtLeast: bi('{path} is at least {value}', '{path} es al menos {value}'),
+  ordinalScale: bi('on the ordered scale: {scale}', 'en la escala ordenada: {scale}'),
+  durationSince: bi(
+    'at least {duration} have elapsed since {path}, counted as whole calendar periods',
+    'han transcurrido al menos {duration} desde {path}, contados como periodos naturales completos',
+  ),
+  collectionAny: bi(
+    'at least one entry in {path} satisfies:',
+    'al menos una entrada de {path} cumple:',
+  ),
+  allOf: bi('all of:', 'todo lo siguiente:'),
+  anyOf: bi('any of:', 'alguno de lo siguiente:'),
+  not: bi('not:', 'no se cumple:'),
+  /**
+   * The schema cannot enforce "at least one of years, months, days" inside a
+   * discriminated union, so the integrity linter does. Both halves say plainly
+   * that the period is missing rather than rendering "at least  have elapsed".
+   */
+  noPeriod: bi('no period is specified', 'no se especifica ningún periodo'),
+  year: bi('{count} year', '{count} año'),
+  years: bi('{count} years', '{count} años'),
+  month: bi('{count} month', '{count} mes'),
+  months: bi('{count} months', '{count} meses'),
+  day: bi('{count} day', '{count} día'),
+  days: bi('{count} days', '{count} días'),
+} as const satisfies Readonly<Record<string, Bi>>;
 
 function leaf(text: string): SpecNode {
   return { text, children: [] };
@@ -36,21 +114,27 @@ function listValues(values: readonly (string | number)[]): string {
   return values.map((v) => String(v)).join(', ');
 }
 
-function durationText(spec: {
-  readonly years?: number;
-  readonly months?: number;
-  readonly days?: number;
-}): string {
+function durationText(
+  spec: {
+    readonly years?: number;
+    readonly months?: number;
+    readonly days?: number;
+  },
+  locale: Locale,
+): string {
   const parts: string[] = [];
-  if (spec.years !== undefined) parts.push(`${spec.years} ${spec.years === 1 ? 'year' : 'years'}`);
-  if (spec.months !== undefined) {
-    parts.push(`${spec.months} ${spec.months === 1 ? 'month' : 'months'}`);
+  if (spec.years !== undefined) {
+    parts.push(fill(spec.years === 1 ? PHRASE.year : PHRASE.years, locale, { count: spec.years }));
   }
-  if (spec.days !== undefined) parts.push(`${spec.days} ${spec.days === 1 ? 'day' : 'days'}`);
-  // The schema cannot enforce "at least one of years, months, days" inside a
-  // discriminated union, so the integrity linter does. Say plainly what an
-  // empty period means rather than rendering "at least  have elapsed".
-  return parts.length === 0 ? 'no period is specified' : parts.join(' + ');
+  if (spec.months !== undefined) {
+    parts.push(
+      fill(spec.months === 1 ? PHRASE.month : PHRASE.months, locale, { count: spec.months }),
+    );
+  }
+  if (spec.days !== undefined) {
+    parts.push(fill(spec.days === 1 ? PHRASE.day : PHRASE.days, locale, { count: spec.days }));
+  }
+  return parts.length === 0 ? pick(PHRASE.noPeriod, locale) : parts.join(' + ');
 }
 
 /**
@@ -61,60 +145,80 @@ function durationText(spec: {
  * rather than silently rendering as nothing on the one screen whose job is to
  * show a reviewer the whole rule.
  */
-export function describeSpec(spec: EvaluatorSpec): SpecNode {
+export function describeSpec(spec: EvaluatorSpec, locale: Locale): SpecNode {
   switch (spec.op) {
     case 'is_present':
-      return leaf(`${spec.path} is recorded`);
+      return leaf(fill(PHRASE.isPresent, locale, { path: spec.path }));
     case 'is_true':
-      return leaf(`${spec.path} is true`);
+      return leaf(fill(PHRASE.isTrue, locale, { path: spec.path }));
     case 'is_false':
-      return leaf(`${spec.path} is false`);
+      return leaf(fill(PHRASE.isFalse, locale, { path: spec.path }));
     case 'equals':
-      return leaf(`${spec.path} equals ${String(spec.value)}`);
+      return leaf(fill(PHRASE.equals, locale, { path: spec.path, value: String(spec.value) }));
     case 'one_of':
-      return leaf(`${spec.path} is one of: ${listValues(spec.values)}`);
+      return leaf(fill(PHRASE.oneOf, locale, { path: spec.path, values: listValues(spec.values) }));
     case 'gte':
-      return leaf(`${spec.path} ≥ ${spec.value}`);
+      return leaf(
+        fill(PHRASE.comparison, locale, { path: spec.path, operator: '≥', value: spec.value }),
+      );
     case 'gt':
-      return leaf(`${spec.path} > ${spec.value}`);
+      return leaf(
+        fill(PHRASE.comparison, locale, { path: spec.path, operator: '>', value: spec.value }),
+      );
     case 'lte':
-      return leaf(`${spec.path} ≤ ${spec.value}`);
+      return leaf(
+        fill(PHRASE.comparison, locale, { path: spec.path, operator: '≤', value: spec.value }),
+      );
     case 'lt':
-      return leaf(`${spec.path} < ${spec.value}`);
+      return leaf(
+        fill(PHRASE.comparison, locale, { path: spec.path, operator: '<', value: spec.value }),
+      );
     case 'set_contains_any':
-      return leaf(`${spec.path} contains any of: ${listValues(spec.values)}`);
+      return leaf(
+        fill(PHRASE.setContainsAny, locale, {
+          path: spec.path,
+          values: listValues(spec.values),
+        }),
+      );
     case 'set_contains_field':
-      return leaf(`${spec.path} contains the value found at ${spec.otherPath}`);
+      return leaf(
+        fill(PHRASE.setContainsField, locale, { path: spec.path, other: spec.otherPath }),
+      );
     case 'equals_field':
-      return leaf(`${spec.path} equals the value found at ${spec.otherPath}`);
+      return leaf(fill(PHRASE.equalsField, locale, { path: spec.path, other: spec.otherPath }));
     case 'date_before':
-      return leaf(`${spec.path} is before ${spec.value}`);
+      return leaf(fill(PHRASE.dateBefore, locale, { path: spec.path, value: spec.value }));
     case 'date_on_or_before':
-      return leaf(`${spec.path} is on or before ${spec.value}`);
+      return leaf(fill(PHRASE.dateOnOrBefore, locale, { path: spec.path, value: spec.value }));
     case 'date_after':
-      return leaf(`${spec.path} is after ${spec.value}`);
+      return leaf(fill(PHRASE.dateAfter, locale, { path: spec.path, value: spec.value }));
     case 'date_on_or_after':
-      return leaf(`${spec.path} is on or after ${spec.value}`);
+      return leaf(fill(PHRASE.dateOnOrAfter, locale, { path: spec.path, value: spec.value }));
     case 'ordinal_at_least':
       return {
-        text: `${spec.path} is at least ${spec.value}`,
-        children: [leaf(`on the ordered scale: ${spec.scale.join(' < ')}`)],
+        text: fill(PHRASE.ordinalAtLeast, locale, { path: spec.path, value: spec.value }),
+        children: [
+          leaf(fill(PHRASE.ordinalScale, locale, { scale: spec.scale.join(' < ') })),
+        ],
       };
     case 'duration_since_at_least':
       return leaf(
-        `at least ${durationText(spec)} have elapsed since ${spec.path}, counted as whole calendar periods`,
+        fill(PHRASE.durationSince, locale, {
+          duration: durationText(spec, locale),
+          path: spec.path,
+        }),
       );
     case 'collection_any':
       return {
-        text: `at least one entry in ${spec.path} satisfies:`,
-        children: [describeSpec(spec.where)],
+        text: fill(PHRASE.collectionAny, locale, { path: spec.path }),
+        children: [describeSpec(spec.where, locale)],
       };
     case 'all_of':
-      return { text: 'all of:', children: spec.of.map(describeSpec) };
+      return { text: pick(PHRASE.allOf, locale), children: spec.of.map((s) => describeSpec(s, locale)) };
     case 'any_of':
-      return { text: 'any of:', children: spec.of.map(describeSpec) };
+      return { text: pick(PHRASE.anyOf, locale), children: spec.of.map((s) => describeSpec(s, locale)) };
     case 'not':
-      return { text: 'not:', children: [describeSpec(spec.of)] };
+      return { text: pick(PHRASE.not, locale), children: [describeSpec(spec.of, locale)] };
   }
 }
 

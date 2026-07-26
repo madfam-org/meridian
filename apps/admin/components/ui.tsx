@@ -14,6 +14,7 @@
  */
 
 import type { CSSProperties, ReactNode } from 'react';
+import { Fragment } from 'react';
 import styles from '@/components/ui.module.css';
 
 export type Tone = 'ok' | 'warn' | 'danger' | 'info' | 'neutral' | 'refused';
@@ -149,8 +150,62 @@ export function Mono({ children }: { children: ReactNode }) {
   return <span className={styles.mono}>{children}</span>;
 }
 
-export function Meta({ children }: { children: ReactNode }) {
-  return <span className={styles.meta}>{children}</span>;
+/**
+ * `lang` is optional on the muted text primitives and it is not decoration.
+ *
+ * Three kinds of string reach this console in a language that is not the page's:
+ * a regulator's own name, a reason returned verbatim by a package that only
+ * speaks English, and record content the firm typed in whatever language it
+ * works in. None of the three is translated — translating a reason would put
+ * words in the gate's mouth and translating a matter title would edit the
+ * evidence — so each is marked instead, exactly as `@meridian/i18n` marks the
+ * name of a statute. Without the mark a screen reader pronounces English words
+ * with Spanish phonetics, which is the defect this whole change exists to fix.
+ */
+export function Meta({ children, lang }: { children: ReactNode; lang?: string }) {
+  return (
+    <span className={styles.meta} lang={lang}>
+      {children}
+    </span>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Light markup                                                               */
+/* -------------------------------------------------------------------------- */
+
+const RICH_SEGMENT = /(`[^`]+`|\*[^*]+\*)/g;
+
+/**
+ * Renders the two inline marks the string table is allowed to carry:
+ * `` `code` `` becomes {@link Mono} and `*emphasis*` becomes `<strong>`.
+ *
+ * The alternative was splitting one sentence into three exported fragments so a
+ * `<Mono>` could sit between them, which is how a translation ends up in English
+ * word order: the Spanish for "decided by `canRelease` in `@meridian/core`" does
+ * not put the identifier where the English does, and a call site that
+ * concatenates fragments has already decided that it must. Keeping the sentence
+ * whole leaves that decision with the language that owns it.
+ *
+ * Deliberately not a markdown renderer and deliberately not HTML. It never
+ * interprets a tag, so a string in the table cannot become markup, and there is
+ * no `dangerouslySetInnerHTML` anywhere near it.
+ */
+export function Rich({ text }: { text: string }) {
+  const parts = text.split(RICH_SEGMENT).filter((part) => part.length > 0);
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (part.length > 2 && part.startsWith('`') && part.endsWith('`')) {
+          return <Mono key={index}>{part.slice(1, -1)}</Mono>;
+        }
+        if (part.length > 2 && part.startsWith('*') && part.endsWith('*')) {
+          return <strong key={index}>{part.slice(1, -1)}</strong>;
+        }
+        return <Fragment key={index}>{part}</Fragment>;
+      })}
+    </>
+  );
 }
 
 export function PillRow({ children }: { children: ReactNode }) {
@@ -192,12 +247,31 @@ export function Definitions({ items }: { items: readonly Definition[] }) {
  * `value` and `total` are both rendered as digits next to the bar, because the
  * bar is the decoration and the numbers are the information. A bar with no
  * number beside it is how a dashboard starts implying precision it does not have.
+ *
+ * The digits are `aria-hidden` and the bar carries the whole sentence in its
+ * `aria-label`, which makes that label the *only* thing a screen reader gets
+ * here — so it is the one string in this file that has to be composed by the
+ * caller rather than assembled from an English connective. "3 of 12" and "3 de
+ * 12" are not the same string, and a component that hard-coded the English one
+ * would leave a Spanish page announcing half a sentence in the wrong language
+ * to the reader least able to see that it happened.
  */
-export function Bar({ value, total, label }: { value: number; total: number; label: string }) {
+export function Bar({
+  value,
+  total,
+  label,
+  description,
+}: {
+  value: number;
+  total: number;
+  label: string;
+  /** The full accessible sentence, already in the reader's language. */
+  description: string;
+}) {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
     <div className={styles.barRow}>
-      <div className={styles.barTrack} role="img" aria-label={`${label}: ${value} of ${total}`}>
+      <div className={styles.barTrack} role="img" aria-label={`${label}: ${description}`}>
         <div className={styles.barFill} style={{ width: `${pct}%` }} />
       </div>
       <span className={styles.barValue} aria-hidden="true">
@@ -251,8 +325,13 @@ export function Columns({ children }: { children: ReactNode }) {
   return <div className={styles.columns}>{children}</div>;
 }
 
-export function Panel({ children }: { children: ReactNode }) {
-  return <div className={styles.panel}>{children}</div>;
+/** See {@link Meta} on `lang`: a panel of a package's own prose is marked, not translated. */
+export function Panel({ children, lang }: { children: ReactNode; lang?: string }) {
+  return (
+    <div className={styles.panel} lang={lang}>
+      {children}
+    </div>
+  );
 }
 
 /**
@@ -269,9 +348,13 @@ export function Subhead({ id, children }: { id?: string; children: ReactNode }) 
   );
 }
 
-/** Muted supporting line under a table cell's primary content. */
-export function Detail({ children }: { children: ReactNode }) {
-  return <span className={styles.detailText}>{children}</span>;
+/** Muted supporting line under a table cell's primary content. See {@link Meta} on `lang`. */
+export function Detail({ children, lang }: { children: ReactNode; lang?: string }) {
+  return (
+    <span className={styles.detailText} lang={lang}>
+      {children}
+    </span>
+  );
 }
 
 export const filterBarClass = styles.filterBar;

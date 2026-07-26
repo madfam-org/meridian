@@ -164,6 +164,24 @@ export interface FirmRecords {
   /** Which named dataset produced these records. Rendered so nobody mistakes it for live data. */
   readonly datasetId: string;
   readonly datasetDescription: string;
+  /**
+   * BCP 47 tag for the language the *record content* is written in — matter and
+   * task titles, audit summaries, regulator names, the dataset description.
+   *
+   * The console renders in whichever language the reader asked for, but it never
+   * translates a record: a matter title is what the firm typed on the file and a
+   * regulator's name is that regulator's name. Both are reproduced verbatim and
+   * marked with this tag, exactly as `@meridian/i18n` marks the title of a
+   * statute, so a screen reader does not read English words with Spanish
+   * phonetics on a Spanish page.
+   *
+   * A single tag for the whole set is a simplification that holds today because
+   * one dataset is authored at a time. When these records come from the API,
+   * with one firm's files in Spanish and another's in English, it belongs on the
+   * record rather than the set — and the call sites already put the attribute on
+   * the element, so that change is a type error and not a silent regression.
+   */
+  readonly recordLanguage: string;
   readonly representatives: readonly RepresentativeRecord[];
   readonly applicants: readonly ApplicantRecord[];
   readonly matters: readonly MatterRecord[];

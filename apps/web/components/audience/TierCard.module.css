@@ -81,14 +81,6 @@
   gap: var(--space-2);
 }
 
-/* The Spanish half of an uppercased label keeps its own casing: small-caps
-   Spanish reads as shouting rather than as a label. */
-.subheading :global(span[lang='es']) {
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 500;
-}
-
 .count {
   margin-left: auto;
   text-transform: none;

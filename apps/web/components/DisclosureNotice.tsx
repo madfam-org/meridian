@@ -1,7 +1,7 @@
 import type { DisclosureClass } from '@meridian/core';
 
-import { bi, type Bi } from '@/lib/i18n';
-import { T } from '@/components/Bilingual';
+import type { Bi, Locale } from '@/lib/i18n';
+import { bi, translator } from '@/lib/i18n';
 import { Badge } from '@/components/Badge';
 import type { Tone } from '@/components/Badge';
 
@@ -80,6 +80,7 @@ export interface DisclosureNoticeProps {
   readonly withheld?: readonly Bi[];
   /** What would have to be true for the withheld output to be releasable. */
   readonly remedy?: readonly Bi[];
+  readonly locale: Locale;
 }
 
 const DOWNGRADED_TITLE = bi(
@@ -95,7 +96,9 @@ export function DisclosureNotice({
   reason,
   withheld,
   remedy,
+  locale,
 }: DisclosureNoticeProps) {
+  const t = translator(locale);
   const shownView = disclosureClassView(shown);
   const downgraded = requested !== undefined && requested !== shown;
   const requestedView = requested !== undefined ? disclosureClassView(requested) : null;
@@ -111,35 +114,31 @@ export function DisclosureNotice({
           <span aria-hidden="true" className={styles.mark}>
             §
           </span>
-          <T text={downgraded ? DOWNGRADED_TITLE : RELEASED_TITLE} />
+          {t(downgraded ? DOWNGRADED_TITLE : RELEASED_TITLE)}
         </h3>
         <div className={styles.badges}>
           {downgraded && requestedView !== null ? (
             <>
-              <Badge tone={requestedView.tone} label={requestedView.label} />
+              <Badge tone={requestedView.tone} label={t(requestedView.label)} />
               <span aria-hidden="true" className={styles.arrow}>
                 →
               </span>
             </>
           ) : null}
-          <Badge tone={shownView.tone} label={shownView.label} />
+          <Badge tone={shownView.tone} label={t(shownView.label)} />
         </div>
       </div>
 
-      <p className={styles.meaning}>
-        <T text={shownView.meaning} />
-      </p>
+      <p className={styles.meaning}>{t(shownView.meaning)}</p>
 
       {withheld !== undefined && withheld.length > 0 ? (
         <div className={styles.block}>
           <h4 className={styles.blockTitle}>
-            <T text={bi('Not shown on this page', 'No se muestra en esta página')} />
+            {t('Not shown on this page', 'No se muestra en esta página')}
           </h4>
           <ul className={styles.list}>
             {withheld.map((item) => (
-              <li key={item.en}>
-                <T text={item} />
-              </li>
+              <li key={item.en}>{t(item)}</li>
             ))}
           </ul>
         </div>
@@ -148,12 +147,10 @@ export function DisclosureNotice({
       {reason !== undefined ? (
         <div className={styles.block}>
           <h4 className={styles.blockTitle}>
-            <T
-              text={bi(
-                'Reason returned by the release gate',
-                'Motivo devuelto por el control de divulgación',
-              )}
-            />
+            {t(
+              'Reason returned by the release gate',
+              'Motivo devuelto por el control de divulgación',
+            )}
           </h4>
           <blockquote className={styles.reason} lang="en" cite="urn:meridian:core:canRelease">
             {reason}
@@ -163,14 +160,10 @@ export function DisclosureNotice({
 
       {remedy !== undefined && remedy.length > 0 ? (
         <div className={styles.block}>
-          <h4 className={styles.blockTitle}>
-            <T text={bi('What would change this', 'Qué cambiaría esto')} />
-          </h4>
+          <h4 className={styles.blockTitle}>{t('What would change this', 'Qué cambiaría esto')}</h4>
           <ul className={styles.list}>
             {remedy.map((item) => (
-              <li key={item.en}>
-                <T text={item} />
-              </li>
+              <li key={item.en}>{t(item)}</li>
             ))}
           </ul>
         </div>

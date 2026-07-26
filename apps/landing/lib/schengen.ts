@@ -64,7 +64,7 @@ import {
 // `'use client'` component, and catalog-facts reaches `@meridian/pathways` —
 // the whole rule catalog plus zod — for the sake of one date. See `lib/as-of.ts`.
 import { AS_OF } from '@/lib/as-of';
-import { bi, type Bi } from '@/lib/i18n';
+import { bi, type LocalizedText } from '@/lib/i18n';
 
 /**
  * The three legally-loaded values come straight from `@meridian/presence`.
@@ -116,7 +116,7 @@ export const MAX_STAYS = 12;
  * membership table gains before this list does falls back to the code itself,
  * which is ugly and correct.
  */
-const STATE_NAMES: Readonly<Record<string, Bi>> = {
+const STATE_NAMES: Readonly<Record<string, LocalizedText>> = {
   AT: bi('Austria', 'Austria'),
   BE: bi('Belgium', 'Bélgica'),
   BG: bi('Bulgaria', 'Bulgaria'),
@@ -154,7 +154,7 @@ export interface SchengenState {
   readonly since: IsoDate;
   /** Date partial effects began, where accession was staged. `null` otherwise. */
   readonly partialSince: IsoDate | null;
-  readonly name: Bi;
+  readonly name: LocalizedText;
 }
 
 /**
@@ -203,13 +203,13 @@ export interface SchengenQuery {
 export interface UncountedReason {
   readonly key: string;
   readonly days: number;
-  readonly text: Bi;
+  readonly text: LocalizedText;
 }
 
 export interface StayLine {
   readonly id: string;
   readonly country: CountryCode;
-  readonly countryName: Bi;
+  readonly countryName: LocalizedText;
   /** The stay exactly as entered. */
   readonly range: DateRange;
   readonly stayDays: number;
@@ -231,7 +231,7 @@ export interface StayLine {
 export interface AmbiguousPeriod {
   readonly key: string;
   readonly country: CountryCode;
-  readonly countryName: Bi;
+  readonly countryName: LocalizedText;
   readonly range: DateRange;
   readonly daysInsideWindow: number;
   readonly partialSince: IsoDate;
@@ -500,8 +500,8 @@ export interface ExampleStay {
  */
 export interface SchengenExample {
   readonly id: string;
-  readonly label: Bi;
-  readonly note: Bi;
+  readonly label: LocalizedText;
+  readonly note: LocalizedText;
   readonly referenceDate: string;
   readonly stays: readonly ExampleStay[];
 }

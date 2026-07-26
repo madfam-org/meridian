@@ -44,7 +44,7 @@ import { canRelease } from '@meridian/core';
 import type { DisclosureClass, ReleaseContext } from '@meridian/core';
 
 import { AS_OF } from '@/lib/as-of';
-import { bi, type Bi } from '@/lib/i18n';
+import { bi, type LocalizedText } from '@/lib/i18n';
 import { PORTAL_URL } from '@/lib/links';
 
 // ---------------------------------------------------------------------------
@@ -121,23 +121,23 @@ export const FREE_CLASSES_ARE_THE_UNREGULATED_ONES: boolean =
 
 export interface DoorCta {
   readonly href: string;
-  readonly label: Bi;
+  readonly label: LocalizedText;
 }
 
 export interface Door {
   readonly id: string;
   /** The reader's own words for themselves, in the first person. */
-  readonly who: Bi;
+  readonly who: LocalizedText;
   /** Who that actually is, so a reader can tell whether it is them. */
-  readonly persona: Bi;
+  readonly persona: LocalizedText;
   /** What this reader gets, in their language rather than the product's. */
-  readonly gets: readonly Bi[];
+  readonly gets: readonly LocalizedText[];
   /** What it costs. Never a currency amount — none is decided. */
-  readonly price: Bi;
+  readonly price: LocalizedText;
   /** Where the advice boundary falls for this reader, stated plainly. */
-  readonly boundary: Bi;
+  readonly boundary: LocalizedText;
   /** What of this works today, as against what is described. */
-  readonly availability: Bi;
+  readonly availability: LocalizedText;
   readonly cta: DoorCta | null;
 }
 
@@ -262,7 +262,7 @@ export const DOORS: readonly Door[] = [
  * Kept short and kept honest: neither is a product line, and saying so is
  * cheaper than a reader discovering it.
  */
-export const ADJACENT_READERS: readonly { readonly title: Bi; readonly body: Bi }[] = [
+export const ADJACENT_READERS: readonly { readonly title: LocalizedText; readonly body: LocalizedText }[] = [
   {
     title: bi(
       'Cross-border tax advisers and wealth managers',
@@ -283,12 +283,12 @@ export const ADJACENT_READERS: readonly { readonly title: Bi; readonly body: Bi 
 ];
 
 /** The heading of the commitment block. */
-export const CLINIC_TITLE: Bi = bi(
+export const CLINIC_TITLE: LocalizedText = bi(
   'Free for legal-aid and NGO clinics. Permanently, and without asking.',
   'Gratuito para clínicas jurídicas gratuitas y de ONG. De forma permanente y sin pedirlo.',
 );
 
-export const CLINIC_BODY: readonly Bi[] = [
+export const CLINIC_BODY: readonly LocalizedText[] = [
   bi(
     'Every paid capability described above is free for legal-aid providers, NGO and university clinics, and pro bono immigration practice. Not a discount somebody has to apply for, not a starter tier, not a trial: the same product, at no cost, as a standing commitment.',
     'Todas las funciones de pago descritas arriba son gratuitas para servicios de asistencia jurídica gratuita, clínicas de ONG y universitarias y ejercicio pro bono en extranjería. No es un descuento que haya que solicitar, ni un nivel de entrada, ni una prueba: el mismo producto, sin coste, como compromiso permanente.',

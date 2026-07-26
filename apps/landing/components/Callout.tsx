@@ -1,9 +1,7 @@
 import type { ReactNode } from 'react';
 
-import type { Bi } from '@/lib/i18n';
 import { cx } from '@/lib/ui';
 import type { Tone } from '@/components/Badge';
-import { T } from '@/components/Bilingual';
 
 import styles from './Callout.module.css';
 
@@ -38,7 +36,7 @@ export function Callout({
   children,
 }: {
   readonly tone: Tone;
-  readonly title: Bi;
+  readonly title: string;
   readonly icon?: string;
   readonly level?: 2 | 3;
   readonly children: ReactNode;
@@ -52,7 +50,7 @@ export function Callout({
             {icon}
           </span>
         ) : null}
-        <T text={title} />
+        {title}
       </Heading>
       <div className={styles.body}>{children}</div>
     </aside>

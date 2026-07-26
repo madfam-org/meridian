@@ -9,7 +9,9 @@
  *     the control it belongs to, because the error summary links to it and the
  *     inline message is wired to it through `aria-describedby`. A message with
  *     no field attached is a message a keyboard user cannot reach.
- *  2. **Messages are bilingual**, like every other user-visible string here.
+ *  2. **Messages carry both languages.** They are produced by form-reading code
+ *     that has no view of the page, so the pair travels and the component that
+ *     renders it picks a half — see {@link messageFor}.
  *  3. **No `Date`.** Dates are parsed with `@meridian/core`'s `tryIsoDate`,
  *     which is calendar-exact and timezone-free. `new Date('2026-02-30')` rolls
  *     silently to 1 March and `new Date('2026-07-25')` is midnight UTC — which
@@ -20,15 +22,15 @@
 import { tryIsoDate } from '@meridian/core';
 import type { IsoDate } from '@meridian/core';
 
-import { bi, type Bi } from '@/lib/i18n';
+import { bi, pick, type Locale, type LocalizedText } from '@/lib/i18n';
 
 /** One problem with one field. `fieldId` is the DOM id of the control. */
 export interface FieldIssue {
   readonly fieldId: string;
-  readonly message: Bi;
+  readonly message: LocalizedText;
 }
 
-export function issue(fieldId: string, message: Bi): FieldIssue {
+export function issue(fieldId: string, message: LocalizedText): FieldIssue {
   return { fieldId, message };
 }
 
@@ -37,8 +39,26 @@ export function issue(fieldId: string, message: Bi): FieldIssue {
  * first issue wins: a stack of messages under a single input is noise a screen
  * reader has to walk through.
  */
-export function issueFor(fieldId: string, issues: readonly FieldIssue[]): Bi | undefined {
+export function issueFor(
+  fieldId: string,
+  issues: readonly FieldIssue[],
+): LocalizedText | undefined {
   return issues.find((i) => i.fieldId === fieldId)?.message;
+}
+
+/**
+ * The inline message for one control, resolved to the served locale.
+ *
+ * The form components take strings, not pairs: a control's label has already
+ * been chosen by the caller, and an error message should arrive the same way.
+ */
+export function messageFor(
+  fieldId: string,
+  issues: readonly FieldIssue[],
+  locale: Locale,
+): string | undefined {
+  const found = issueFor(fieldId, issues);
+  return found === undefined ? undefined : pick(found, locale);
 }
 
 /** Drop the `null`s from a list of optional issues, in declaration order. */

@@ -17,14 +17,16 @@
 
 import { useEffect, useState } from 'react';
 import { THEME_STORAGE_KEY } from '@/components/constants';
+import type { Bi, Locale } from '@/lib/i18n';
+import { UI, pick } from '@/lib/i18n';
 import styles from '@/components/shell.module.css';
 
 type ThemeChoice = 'system' | 'light' | 'dark';
 
-const CHOICES: readonly { value: ThemeChoice; label: string }[] = [
-  { value: 'system', label: 'System' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
+const CHOICES: readonly { value: ThemeChoice; label: Bi }[] = [
+  { value: 'system', label: UI.themeSystem },
+  { value: 'light', label: UI.themeLight },
+  { value: 'dark', label: UI.themeDark },
 ];
 
 function applyTheme(choice: ThemeChoice): void {
@@ -44,7 +46,7 @@ function readStored(): ThemeChoice {
   return 'system';
 }
 
-export function ThemeToggle() {
+export function ThemeToggle({ locale }: { locale: Locale }) {
   const [choice, setChoice] = useState<ThemeChoice | null>(null);
 
   useEffect(() => {
@@ -63,7 +65,7 @@ export function ThemeToggle() {
 
   return (
     <div className={styles.asOfForm}>
-      <label htmlFor="theme-choice">Theme</label>
+      <label htmlFor="theme-choice">{pick(UI.themeLabel, locale)}</label>
       <select
         id="theme-choice"
         value={choice ?? 'system'}
@@ -71,7 +73,7 @@ export function ThemeToggle() {
       >
         {CHOICES.map((option) => (
           <option key={option.value} value={option.value}>
-            {option.label}
+            {pick(option.label, locale)}
           </option>
         ))}
       </select>

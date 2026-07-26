@@ -99,11 +99,6 @@
   min-width: 12rem;
 }
 
-.fieldName :global(span[lang='es']) {
-  text-transform: none;
-  letter-spacing: 0;
-}
-
 .value {
   font-family: var(--font-mono);
   font-size: 0.9375rem;
