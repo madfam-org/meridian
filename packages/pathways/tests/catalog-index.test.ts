@@ -23,6 +23,7 @@ import * as ca from '../src/catalog/ca.js';
 import * as esArraigo from '../src/catalog/es-arraigo.js';
 import * as esFamilyNationality from '../src/catalog/es-family-nationality.js';
 import * as esWorkStudy from '../src/catalog/es-work-study.js';
+import * as mxInbound from '../src/catalog/mx-inbound.js';
 import * as usEmployment from '../src/catalog/us-employment.js';
 import * as usFamily from '../src/catalog/us-family.js';
 import * as usNonimmigrant from '../src/catalog/us-nonimmigrant.js';
@@ -57,6 +58,7 @@ const MODULE_NAMESPACES: Record<string, Record<string, unknown>> = {
   'us-employment': usEmployment,
   'us-nonimmigrant': usNonimmigrant,
   'us-status-bars': usStatusBars,
+  'mx-inbound': mxInbound,
 };
 
 /** Duck-typing rather than a zod parse: this must catch a *malformed* export too. */
@@ -116,17 +118,23 @@ describe('catalog assembly', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('counts 84 pathways: 26 Spanish, 23 Canadian, 35 American, and no fourth jurisdiction', () => {
+  it('counts 108 pathways: 26 Spanish, 23 Canadian, 35 American, 24 Mexican', () => {
     // Pinned deliberately, and it fails in both directions. A drop means a
     // module stopped being spread into the catalog and its routes went
-    // invisible; a rise that nobody updated this line for means a jurisdiction
-    // arrived without anyone deciding it had. Neither should pass quietly.
-    expect(MERIDIAN_PATHWAY_CATALOG).toHaveLength(84);
+    // invisible; a rise nobody updated this line for means a jurisdiction
+    // arrived without anyone deciding it had.
+    //
+    // Mexico joined on 2026-07-26 and is the one that mattered most per record:
+    // it appeared in this catalog as an ORIGIN from the first commit while its
+    // own inbound system went unencoded, which meant a platform built by a
+    // Mexican company could not answer a question about moving to Mexico.
+    expect(MERIDIAN_PATHWAY_CATALOG).toHaveLength(108);
     expect(pathwaysForJurisdiction('ES')).toHaveLength(26);
     expect(pathwaysForJurisdiction('CA')).toHaveLength(23);
     expect(pathwaysForJurisdiction('US')).toHaveLength(35);
+    expect(pathwaysForJurisdiction('MX')).toHaveLength(24);
     expect(new Set(MERIDIAN_PATHWAY_CATALOG.map((p) => p.jurisdiction))).toEqual(
-      new Set(['ES', 'CA', 'US']),
+      new Set(['ES', 'CA', 'US', 'MX']),
     );
   });
 
@@ -152,12 +160,20 @@ describe('the United States block, across its four source files', () => {
   const US_MODULES = ['us-family', 'us-employment', 'us-nonimmigrant', 'us-status-bars'];
   const usPathways = pathwaysForJurisdiction('US');
 
-  it('is the last four modules, in the order they were added', () => {
-    // The block went on the end because appending never renumbers what came
-    // before, not because of anything about the corridor — which is the largest
-    // in the world.
+  it('is four consecutive modules, in the order they were added', () => {
+    // The block went on the end when it was added, because appending never
+    // renumbers what came before — not because of anything about the corridor,
+    // which is the largest in the world. It is no longer last: `mx-inbound`
+    // arrived on 2026-07-26 and went after it, for the same reason.
+    //
+    // So this asserts the block is contiguous and internally ordered, not that
+    // it sits at the end. Anchoring on "last" would have made every future
+    // jurisdiction break a test about the United States, which teaches people to
+    // edit assertions instead of reading them.
     const sources = MERIDIAN_CATALOG_MODULES.map((m) => m.source);
-    expect(sources.slice(-4)).toEqual(US_MODULES);
+    const first = sources.indexOf(US_MODULES[0] as string);
+    expect(first).toBeGreaterThanOrEqual(0);
+    expect(sources.slice(first, first + US_MODULES.length)).toEqual(US_MODULES);
   });
 
   it('keeps every bridge inside the file that declares it', () => {

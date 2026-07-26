@@ -207,12 +207,22 @@ describe('deriveCorridor — status and effects', () => {
     expect(both.ok && both.value.researchStatus).toBe('researched');
   });
 
-  it('reports encoded only where both ends are encoded — today, ES and CA', () => {
+  it('reports encoded only where both ends are encoded', () => {
+    // Four jurisdictions are encoded today: ES, CA, US and MX. MX joined on
+    // 2026-07-26 and this test previously asserted MX>ES was merely
+    // `researched`, which was true while Mexico appeared in the catalog only as
+    // an origin.
     const esCa = deriveCorridor(ATLAS, 'ES', 'CA');
     expect(esCa.ok && esCa.value.researchStatus).toBe('encoded');
 
     const mxEs = deriveCorridor(ATLAS, 'MX', 'ES');
-    expect(mxEs.ok && mxEs.value.researchStatus).toBe('researched');
+    expect(mxEs.ok && mxEs.value.researchStatus).toBe('encoded');
+
+    // A corridor is only as known as its least-known end, so one unencoded end
+    // is still enough to hold the whole corridor down. That is the rule the
+    // metric rests on and it has to keep working as the encoded set grows.
+    const mxBr = deriveCorridor(ATLAS, 'MX', 'BR');
+    expect(mxBr.ok && mxBr.value.researchStatus).not.toBe('encoded');
   });
 
   it('deduplicates effects and orders them the same way every time', () => {

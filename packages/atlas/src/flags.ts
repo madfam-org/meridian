@@ -348,10 +348,11 @@ export const FLAG_SUPPRESSIONS: readonly FlagSuppression[] = [
   suppression(
     'BQ',
     'no_single_flag',
-    'Bonaire, Sint Eustatius and Saba each fly their own flag. The pack itself concedes the point ' +
-      'by shipping four files — BQ, BQ-BO, BQ-SA and BQ-SE — and its BQ.svg is Bonaire’s flag ' +
-      'alone (white and blue diagonal, yellow triangle, red star inside a black compass ring). ' +
-      'Rendering one of three as though it were the territory’s is a choice presented as a fact.',
+    'Bonaire, Sint Eustatius and Saba each fly their own flag. The pack concedes the point by ' +
+      'shipping four files — BQ, BQ-BO, BQ-SA and BQ-SE — and BQ.svg is byte-identical to ' +
+      'BQ-BO.svg, so the file offered for the whole territory is Bonaire’s flag under another ' +
+      'name. Rendering one of three as though it were the territory’s is a choice presented as a ' +
+      'fact.',
   ),
   suppression(
     'BV',
@@ -409,15 +410,19 @@ export const FLAG_SUPPRESSIONS: readonly FlagSuppression[] = [
   suppression(
     'NC',
     'source_chose_among_competing_flags',
-    'Both candidate packs draw the Kanak flag for New Caledonia — the vendored NC.svg is blue, ' +
-      'green and red with a yellow disc — rather than the tricolour. Two flags are associated with ' +
-      'the territory and which is flown has been a live political question there. Agreement between ' +
-      'two dependencies is not neutrality; it is two packagers making the same choice.',
+    'The vendored NC.svg is blue, green and red with a yellow disc, and is not byte-identical to ' +
+      'FR.svg; the research brief §7.3 identifies the same design in flag-icons as the Kanak flag. ' +
+      'Two flags are associated with the territory and which is flown has been a live political ' +
+      'question there. Agreement between two dependencies is not neutrality; it is two packagers ' +
+      'making the same choice.',
   ),
   suppression(
     'PM',
     'image_identifies_another_jurisdiction',
-    'PM.svg is byte-identical to FR.svg in the vendored set, alongside GP and RE. See GP.',
+    'PM.svg is byte-identical to FR.svg in the vendored set, alongside GP and RE. Four rows would ' +
+      'carry the same picture, so the picture tells a reader nothing about which of the four they ' +
+      'are looking at — and Saint Pierre and Miquelon is exactly the row where a reader most needs ' +
+      'to know it is not metropolitan France.',
   ),
   suppression(
     'PS',
@@ -430,15 +435,18 @@ export const FLAG_SUPPRESSIONS: readonly FlagSuppression[] = [
   suppression(
     'RE',
     'image_identifies_another_jurisdiction',
-    'RE.svg is byte-identical to FR.svg in the vendored set, alongside GP and PM. See GP.',
+    'RE.svg is byte-identical to FR.svg in the vendored set, alongside GP and PM. The tricolour is ' +
+      'what is officially flown in Réunion, so the image is not wrong — it simply does not ' +
+      'discriminate, and an image that cannot discriminate is not identification however accurate ' +
+      'it is.',
   ),
   suppression(
     'SH',
     'one_code_several_systems',
     'The atlas record says it plainly: SH is really three controls behind one ISO code. Saint ' +
       'Helena, Ascension and Tristan da Cunha maintain separate immigration requirements under ' +
-      'their own laws and fly separate flags. One image asserts one of the three and hides the ' +
-      'other two, which is exactly the fact a reader of this row most needs.',
+      'their own laws. One image can stand for at most one of the three, and which of the three a ' +
+      'reader is looking at is exactly the fact this row most needs to convey.',
   ),
   suppression(
     'SJ',

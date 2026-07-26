@@ -270,22 +270,32 @@ describe('computeCoverage — against the atlas as shipped', () => {
     expect(report.structural.byStatus.counsel_reviewed).toBe(0);
   });
 
-  it('covers a sliver of stock, far below its structural share, and says so', () => {
-    // Three encoded jurisdictions — ES, CA, US — and `covered` requires BOTH
-    // ends of a corridor to be encoded. So the only rows that count are the ones
-    // running between those three, and the largest corridor in the world,
-    // Mexico to the United States, is NOT among them: Mexico appears in the
-    // catalog only as an origin and no Mexican inbound pathway is encoded.
+  it('covers more of the world by people than by systems, and says why', () => {
+    // The two numbers have inverted, and the inversion is the point.
     //
-    // This is the divergence the two numbers exist to expose. Structural
-    // coverage rose when the United States was encoded; weighted coverage
-    // barely moved, because encoding a destination does not by itself cover the
-    // people arriving at it under this rule. Whether "both ends" is the right
-    // test is a live design question — see the destination-side figure the
-    // report prints separately and deliberately refuses to call coverage.
-    expect(report.weighted.coveredStock).toBeGreaterThan(0);
-    expect(report.weighted.coveredFraction).toBeLessThan(0.01);
-    expect(report.weighted.coveredFraction).toBeLessThan(report.structural.encodedFraction);
+    // Structural coverage is 4 of 249 jurisdictions — about 1.6%. Weighted
+    // coverage is about 6.8% of the migrants in the stock table. Weighted now
+    // EXCEEDS structural because the four encoded systems are not four
+    // arbitrary ones: Mexico and the United States sit at the two ends of the
+    // largest bilateral corridor on earth, so encoding Mexico moved weighted
+    // coverage from 0.61% to 6.77% while moving structural coverage by four
+    // tenths of a percentage point.
+    //
+    // Before Mexico was encoded this test asserted the opposite relationship,
+    // and that was honest then: three encoded systems that no single stock row
+    // ran between produced a weighted figure of zero against a non-zero
+    // structural one. Both readings are correct about their own moment, which
+    // is why the report prints both numbers rather than choosing one.
+    expect(report.weighted.coveredFraction).toBeGreaterThan(report.structural.encodedFraction);
+    expect(report.weighted.coveredFraction).toBeGreaterThan(0.05);
+    expect(report.weighted.coveredFraction).toBeLessThan(0.1);
+
+    // Still a small fraction of the world, and the report must not round that
+    // away: covered stock is measured against the table, and the table itself
+    // accounts for about two thirds of world migration.
+    const completeness = report.weighted.stockTableCompleteness;
+    expect(completeness).not.toBeNull();
+    if (completeness !== null) expect(completeness).toBeLessThan(0.7);
   });
 
   it('accounts for well under the whole world, and reports the shortfall', () => {
@@ -300,7 +310,22 @@ describe('computeCoverage — against the atlas as shipped', () => {
     expect(report.largestUncovered).toHaveLength(DEFAULT_LARGEST_UNCOVERED);
     const stocks = report.largestUncovered.map((r) => r.stock);
     expect(stocks).toEqual([...stocks].sort((a, b) => b - a));
-    expect(report.largestUncovered[0]?.origin).toBe('MX');
-    expect(report.largestUncovered[0]?.destination).toBe('US');
+    // The head of this queue moved on 2026-07-26, and it moved because the work
+    // got done. It read MX>US — the largest bilateral corridor on earth — until
+    // Mexico was encoded as a destination; the United States already was, so
+    // that corridor became covered and dropped out of the queue entirely.
+    // Afghanistan to Iran is what surfaced behind it.
+    //
+    // Pinning the head is deliberate. This list is the work queue in value
+    // order, and a queue whose front nobody asserts is a queue that can quietly
+    // start recommending the wrong next thing.
+    expect(report.largestUncovered[0]?.origin).toBe('AF');
+    expect(report.largestUncovered[0]?.destination).toBe('IR');
+
+    // MX>US must no longer appear anywhere in the uncovered list.
+    const stillUncovered = report.largestUncovered.some(
+      (r) => r.origin === 'MX' && r.destination === 'US',
+    );
+    expect(stillUncovered).toBe(false);
   });
 });

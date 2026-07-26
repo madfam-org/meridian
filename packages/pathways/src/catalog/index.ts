@@ -1,7 +1,7 @@
 /**
  * The shipped catalog.
  *
- * Three jurisdictions, thirteen source modules. Every record here is
+ * Four jurisdictions, fourteen source modules. Every record here is
  * `reviewStatus: 'unreviewed'`. Nothing in this catalog is eligible to appear
  * in an advice-class recommendation until a licensed person has read it and
  * their name is on the record.
@@ -35,7 +35,7 @@
  * is a claim about importance.
  *
  * Jurisdiction blocks stay in the order the catalog originally shipped in — ES,
- * then CA, then US — for the same reason. The United States block was added
+ * then CA, then US, then MX — for the same reason. The United States block was added
  * last and goes last; that says nothing about the corridor's size, which is the
  * largest in the world, and everything about not renumbering what came before.
  */
@@ -53,6 +53,7 @@ import { ES_WORK_STUDY_PATHWAYS } from './es-work-study.js';
 import { US_EMPLOYMENT_PATHWAYS } from './us-employment.js';
 import { US_FAMILY_PATHWAYS } from './us-family.js';
 import { US_NONIMMIGRANT_PATHWAYS } from './us-nonimmigrant.js';
+import { MX_INBOUND_PATHWAYS } from './mx-inbound.js';
 import { US_STATUS_AND_BARS_PATHWAYS } from './us-status-bars.js';
 
 export * from './cusma-professions.js';
@@ -69,6 +70,7 @@ export * from './us-family.js';
 export * from './us-employment.js';
 export * from './us-nonimmigrant.js';
 export * from './us-status-bars.js';
+export * from './mx-inbound.js';
 
 /**
  * One source file's worth of pathways.
@@ -83,7 +85,7 @@ export interface CatalogModule {
 }
 
 /**
- * The shipped catalog: thirteen module arrays, spread in the documented order.
+ * The shipped catalog: fourteen module arrays, spread in the documented order.
  *
  * Written out as a literal spread rather than flattened from
  * {@link MERIDIAN_CATALOG_MODULES}, because `scripts/check-pathway-citations.mjs`
@@ -112,10 +114,11 @@ export const MERIDIAN_PATHWAY_CATALOG: readonly Pathway[] = [
   ...US_EMPLOYMENT_PATHWAYS,
   ...US_NONIMMIGRANT_PATHWAYS,
   ...US_STATUS_AND_BARS_PATHWAYS,
+  ...MX_INBOUND_PATHWAYS,
 ];
 
 /**
- * The same thirteen modules, each paired with the file it lives in.
+ * The same fourteen modules, each paired with the file it lives in.
  *
  * This list *is* the ordering decision documented at the top of this file, in a
  * form code can read: it is what `catalogSourceOf` answers from and what the
@@ -136,6 +139,7 @@ export const MERIDIAN_CATALOG_MODULES: readonly CatalogModule[] = [
   { source: 'us-employment', pathways: US_EMPLOYMENT_PATHWAYS },
   { source: 'us-nonimmigrant', pathways: US_NONIMMIGRANT_PATHWAYS },
   { source: 'us-status-bars', pathways: US_STATUS_AND_BARS_PATHWAYS },
+  { source: 'mx-inbound', pathways: MX_INBOUND_PATHWAYS },
 ];
 
 const BY_ID = new Map(MERIDIAN_PATHWAY_CATALOG.map((p) => [p.id, p]));
@@ -154,7 +158,7 @@ export function pathwaysForJurisdiction(jurisdiction: string): Pathway[] {
 /**
  * Which source file a pathway is declared in, or `null` for an unknown id.
  *
- * The catalog is thirteen files and growing. When an integrity check names a
+ * The catalog is fourteen files and growing. When an integrity check names a
  * pathway, the next question is always "where do I edit that", and answering it
  * from data beats answering it from memory.
  */

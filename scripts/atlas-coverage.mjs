@@ -80,6 +80,7 @@ const REQUIRED = [
   'ATLAS_INTEGRITY',
   'ATTRIBUTABLE_BILATERAL_STOCK',
   'CORRIDOR_STOCK',
+  'WEIGHTED_CORRIDOR_STOCK',
   'CORRIDOR_STOCK_AS_OF_YEAR',
   'CORRIDOR_STOCK_MINIMUM',
   'CORRIDOR_STOCK_SOURCE_URL',
@@ -107,6 +108,7 @@ const {
   ATLAS_INTEGRITY,
   ATTRIBUTABLE_BILATERAL_STOCK,
   CORRIDOR_STOCK,
+  WEIGHTED_CORRIDOR_STOCK,
   CORRIDOR_STOCK_AS_OF_YEAR,
   CORRIDOR_STOCK_MINIMUM,
   CORRIDOR_STOCK_SOURCE_URL,
@@ -172,7 +174,7 @@ function heading(text) {
 const report = computeCoverage({
   asOf,
   jurisdictions: ALL_JURISDICTIONS,
-  stock: CORRIDOR_STOCK,
+  stock: WEIGHTED_CORRIDOR_STOCK,
   globalStock: GLOBAL_MIGRANT_STOCK,
   largestUncoveredLimit: limit,
 });
@@ -260,7 +262,7 @@ console.log(
 
 heading('WEIGHTED COVERAGE — people');
 console.log(
-  `corridors weighted        ${padStart(n(CORRIDOR_STOCK.length), 15)} rows in the stock table`,
+  `corridors weighted        ${padStart(n(WEIGHTED_CORRIDOR_STOCK.length), 15)} rows in the stock table`,
 );
 console.log(`migrants in those rows    ${padStart(n(report.weighted.knownStock), 15)}`);
 console.log(`migrants on covered rows  ${padStart(n(report.weighted.coveredStock), 15)}`);
@@ -277,7 +279,7 @@ console.log(
   )}   (of ${n(GLOBAL_MIGRANT_STOCK)} migrants worldwide)`,
 );
 
-const destinationRows = CORRIDOR_STOCK.filter((row) =>
+const destinationRows = WEIGHTED_CORRIDOR_STOCK.filter((row) =>
   encoded.some((j) => j.code === row.destination),
 );
 const destinationStock = destinationRows.reduce((sum, row) => sum + row.stock, 0);
@@ -328,7 +330,7 @@ heading('INTEGRITY OF THE ATLAS');
 const gaps = blocCrossReferenceGaps({
   registries: JURISDICTION_REGISTRIES,
   blocs: MOBILITY_BLOCS,
-  stock: CORRIDOR_STOCK,
+  stock: WEIGHTED_CORRIDOR_STOCK,
 });
 if (ATLAS_INTEGRITY.length === 0) {
   console.log(`${INTEGRITY_RULE_COUNT} rules checked, 0 findings.`);

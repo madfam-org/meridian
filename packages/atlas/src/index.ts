@@ -66,17 +66,20 @@ import { ASIA_JURISDICTIONS } from './regions/asia.js';
 import { EUROPE_JURISDICTIONS } from './regions/europe.js';
 import { OCEANIA_JURISDICTIONS } from './regions/oceania.js';
 import { CORRIDOR_STOCK } from './stock.js';
+import { MEXICO_CORRIDOR_STOCK_ADDITIONS } from './stock-mexico.js';
 import { mergeJurisdictionRegistries } from './corridor.js';
 import type { Atlas, JurisdictionCollision, JurisdictionRegistry } from './corridor.js';
 import { checkAtlasIntegrity } from './coverage.js';
 import type { IntegrityFinding } from './coverage.js';
-import type { Jurisdiction } from './types.js';
+import type { CorridorStock, Jurisdiction } from './types.js';
 
 export * from './types.js';
 export * from './corridor.js';
 export * from './coverage.js';
 export { MOBILITY_BLOCS } from './blocs.js';
 export * from './stock.js';
+export * from './stock-mexico.js';
+export * from './flags.js';
 export { AFRICA_JURISDICTIONS } from './regions/africa.js';
 export { AMERICAS_JURISDICTIONS } from './regions/americas.js';
 export { ASIA_JURISDICTIONS } from './regions/asia.js';
@@ -116,8 +119,36 @@ export const ATLAS: Atlas = { jurisdictions: ALL_JURISDICTIONS, blocs: MOBILITY_
  * Not empty today. See the module doc above for what is in it and why each entry
  * is reported rather than repaired in place.
  */
+/**
+ * The weighted-coverage table: the main stock table plus the Mexico additions.
+ *
+ * `stock.ts` encodes every corridor at or above 200,000 persons, which is a
+ * defensible rule and makes the table nearly blind to Mexico — a query for
+ * Mexico corridors returned exactly two rows, while the Central American,
+ * Venezuelan, Haitian, Cuban and Colombian populations in Mexico, and Mexicans
+ * in Spain and Canada, all sit below the floor.
+ *
+ * `MEXICO_CORRIDOR_STOCK_ADDITIONS` is the subset of the Mexico table that
+ * `stock.ts` does not already carry, computed against the real array rather than
+ * written down. Concatenating the Mexico table *whole* would double-count MX→US
+ * and US→MX — 12,104,000 people — and inflate both `knownStock` and
+ * `stockTableCompleteness`. Using the additions is duplicate-free by
+ * construction, which is the point: a merge rule that lives only in a comment
+ * eventually gets read by someone in a hurry.
+ */
+export const WEIGHTED_CORRIDOR_STOCK: readonly CorridorStock[] = [
+  ...CORRIDOR_STOCK,
+  ...MEXICO_CORRIDOR_STOCK_ADDITIONS,
+];
+
+/**
+ * Integrity findings for the atlas as shipped, computed at load.
+ *
+ * Not empty today. See the module doc above for what is in it and why each entry
+ * is reported rather than repaired in place.
+ */
 export const ATLAS_INTEGRITY: readonly IntegrityFinding[] = checkAtlasIntegrity({
   registries: JURISDICTION_REGISTRIES,
   blocs: MOBILITY_BLOCS,
-  stock: CORRIDOR_STOCK,
+  stock: WEIGHTED_CORRIDOR_STOCK,
 });

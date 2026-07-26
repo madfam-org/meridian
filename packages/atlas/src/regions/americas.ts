@@ -269,7 +269,7 @@ export const AMERICAS_JURISDICTIONS: readonly Jurisdiction[] = [
     name: { en: "Mexico", es: "México" },
     region: "americas",
     autonomy: "autonomous",
-    researchStatus: "researched",
+    researchStatus: "encoded",
     blocs: ["cusma"],
     inbound: [
       "work_employed",
