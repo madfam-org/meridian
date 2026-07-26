@@ -28,10 +28,17 @@ spec:
         - name: ghcr-credentials
       containers:
         - name: api
-          # Bootstrap tag. The first push to main replaces this with an
-          # immutable digest through the `images:` block in kustomization.yaml
-          # (.github/workflows/build-deploy.yml).
-          image: ghcr.io/madfam-org/meridian-api:main
+          # Immutable digest, rewritten in place by the `Pin image digests` step
+          # of .github/workflows/build-deploy.yml on every push to main.
+          #
+          # The digest lives here as well as in kustomization.yaml's `images:`
+          # block because readers of this file are not all kustomize. The
+          # onboarding gate fetches this manifest raw from GitHub, applies no
+          # overlay, and treats any reference that is not `@sha256:` as a
+          # blocker — so a `:main` tag here fails the gate even when the
+          # rendered output would have been correct. The two must be kept in
+          # step; CI writes both in the same commit.
+          image: ghcr.io/madfam-org/meridian-api@sha256:9a9547aec9093b09280610e903ca344095d191ecf95d0f86900d7433e70f359f
           ports:
             - name: http
               containerPort: 8000
@@ -50,6 +57,30 @@ spec:
               value: "https://auth.madfam.io"
             - name: JANUA_JWKS_URL
               value: "https://auth.madfam.io/.well-known/jwks.json"
+            # Expected `iss`. Janua is single-issuer per deployment — the value
+            # is derived from Janua's own configured domain and never from the
+            # request Host — so there is exactly one correct value for the whole
+            # ecosystem, and it is the origin the JWKS above is served from.
+            - name: JANUA_ISSUER
+              value: "https://auth.madfam.io"
+            # Expected `aud`, and the reason a token minted for a neighbouring
+            # service in the same realm cannot authenticate here.
+            #
+            # THIS MUST EQUAL THE CLIENT IDENTIFIER REGISTERED FOR THIS API IN
+            # JANUA, CHARACTER FOR CHARACTER. A mismatch fails every
+            # verification closed: apps/api/src/auth/verifier.ts refuses with
+            # `wrong_audience` and tells the caller only that the token was not
+            # accepted, so the symptom is "every request is 401" rather than
+            # anything that names configuration.
+            #
+            # No such registration exists yet. `meridian-api` is a claim about
+            # one that has to be made before this deployment can authenticate
+            # anybody — register the API under this identifier, and mint the
+            # portal's and console's tokens with it in `aud`. This line and the
+            # matching line in enclii.yaml are the only two places the value
+            # appears; move both in the commit that performs the registration.
+            - name: JANUA_AUDIENCE
+              value: "meridian-api"
             # CORS allow-list, explicit and never a wildcard: these responses
             # carry an applicant's own documents. `meridian.madfam.io` is absent
             # on purpose — that host is the landing site now, and it makes no
@@ -85,6 +116,22 @@ spec:
               cpu: "1"
               memory: 1Gi
           securityContext:
+            # `privileged: false` is spelled out rather than left to the
+            # default. The cluster's disallow-privileged-containers policy runs
+            # in Enforce and requires the field to be *present* — "absent" and
+            # "false" mean the same thing to the kubelet and different things to
+            # the admission webhook, so a manifest that omits it is rejected at
+            # apply time with no workload ever created. This exact omission
+            # blocked a previous service's go-live; all four Meridian
+            # Deployments carry the field for that reason.
+            #
+            # The rest of the baseline set is already satisfied and is not
+            # repeated here: `runAsNonRoot`, `runAsUser`/`runAsGroup` and
+            # `seccompProfile` sit on the pod securityContext above,
+            # `capabilities.drop: [ALL]` and `allowPrivilegeEscalation` are
+            # below, and no pod in this namespace requests a host namespace, a
+            # hostPath volume or a host port.
+            privileged: false
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:

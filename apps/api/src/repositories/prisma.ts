@@ -91,6 +91,7 @@ import type {
   RepresentativeRepository,
   StayRecord,
   StayRepository,
+  StoreHealth,
   TaskPatch,
   TaskRecord,
   TaskRepository,
@@ -949,6 +950,76 @@ class PrismaRepositories implements Repositories {
   }
 }
 
+/**
+ * The tables a request has to be able to read, and the order they are probed in.
+ *
+ * **Why every table and not just one.** A half-applied migration is a real
+ * state: `prisma migrate deploy` stops at the first statement that fails, and
+ * what it leaves behind is a database with some of the schema. Probing only
+ * `tenant` would pass on a deployment where `audit_event` never got created —
+ * and a mutation that cannot write its audit row is precisely the failure this
+ * service must not serve traffic through. `tenant` is first because it is what
+ * the auth hook reads on every authenticated request, so the commonest total
+ * failure is also the fastest one to detect.
+ *
+ * **Why a read and not `information_schema`.** A catalog query proves a relation
+ * exists; it does not prove this connection's role may select from it. A grant
+ * that was never applied fails every request while `information_schema` reports
+ * a complete schema — and this deployment is *expected* to run on a narrowed
+ * grant, since `audit_event` is meant to carry INSERT and SELECT only. Reading
+ * is the only check whose success means the thing the request path needs; it
+ * reports the missing grant as `42501 permission denied`.
+ *
+ * **Why `take: 1` and not `count()`.** `SELECT count(*)` on `audit_event` is a
+ * sequential scan that grows without bound, and a readiness probe that gets
+ * slower every week is an outage with a delay fuse. Prisma emits
+ * `ORDER BY "id" ASC LIMIT 1`, a one-row scan of the primary-key index whatever
+ * the table holds. It also names every column of the model in the select list,
+ * so it fails when a *column* is missing — a migration applied halfway through a
+ * table, not just a table that was never created.
+ *
+ * An empty result is a **pass**. A fresh deployment has no tenants, and a
+ * readiness check that demanded a row would mean a correctly migrated cluster
+ * never comes up.
+ */
+const SCHEMA_PROBES: readonly {
+  readonly table: string;
+  readonly read: (db: MeridianPrismaClient) => Promise<unknown>;
+}[] = [
+  { table: 'tenant', read: (db) => db.tenant.findMany({ take: 1 }) },
+  { table: 'representative', read: (db) => db.representative.findMany({ take: 1 }) },
+  { table: 'applicant', read: (db) => db.applicant.findMany({ take: 1 }) },
+  { table: 'matter', read: (db) => db.matter.findMany({ take: 1 }) },
+  { table: 'task', read: (db) => db.task.findMany({ take: 1 }) },
+  { table: 'document', read: (db) => db.document.findMany({ take: 1 }) },
+  { table: 'stay', read: (db) => db.stay.findMany({ take: 1 }) },
+  { table: 'pathway_evaluation', read: (db) => db.pathwayEvaluation.findMany({ take: 1 }) },
+  { table: 'govtech_handoff', read: (db) => db.govTechHandoff.findMany({ take: 1 }) },
+  { table: 'audit_event', read: (db) => db.auditEvent.findMany({ take: 1 }) },
+];
+
+function asError(thrown: unknown): Error {
+  return thrown instanceof Error ? thrown : new Error(String(thrown));
+}
+
+/**
+ * The one useful line out of a driver error.
+ *
+ * Prisma prefixes a failed query with the call site and an excerpt of *this
+ * file*, and puts the actual cause on the last line. Passed through whole, the
+ * readiness payload shows an unauthenticated caller two hundred characters of
+ * our source — including the absolute path of the machine that built it — and
+ * none of the reason, because `safeReason` truncates before reaching it. The
+ * full error is kept as the `cause` for anyone reading a log.
+ */
+function driverSummary(error: Error): string {
+  const lines = error.message
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  return lines.at(-1) ?? error.name;
+}
+
 export class PrismaRepositoryProvider implements RepositoryProvider {
   readonly kind = 'prisma' as const;
   readonly tenants: TenantDirectory;
@@ -962,17 +1033,65 @@ export class PrismaRepositoryProvider implements RepositoryProvider {
   }
 
   /**
-   * A real round trip, not a connection-pool status flag.
+   * Readiness for the store: reachable, and carrying a schema this code can use.
    *
-   * A pool can hold a connection to a database that has since become read-only
-   * or run out of disk, and report itself healthy the entire time.
+   * The check this replaced was `SELECT 1`. That proves a socket. Against a
+   * Postgres instance with zero tables it returns a row, the pod reports ready,
+   * joins the Service, and then every authenticated request 500s inside the auth
+   * hook on `relation "tenant" does not exist`. A green pipeline and a dead
+   * service. For the database dimension, that check was the unconditional
+   * `{"ready": true}` this module's own note calls worse than none.
+   *
+   * So: prove connectivity, then read {@link SCHEMA_PROBES}. A pool status flag
+   * would not do either — a pool can hold a connection to a database that has
+   * since become read-only or run out of disk and report itself healthy
+   * throughout.
+   *
+   * The two failures are reported separately because they are different jobs.
+   * `unreachable` is a network, a credential or a database that is down, and it
+   * may well heal on its own. `schema_unavailable` will not heal: nothing
+   * changes until somebody applies a migration, and restarting the pod only
+   * makes it crash-loop faster.
    */
-  async checkHealth(): Promise<Result<void, Error>> {
+  async checkHealth(): Promise<StoreHealth> {
+    const connected = await this.probeConnection();
+    if (!connected.ok) return { status: 'unreachable', error: connected.error };
+
+    for (const probe of SCHEMA_PROBES) {
+      try {
+        await probe.read(this.db);
+      } catch (error) {
+        // A relation can also stop being readable because the connection went
+        // away between the two statements. Re-probe before blaming the schema:
+        // reporting "run your migrations" at a database that simply vanished
+        // sends the operator to the wrong runbook.
+        const stillConnected = await this.probeConnection();
+        if (!stillConnected.ok) return { status: 'unreachable', error: stillConnected.error };
+        return {
+          status: 'schema_unavailable',
+          error: new Error(`could not read "${probe.table}": ${driverSummary(asError(error))}`, {
+            cause: error,
+          }),
+        };
+      }
+    }
+
+    return { status: 'healthy' };
+  }
+
+  /**
+   * One trivial round trip, to separate "cannot reach it" from "nothing there".
+   *
+   * The literal is a constant with nothing interpolated into it;
+   * `$queryRawUnsafe` is simply the only raw entry point on the structural
+   * client type this adapter is written against.
+   */
+  private async probeConnection(): Promise<Result<void, Error>> {
     try {
       await this.db.$queryRawUnsafe('SELECT 1');
       return ok(undefined);
     } catch (error) {
-      return err(error instanceof Error ? error : new Error(String(error)));
+      return err(asError(error));
     }
   }
 

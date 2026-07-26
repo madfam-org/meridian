@@ -19,7 +19,6 @@
  * test pass for the wrong reason.
  */
 
-import { err, ok, type Result } from '@meridian/core';
 import type { Document } from '@meridian/documents';
 
 import type {
@@ -51,6 +50,8 @@ import type {
   RepresentativeRepository,
   StayRecord,
   StayRepository,
+  StoreHealth,
+  StoreHealthStatus,
   TaskPatch,
   TaskRecord,
   TaskRepository,
@@ -544,12 +545,14 @@ class MemoryRepositories implements Repositories {
 
 export interface MemoryProviderOptions {
   /**
-   * Makes {@link RepositoryProvider.checkHealth} fail.
+   * The state {@link RepositoryProvider.checkHealth} reports.
    *
    * Readiness has to be testable, and a readiness probe nobody has ever seen
-   * fail is a readiness probe that reports ready when the database is gone.
+   * fail is a readiness probe that reports ready when the database is gone. All
+   * three states are reachable from here, including `schema_unavailable`, which
+   * is the one the Prisma adapter's `SELECT 1` could never produce.
    */
-  readonly healthy?: boolean;
+  readonly health?: StoreHealthStatus;
   readonly unhealthyReason?: string;
 }
 
@@ -558,13 +561,13 @@ export class InMemoryRepositoryProvider implements RepositoryProvider {
   readonly tenants: TenantDirectory;
   readonly store: MemoryStore;
 
-  private healthy: boolean;
+  private health: StoreHealthStatus;
   private unhealthyReason: string;
 
   constructor(options: MemoryProviderOptions = {}) {
     this.store = new MemoryStore();
     this.tenants = new MemoryTenantDirectory(this.store);
-    this.healthy = options.healthy ?? true;
+    this.health = options.health ?? 'healthy';
     this.unhealthyReason = options.unhealthyReason ?? 'in-memory store marked unavailable';
   }
 
@@ -573,13 +576,17 @@ export class InMemoryRepositoryProvider implements RepositoryProvider {
   }
 
   /** Flip health at runtime so a test can take the dependency down mid-suite. */
-  setHealthy(healthy: boolean, reason?: string): void {
-    this.healthy = healthy;
+  setHealth(status: StoreHealthStatus, reason?: string): void {
+    this.health = status;
     if (reason !== undefined) this.unhealthyReason = reason;
   }
 
-  async checkHealth(): Promise<Result<void, Error>> {
-    return this.healthy ? ok(undefined) : err(new Error(this.unhealthyReason));
+  async checkHealth(): Promise<StoreHealth> {
+    // The in-memory store has no schema to be missing, so anything other than
+    // healthy here is a state a test asked for. It is still reported as the
+    // adapter would report it, so the route is exercised over the real shape.
+    if (this.health === 'healthy') return { status: 'healthy' };
+    return { status: this.health, error: new Error(this.unhealthyReason) };
   }
 
   async close(): Promise<void> {

@@ -4,8 +4,9 @@
 # is the surface where a licensed person's name goes onto a pathway record, so
 # it is built from the same commit as the API rather than shipped independently.
 #
-# Requires `output: 'standalone'` in apps/admin/next.config.* and the workspace
-# packages listed under `transpilePackages` — see Dockerfile.web for why.
+# Requires `output: 'standalone'` in apps/admin/next.config.mjs. Workspace
+# packages are consumed as emitted JavaScript, so that config carries no
+# `transpilePackages` and no `experimental.extensionAlias` — see Dockerfile.web.
 
 FROM node:22-alpine AS deps
 
@@ -36,13 +37,10 @@ COPY tsconfig.base.json turbo.json ./
 COPY packages/ ./packages/
 COPY apps/admin/ ./apps/admin/
 
-# Public endpoints only — build arguments are readable from the published image.
-ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_JANUA_URL
-ARG NEXT_PUBLIC_JANUA_CLIENT_ID
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_JANUA_URL=$NEXT_PUBLIC_JANUA_URL
-ENV NEXT_PUBLIC_JANUA_CLIENT_ID=$NEXT_PUBLIC_JANUA_CLIENT_ID
+# No NEXT_PUBLIC_* build arguments; see Dockerfile.web for the whole reasoning.
+# The three that were here were read by no line of source, and a build argument
+# is readable from the published image, so they recorded a wiring that does not
+# exist in an artifact anyone can pull.
 
 ENV NEXT_TELEMETRY_DISABLED=1
 

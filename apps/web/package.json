@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@meridian/core": "workspace:*",
+    "@meridian/mrtd": "workspace:*",
     "@meridian/pathways": "workspace:*",
     "@meridian/presence": "workspace:*",
     "next": "15.1.3",

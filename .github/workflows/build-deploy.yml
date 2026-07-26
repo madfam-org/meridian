@@ -83,12 +83,11 @@ jobs:
             ghcr.io/madfam-org/meridian-web:main
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
-          # Public endpoints only. Build arguments are recorded in the image
-          # history of a publicly pullable image.
-          build-args: |
-            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://meridian-api.madfam.io' }}
-            NEXT_PUBLIC_JANUA_URL=${{ vars.NEXT_PUBLIC_JANUA_URL || 'https://auth.madfam.io' }}
-            NEXT_PUBLIC_JANUA_CLIENT_ID=meridian-web
+          # No build arguments. The three NEXT_PUBLIC_* values passed here were
+          # read by no line of source in apps/ or packages/, so they were inlined
+          # into a publicly pullable image to be used by nothing. Dockerfile.web
+          # no longer declares the matching ARGs; restore both sides together, in
+          # the change that adds the code reading them.
 
       - name: Build and push admin
         id: build-admin
@@ -102,14 +101,13 @@ jobs:
             ghcr.io/madfam-org/meridian-admin:main
           cache-from: type=gha,scope=admin
           cache-to: type=gha,mode=max,scope=admin
-          build-args: |
-            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://meridian-api.madfam.io' }}
-            NEXT_PUBLIC_JANUA_URL=${{ vars.NEXT_PUBLIC_JANUA_URL || 'https://auth.madfam.io' }}
-            NEXT_PUBLIC_JANUA_CLIENT_ID=meridian-admin
+          # No build arguments; see the web step above.
 
-      # The public explainer at meridian.madfam.io. It takes one build argument
-      # and it is the least sensitive of the four images: no API URL, no Janua
-      # client id, nothing to inline but the address of the portal it links to.
+      # The public explainer at meridian.madfam.io, and the least sensitive of
+      # the four images: no API URL, no Janua client id, nothing inlined at all.
+      # The `NEXT_PUBLIC_APP_URL` build argument this step used to pass named no
+      # ARG in Dockerfile.landing, so BuildKit discarded it — the portal address
+      # comes from apps/landing/lib/links.ts.
       - name: Build and push landing
         id: build-landing
         uses: docker/build-push-action@v5
@@ -122,8 +120,6 @@ jobs:
             ghcr.io/madfam-org/meridian/landing:main
           cache-from: type=gha,scope=landing
           cache-to: type=gha,mode=max,scope=landing
-          build-args: |
-            NEXT_PUBLIC_APP_URL=${{ vars.NEXT_PUBLIC_APP_URL || 'https://meridian-app.madfam.io' }}
 
       # Keyless signing through the workflow's OIDC identity — no key material
       # exists to leak. The signature is a public transparency-log record that
@@ -183,18 +179,64 @@ jobs:
       # Digests, not tags. A tag is a mutable pointer; the cluster must roll out
       # the exact bytes this job built and signed, and ArgoCD must be able to
       # tell one revision from the next.
+      #
+      # Two places, deliberately. `kustomization.yaml` is what a kustomize
+      # render reads, and the Deployment manifests are what everything that does
+      # not render reads — the Enclii onboarding gate fetches each Deployment
+      # raw from GitHub, applies no overlay, and blocks on any image reference
+      # that is not `@sha256:`. A digest that exists only in the overlay is a
+      # digest that gate never sees, so both are rewritten in the same commit.
       - name: Pin image digests
         working-directory: infra/k8s/production
+        # Digests arrive through the environment rather than being interpolated
+        # into the script body, so nothing from a step output is ever parsed as
+        # shell.
+        env:
+          API_DIGEST: ${{ steps.build-api.outputs.digest }}
+          WEB_DIGEST: ${{ steps.build-web.outputs.digest }}
+          ADMIN_DIGEST: ${{ steps.build-admin.outputs.digest }}
+          LANDING_DIGEST: ${{ steps.build-landing.outputs.digest }}
         run: |
           set -euo pipefail
-          kustomize edit set image \
-            ghcr.io/madfam-org/meridian-api=ghcr.io/madfam-org/meridian-api@${{ steps.build-api.outputs.digest }}
-          kustomize edit set image \
-            ghcr.io/madfam-org/meridian-web=ghcr.io/madfam-org/meridian-web@${{ steps.build-web.outputs.digest }}
-          kustomize edit set image \
-            ghcr.io/madfam-org/meridian-admin=ghcr.io/madfam-org/meridian-admin@${{ steps.build-admin.outputs.digest }}
-          kustomize edit set image \
-            ghcr.io/madfam-org/meridian/landing=ghcr.io/madfam-org/meridian/landing@${{ steps.build-landing.outputs.digest }}
+
+          API_IMAGE=ghcr.io/madfam-org/meridian-api
+          WEB_IMAGE=ghcr.io/madfam-org/meridian-web
+          ADMIN_IMAGE=ghcr.io/madfam-org/meridian-admin
+          # Nested path, unlike the other three. See kustomization.yaml.
+          LANDING_IMAGE=ghcr.io/madfam-org/meridian/landing
+
+          kustomize edit set image "${API_IMAGE}=${API_IMAGE}@${API_DIGEST}"
+          kustomize edit set image "${WEB_IMAGE}=${WEB_IMAGE}@${WEB_DIGEST}"
+          kustomize edit set image "${ADMIN_IMAGE}=${ADMIN_IMAGE}@${ADMIN_DIGEST}"
+          kustomize edit set image "${LANDING_IMAGE}=${LANDING_IMAGE}@${LANDING_DIGEST}"
+
+          # Rewrites the one `image:` line in a Deployment, whether it currently
+          # holds a tag or an older digest. `[:@]` immediately after the
+          # repository name is what stops `meridian-api` from matching inside a
+          # longer repository name.
+          #
+          # The grep afterwards is the point of the function: a sed that matches
+          # nothing exits 0, and a silent no-op here ships a manifest still
+          # pinned to `:main` behind a green pipeline — exactly the failure this
+          # step exists to prevent.
+          pin_deployment() {
+            file="$1"
+            repo="$2"
+            digest="$3"
+            sed -i -E "s#^([[:space:]]*image: )${repo}[:@][^[:space:]]+#\1${repo}@${digest}#" "$file"
+            if ! grep -qF "image: ${repo}@${digest}" "$file"; then
+              echo "could not pin ${repo}@${digest} in ${file}." >&2
+              echo "expected a line 'image: ${repo}:<tag>' or 'image: ${repo}@sha256:<hex>'; found:" >&2
+              grep -n 'image:' "$file" >&2 || true
+              exit 1
+            fi
+            echo "pinned ${file} -> ${repo}@${digest}"
+          }
+
+          pin_deployment api-deployment.yaml "${API_IMAGE}" "${API_DIGEST}"
+          pin_deployment web-deployment.yaml "${WEB_IMAGE}" "${WEB_DIGEST}"
+          pin_deployment admin-deployment.yaml "${ADMIN_IMAGE}" "${ADMIN_DIGEST}"
+          pin_deployment landing-deployment.yaml "${LANDING_IMAGE}" "${LANDING_DIGEST}"
 
       # ArgoCD syncs from this commit. A push authenticated with GITHUB_TOKEN
       # does not start another workflow run, so this cannot loop; `[skip ci]`
@@ -204,7 +246,12 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add infra/k8s/production/kustomization.yaml
+          git add \
+            infra/k8s/production/kustomization.yaml \
+            infra/k8s/production/api-deployment.yaml \
+            infra/k8s/production/web-deployment.yaml \
+            infra/k8s/production/admin-deployment.yaml \
+            infra/k8s/production/landing-deployment.yaml
           if ! git diff --staged --quiet; then
             git commit -m "ci: pin image digests for ${GITHUB_SHA} [skip ci]"
             git pull --rebase origin main

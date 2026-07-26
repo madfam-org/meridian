@@ -150,6 +150,28 @@ spec:
       value: "https://auth.madfam.io"
     - name: JANUA_JWKS_URL
       value: "https://auth.madfam.io/.well-known/jwks.json"
+    # Expected `iss`. Janua is single-issuer per deployment — the value comes
+    # from Janua's own configured domain, never from the request Host — so there
+    # is one correct value ecosystem-wide, and it is the origin serving the JWKS
+    # above.
+    - name: JANUA_ISSUER
+      value: "https://auth.madfam.io"
+    # Expected `aud`. Both JANUA_ISSUER and JANUA_AUDIENCE are required by
+    # apps/api/src/config.ts with `.min(1)`; neither had a value anywhere in this
+    # repository, so the service exited 78 at boot naming both.
+    #
+    # THIS MUST EQUAL THE CLIENT IDENTIFIER REGISTERED FOR THIS API IN JANUA,
+    # CHARACTER FOR CHARACTER. A mismatch fails every token verification closed —
+    # apps/api/src/auth/verifier.ts refuses with `wrong_audience` and tells the
+    # caller only that the token was not accepted, so it presents as "every
+    # request is 401", not as a configuration error.
+    #
+    # No such registration exists yet: `meridian-api` is a claim about one that
+    # must be made before this service can authenticate anybody. This line and
+    # the matching line in infra/k8s/production/api-deployment.yaml are the only
+    # two places the value appears; move both in the commit that registers it.
+    - name: JANUA_AUDIENCE
+      value: "meridian-api"
     # CORS allow-list. Both browsers that may call this API are ours; anything
     # else is refused rather than reflected back. An explicit list, never a
     # wildcard: these responses carry an applicant's own documents.
@@ -223,20 +245,15 @@ spec:
     # infra/k8s/production/web-deployment.yaml.
     healthCheck: /
 
-  env:
-    # Next inlines NEXT_PUBLIC_* at build time, so these are also passed as
-    # --build-arg in .github/workflows/build-deploy.yml. Keeping them here too
-    # documents the runtime contract and keeps the two in one diff.
-    - name: NEXT_PUBLIC_API_URL
-      value: "https://meridian-api.madfam.io"
-    - name: NEXT_PUBLIC_JANUA_URL
-      value: "https://auth.madfam.io"
-    # Still `meridian-web`. This is the client's registered identifier in Janua,
-    # not a label we own: changing it here without registering the new client
-    # first fails every sign-in with an unknown-client error. Rename it in the
-    # change that registers it, not in this one.
-    - name: NEXT_PUBLIC_JANUA_CLIENT_ID
-      value: "meridian-web"
+  # No env block. This service used to declare NEXT_PUBLIC_API_URL,
+  # NEXT_PUBLIC_JANUA_URL and NEXT_PUBLIC_JANUA_CLIENT_ID; `grep -rn NEXT_PUBLIC
+  # apps packages` matches nothing, so all three described a wiring the portal
+  # does not have — it renders from data in its own source and calls no API and
+  # no identity provider. Declaring them taught a reader that sign-in was
+  # configured. Restore them in the change that adds the code reading them,
+  # alongside the matching --build-arg in .github/workflows/build-deploy.yml,
+  # since Next inlines NEXT_PUBLIC_* at build time and a runtime-only copy would
+  # not reach the client bundle.
 
   domains:
     - domain: meridian-app.madfam.io
@@ -295,15 +312,11 @@ spec:
     # pod unready forever. See infra/k8s/production/landing-deployment.yaml.
     healthCheck: /
 
-  env:
-    # The landing site's only outward dependency is knowing where the portal
-    # lives, for the sign-in link. Next inlines NEXT_PUBLIC_* at build time, so
-    # this is also passed as --build-arg in
-    # .github/workflows/build-deploy.yml. No API URL and no Janua client: this
-    # site calls nothing and signs nobody in — that is what makes it safe to
-    # serve to anyone.
-    - name: NEXT_PUBLIC_APP_URL
-      value: "https://meridian-app.madfam.io"
+  # No env block, and nothing removed from this service's behaviour by saying
+  # so. NEXT_PUBLIC_APP_URL was declared here as the portal address for the
+  # sign-in link; the site reads it from apps/landing/lib/links.ts instead,
+  # where a reviewer can see the constant. This surface calls nothing and signs
+  # nobody in, which is what makes it safe to serve to anyone.
 
   domains:
     - domain: meridian.madfam.io
@@ -358,13 +371,9 @@ spec:
     # infra/k8s/production/web-deployment.yaml.
     healthCheck: /
 
-  env:
-    - name: NEXT_PUBLIC_API_URL
-      value: "https://meridian-api.madfam.io"
-    - name: NEXT_PUBLIC_JANUA_URL
-      value: "https://auth.madfam.io"
-    - name: NEXT_PUBLIC_JANUA_CLIENT_ID
-      value: "meridian-admin"
+  # No env block, for the reason given on meridian-app above: the console reads
+  # no NEXT_PUBLIC_* variable, so declaring three of them described an API and
+  # identity wiring it does not have.
 
   domains:
     - domain: meridian-admin.madfam.io

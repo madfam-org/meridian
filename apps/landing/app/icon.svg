@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Meridian">
+  <!--
+    The mark already in the product, not a new one.
+
+    This site's header renders U+25C8 WHITE DIAMOND CONTAINING BLACK SMALL
+    DIAMOND as its brand mark (`app/layout.tsx`). Drawing that same figure as two
+    paths is a faithful copy of what is on the page rather than an invented
+    identity, and it does not depend on the reader having a font that carries the
+    codepoint — which a favicon cannot assume.
+
+    No `apple-icon` ships alongside this. iOS does not render SVG for a touch
+    icon, so declaring one would point a `rel="apple-touch-icon"` at an asset
+    that resolves and then draws nothing, which is worse than the platform
+    default. A raster icon is a design decision with a brand behind it, and there
+    is no brand here to draw it from.
+
+    The three fills are the accents from `app/globals.css`, so the tab matches
+    the page it opens. The bare `.mark` rule is the one that has to survive a
+    client which ignores media queries inside an icon (several do), so it is a
+    mid teal chosen to sit between the two: against white it measures 4.0:1 and
+    against a dark tab strip 4.0:1, both clear of the 3:1 that WCAG 1.4.11 asks
+    of a non-text graphic, so the fallback is never the invisible case. The two
+    queries then pick the exact light and dark accents where they are honoured.
+  -->
+  <style>
+    .mark { fill: #2a8d81; }
+    @media (prefers-color-scheme: light) { .mark { fill: #145c56; } }
+    @media (prefers-color-scheme: dark) { .mark { fill: #57c2b3; } }
+  </style>
+  <path class="mark" fill-rule="evenodd" d="M16 1 31 16 16 31 1 16Z M16 5 5 16 16 27 27 16Z" />
+  <path class="mark" d="M16 10.5 21.5 16 16 21.5 10.5 16Z" />
+</svg>

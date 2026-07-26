@@ -8,9 +8,11 @@
  *
  * The footer is not chrome. It states where the records came from and what the
  * console is entitled to release, because a console whose data source is
- * ambiguous is a console whose numbers cannot be relied on — and because
- * `apps/api` does not exist yet, so the honest answer today is "an in-process
- * store", and that belongs on every screen rather than buried in a README.
+ * ambiguous is a console whose numbers cannot be relied on — and this console is
+ * wired to no service, so the honest answer is "an in-process store", and that
+ * belongs on every screen rather than buried in a README. It is rendered from
+ * `activeDatasetId()` rather than written into the markup, so it keeps telling
+ * the truth when the source changes.
  */
 
 import type { Metadata, Viewport } from 'next';
@@ -22,17 +24,49 @@ import { KeyboardShortcuts, NavWithAsOf } from '@/components/shell';
 import { THEME_STORAGE_KEY } from '@/components/constants';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { activeDatasetId, consoleAudience, loadRecords } from '@/lib/records';
+import { SELF_URL } from '@/lib/links';
 import styles from '@/components/shell.module.css';
 import '@/app/globals.css';
 
+const TITLE = 'Meridian firm console';
+
+const DESCRIPTION =
+  'Caseload, representative standing, catalog review and integration status for a licensed practice.';
+
 export const metadata: Metadata = {
+  // Absolute URLs for anything a client resolves without a request context.
+  metadataBase: new URL(SELF_URL),
   title: {
-    default: 'Meridian firm console',
+    default: TITLE,
     template: '%s · Meridian firm console',
   },
-  description:
-    'Caseload, representative standing, catalog review and integration status for a licensed practice.',
+  description: DESCRIPTION,
+  // A search engine has no business holding a page of somebody's caseload. This
+  // is the second of the two controls, not the only one: `app/robots.ts` asks a
+  // crawler not to fetch, and this tag tells one that arrived anyway — from a
+  // pasted link, a referrer header, a certificate-transparency sweep — not to
+  // index what it found. Neither is access control, and neither is standing in
+  // for it.
   robots: { index: false, follow: false },
+  // Share metadata is still worth having, and it is not in tension with the
+  // line above: a console URL pasted into a practice's own chat should say what
+  // it is, and an unfurl is a fetch by a client the reader invited, not a
+  // crawler indexing the open web. Nothing tenant-specific appears here — the
+  // description is about the product, not about whose files are behind it.
+  openGraph: {
+    type: 'website',
+    siteName: 'Meridian',
+    url: SELF_URL,
+    title: TITLE,
+    description: DESCRIPTION,
+  },
+  twitter: {
+    // `summary`, not `summary_large_image`: no image ships, and declaring a
+    // large-image card without one produces an empty grey banner.
+    card: 'summary',
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export const viewport: Viewport = {

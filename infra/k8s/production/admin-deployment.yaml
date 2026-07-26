@@ -31,10 +31,16 @@ spec:
         - name: ghcr-credentials
       containers:
         - name: admin
-          image: ghcr.io/madfam-org/meridian-admin:main
+          # Immutable digest, rewritten in place by the `Pin image digests` step
+          # of .github/workflows/build-deploy.yml. See api-deployment.yaml for
+          # why the digest is written here and not only in kustomization.yaml.
+          image: ghcr.io/madfam-org/meridian-admin@sha256:5eaa87c6c3b3bc76356e30a5c872d15037b375631054d51d93a62e08dd78a6a4
           ports:
             - name: http
               containerPort: 3000
+          # No NEXT_PUBLIC_* here; see web-deployment.yaml. Nothing in apps/
+          # or packages/ reads one, so declaring them documented a wiring that
+          # does not exist.
           env:
             - name: NODE_ENV
               value: production
@@ -42,14 +48,6 @@ spec:
               value: "3000"
             - name: HOSTNAME
               value: 0.0.0.0
-            # Must match the --build-arg values in build-deploy.yml; see
-            # web-deployment.yaml for why.
-            - name: NEXT_PUBLIC_API_URL
-              value: "https://meridian-api.madfam.io"
-            - name: NEXT_PUBLIC_JANUA_URL
-              value: "https://auth.madfam.io"
-            - name: NEXT_PUBLIC_JANUA_CLIENT_ID
-              value: "meridian-admin"
           resources:
             requests:
               cpu: 100m
@@ -58,6 +56,10 @@ spec:
               cpu: 500m
               memory: 512Mi
           securityContext:
+            # Present, not merely not-true: the disallow-privileged-containers
+            # policy is in Enforce and rejects a container that omits the field.
+            # See api-deployment.yaml.
+            privileged: false
             allowPrivilegeEscalation: false
             # See web-deployment.yaml — Next writes its caches at runtime.
             readOnlyRootFilesystem: false

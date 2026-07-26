@@ -9,9 +9,14 @@
  * Cloudflare universal SSL covers one label — so every Meridian host is flat
  * under `madfam.io`.
  *
- * Neither host is serving yet. The links are correct for where each service is
- * configured to run, and the status section says plainly that nothing is
- * deployed, so a visitor is not left to discover it by clicking.
+ * Each constant is the address the corresponding service is configured to serve
+ * on, in `enclii.yaml` and in `infra/k8s/production/`. Whether a host is
+ * answering at any given moment is a fact about the cluster, and this
+ * application has no way to observe it: nothing here fetches, so a claim about
+ * reachability written into copy would be a guess that ages badly in both
+ * directions. The page therefore states what it can check — what the catalog
+ * contains and what the applications hold — and leaves reachability to the
+ * browser, which finds out for certain by trying.
  */
 
 /** The marketing site itself — this application. */

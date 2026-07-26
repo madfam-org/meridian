@@ -1,0 +1,103 @@
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.button {
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--fg);
+  cursor: pointer;
+  min-height: 2.5rem;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+/*
+ * A bilingual run styles its Spanish half in the muted foreground, which on the
+ * accent fill drops below an accessible contrast ratio — the same problem
+ * globals.css already solves for the skip link. Inside a filled button both
+ * languages inherit the button's own foreground, and the second language is
+ * distinguished by weight instead of by colour.
+ */
+.primary :global(span) {
+  color: inherit;
+}
+
+.primary :global(span[lang='es']) {
+  opacity: 0.85;
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--surface-sunken);
+}
+
+/*
+ * The clear control discards what the reader typed. It is bordered in the
+ * warning tone rather than the error tone: it is not a mistake, it is the
+ * intended way to take a document number off a shared screen.
+ */
+.clear {
+  border-color: var(--warn-border);
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+}
+
+.clear:hover:not(:disabled) {
+  border-color: var(--warn-fg);
+}
+
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.groupLabel {
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  font-weight: 600;
+}
+
+.groupLabel :global(span[lang='es']) {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.groupButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.groupButtons .button {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: var(--space-1) var(--space-3);
+  min-height: 2.25rem;
+}

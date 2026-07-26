@@ -41,11 +41,22 @@ spec:
         - name: web
           # Image name unchanged: it identifies the artifact built from
           # apps/web, and repointing it would reset the digest CI has already
-          # pinned in kustomization.yaml for a build whose bytes did not change.
-          image: ghcr.io/madfam-org/meridian-web:main
+          # pinned for a build whose bytes did not change.
+          #
+          # Immutable digest, rewritten in place by the `Pin image digests` step
+          # of .github/workflows/build-deploy.yml. See api-deployment.yaml for
+          # why the digest is written here and not only in kustomization.yaml.
+          image: ghcr.io/madfam-org/meridian-web@sha256:cc162375f75b18bcb37589e9409122e79b8a39335a75689f9b643a196c38922e
           ports:
             - name: http
               containerPort: 3000
+          # Three variables, all of which this container's process actually
+          # reads. The `NEXT_PUBLIC_*` set that used to sit here — API URL,
+          # Janua URL, Janua client id — was removed: `grep -rn NEXT_PUBLIC apps
+          # packages` matches nothing, so declaring them described a wiring that
+          # did not exist and told the next reader the portal was already
+          # talking to the API. Add them back in the change that adds the code
+          # reading them, together with the matching --build-arg, and not before.
           env:
             - name: NODE_ENV
               value: production
@@ -53,20 +64,6 @@ spec:
               value: "3000"
             - name: HOSTNAME
               value: 0.0.0.0
-            # Next inlines NEXT_PUBLIC_* into the client bundle at build time.
-            # These runtime copies are what server components read, so they must
-            # match the --build-arg values in build-deploy.yml — a mismatch
-            # produces a page whose client and server disagree about where the
-            # API lives.
-            - name: NEXT_PUBLIC_API_URL
-              value: "https://meridian-api.madfam.io"
-            - name: NEXT_PUBLIC_JANUA_URL
-              value: "https://auth.madfam.io"
-            # Still `meridian-web` — the identifier registered with Janua. See
-            # enclii.yaml: renaming it before the new client exists there fails
-            # every sign-in.
-            - name: NEXT_PUBLIC_JANUA_CLIENT_ID
-              value: "meridian-web"
           resources:
             requests:
               cpu: 100m
@@ -75,6 +72,10 @@ spec:
               cpu: 500m
               memory: 512Mi
           securityContext:
+            # Present, not merely not-true: the disallow-privileged-containers
+            # policy is in Enforce and rejects a container that omits the field.
+            # See api-deployment.yaml.
+            privileged: false
             allowPrivilegeEscalation: false
             # Next writes its fetch and route caches under .next/cache at
             # runtime. Locking the filesystem would need an emptyDir mounted at

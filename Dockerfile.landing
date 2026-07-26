@@ -1,4 +1,9 @@
-# Meridian Landing — ghcr.io/madfam-org/meridian-landing
+# Meridian Landing — ghcr.io/madfam-org/meridian/landing
+#
+# Note the nested path. The other three images predate the landing split and use
+# the flat form `madfam-org/meridian-<part>`; this one is newer and uses the
+# nested form Avala and Enclii already publish under. The workflow, the
+# Deployment and kustomization.yaml all agree on the nested name.
 #
 # The marketing site served at meridian.madfam.io. The applicant portal moved to
 # meridian-app.madfam.io when the two were split; this image is not that one.
@@ -55,6 +60,12 @@ COPY apps/landing/ ./apps/landing/
 # A build argument is recorded in the image history and is readable by anyone who
 # can pull the image, and this image is published to a public registry — so the
 # right number of them is zero until something genuinely needs one.
+#
+# CI used to pass `--build-arg NEXT_PUBLIC_APP_URL=...` into this build. No stage
+# here declares that ARG, so BuildKit discarded it with a warning nobody reads,
+# and the value reached neither the bundle nor the image. The --build-arg line is
+# gone from .github/workflows/build-deploy.yml; do not restore it without adding
+# the ARG, and do not add the ARG without code that reads the variable.
 
 ENV NEXT_TELEMETRY_DISABLED=1
 

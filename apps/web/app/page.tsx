@@ -16,7 +16,9 @@ import { Card, Facts, Fact, Figure, Grid, Page, PageHeader, Section, Stack } fro
 import styles from './page.module.css';
 
 /**
- * The landing page.
+ * The portal's home page. The public explainer is a separate application —
+ * `apps/landing`, on its own host — and this is what a person sees once they
+ * have followed the link across.
  *
  * Every figure on this page is counted from the shipped catalog at build time.
  * There are no adoption numbers, no testimonials, no "trusted by" line and no
@@ -24,9 +26,10 @@ import styles from './page.module.css';
  * platform that tells someone whether they have overstayed cannot afford to
  * spend its credibility on marketing.
  *
- * The "not built" section is longer than the "built" section. That is the
- * honest ratio today, and stating it here is cheaper than letting someone
- * discover it while relying on the product.
+ * The "what is built" section gives the limits the same room as the
+ * capabilities, and puts them on the same screen rather than below the fold.
+ * Stating them here is cheaper than letting someone discover them while relying
+ * on the product.
  */
 
 const catalog = MERIDIAN_PATHWAY_CATALOG;
@@ -47,8 +50,13 @@ export default function HomePage() {
       <PageHeader
         eyebrow={
           <>
+            {/* No port, no hostname, no environment name. Where this build is
+                answering from is not something the page can observe — it renders
+                identically in a container, in `next dev` and in a static export
+                — so any address printed here would be a guess, and the one that
+                used to be printed here matched neither the container port nor
+                the dev port. The browser's address bar already knows. */}
             <Chip>Applicant portal</Chip>
-            <Chip>Port 6101</Chip>
             <Chip>AGPL-3.0</Chip>
           </>
         }
@@ -162,18 +170,30 @@ export default function HomePage() {
           </Facts>
         </Card>
 
+        {/* Title and body both branch on the counted figure rather than
+            asserting the state that happens to hold today. The moment a
+            licensed person signs a record off, this callout has to stop saying
+            nothing has been signed off — and it does, without anybody
+            remembering that a sentence needs editing. */}
         <Callout
-          tone="warn"
-          icon="!"
-          title={bi(
-            'No rule in this catalog has been signed off by a licensed person',
-            'Ninguna norma de este catálogo ha sido validada por una persona con licencia',
-          )}
+          tone={counselReviewed === 0 ? 'warn' : 'info'}
+          icon={counselReviewed === 0 ? '!' : 'i'}
+          title={
+            counselReviewed === 0
+              ? bi(
+                  'No rule in this catalog has been signed off by a licensed person',
+                  'Ninguna norma de este catálogo ha sido validada por una persona con licencia',
+                )
+              : bi(
+                  'Only signed-off rules can be built into a recommendation',
+                  'Solo las normas validadas pueden formar parte de una recomendación',
+                )
+          }
         >
           <TProse
             text={bi(
-              `All ${catalog.length} pathways carry reviewStatus "unreviewed". They may be shown as a restatement of the sources they cite, and your own figures may be measured against them, but nothing here may be built into a recommendation. That is the intended live state, not an oversight waiting to be tidied — counsel sign-off is a workflow step with a named human attached, not a constant somebody flips.`,
-              `Las ${catalog.length} vías llevan reviewStatus «unreviewed». Pueden mostrarse como exposición de las fuentes que citan, y sus propias cifras pueden medirse frente a ellas, pero nada de esto puede convertirse en una recomendación. Ese es el estado real previsto, no un descuido pendiente de arreglar: la validación por letrado es un paso del flujo con una persona concreta detrás, no una constante que alguien cambia.`,
+              `${counselReviewed} of ${catalog.length} pathways carry a licensed sign-off; the rest carry reviewStatus "unreviewed". An unreviewed pathway may be shown as a restatement of the sources it cites, and your own figures may be measured against it, but it may not be built into a recommendation. That is the intended live state, not an oversight waiting to be tidied — counsel sign-off is a workflow step with a named human attached, not a constant somebody flips.`,
+              `${counselReviewed} de ${catalog.length} vías cuentan con validación de una persona con licencia; el resto llevan reviewStatus «unreviewed». Una vía no revisada puede mostrarse como exposición de las fuentes que cita, y sus propias cifras pueden medirse frente a ella, pero no puede convertirse en una recomendación. Ese es el estado real previsto, no un descuido pendiente de arreglar: la validación por letrado es un paso del flujo con una persona concreta detrás, no una constante que alguien cambia.`,
             )}
           />
           <TProse

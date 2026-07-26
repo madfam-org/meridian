@@ -3,8 +3,8 @@
  *
  * There is no write side, and that is the point for the audit trail: the trail
  * is append-only because this module exposes no way to append to it, edit it, or
- * remove from it. When `apps/api` grows a real implementation the same shape
- * holds — `loadRecords` becomes a query and every consumer below it is unchanged.
+ * remove from it. When this console is wired to `apps/api` the same shape holds
+ * — `loadRecords` becomes a query and every consumer below it is unchanged.
  *
  * The tenant is *built* from the roster rather than declared alongside it, so
  * `representativeFor(tenant, …)` and the roster page can never disagree about

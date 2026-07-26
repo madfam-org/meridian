@@ -1,0 +1,167 @@
+/*
+ * Form controls.
+ *
+ * Extends the visual language already in the portal rather than introducing a
+ * second one: the label is the same small uppercase run used by `.factLabel` in
+ * Layout.module.css and `.label` on the pathways filter, the control borders are
+ * `--border-strong`, and the focus ring comes from `globals.css` and is never
+ * overridden here.
+ *
+ * The error state carries three signals — a glyph, the word "Error", and a
+ * border colour — because the colour is the least reliable of the three.
+ */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.fieldRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.label {
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+/* The Spanish half of a label keeps sentence case; uppercasing it distorts
+   accented characters and reads as shouting in the second language. */
+.label :global(span[lang='es']),
+.checkboxLabel :global(span[lang='es']) {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.required {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--fg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-2);
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.error {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+  color: var(--bad-fg);
+  background: var(--bad-bg);
+  border: 1px solid var(--bad-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  max-width: var(--measure);
+}
+
+.errorGlyph {
+  font-weight: 700;
+}
+
+.errorWord {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+.errorText {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.control {
+  font: inherit;
+  font-size: 0.9375rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--fg);
+  max-width: 100%;
+  min-width: 0;
+}
+
+.fieldInvalid .control,
+.fieldInvalid .checkbox {
+  border-color: var(--bad-fg);
+  /* A second ring, so the invalid state survives a forced-colours mode that
+     discards author colours. */
+  box-shadow: 0 0 0 1px var(--bad-fg);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  /* MRZ lines must not have their character positions distorted; letter
+     spacing is what makes counting to column 20 possible on screen. */
+  letter-spacing: 0.06em;
+}
+
+.textarea {
+  width: 100%;
+  resize: vertical;
+  overflow-x: auto;
+  white-space: pre;
+  line-height: 1.7;
+}
+
+.dateControl {
+  width: auto;
+}
+
+.numberControl {
+  width: 8rem;
+}
+
+.select {
+  min-width: 12rem;
+}
+
+.checkboxField {
+  gap: var(--space-2);
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.checkbox {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0.2rem 0 0;
+  accent-color: var(--accent);
+  flex: none;
+}
+
+.checkboxLabel {
+  font-size: 0.9375rem;
+  color: var(--fg);
+  max-width: var(--measure);
+}

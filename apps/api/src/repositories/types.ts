@@ -31,7 +31,6 @@ import type {
   Matter,
   MatterPhase,
   MatterStatus,
-  Result,
   Task,
   TaskStatus,
   Tenant,
@@ -366,12 +365,46 @@ export interface TenantDirectory {
   create(input: NewTenant): Promise<TenantRecord>;
 }
 
+/**
+ * What a readiness probe of the backing store found. Three states, not two.
+ *
+ * `unreachable` and `schema_unavailable` are different faults with different
+ * operators and different fixes, and collapsing them into one boolean throws
+ * away the only information the person paged at 03:00 needs. A store that
+ * answers a socket but has no tables is not "down" — the network is fine, the
+ * credentials are fine, nothing will heal on its own, and restarting the pod
+ * changes nothing. Somebody has to apply a migration.
+ *
+ * `healthy` says the tables the request path reads were read successfully. It
+ * does **not** say they contain anything: an empty database is the normal state
+ * of a deployment on its first day, and treating "no rows" as "not ready" would
+ * mean a correctly migrated cluster never comes up.
+ */
+export type StoreHealth =
+  | { readonly status: 'healthy' }
+  /** Reached, but a table the request path depends on could not be read. */
+  | { readonly status: 'schema_unavailable'; readonly error: Error }
+  /** No usable round trip at all: refused, timed out, authentication rejected. */
+  | { readonly status: 'unreachable'; readonly error: Error };
+
+/** The three values {@link StoreHealth} discriminates on, for callers that need the names. */
+export type StoreHealthStatus = StoreHealth['status'];
+
 export interface RepositoryProvider {
   /** For the readiness report, which must say which backing store it checked. */
   readonly kind: 'memory' | 'prisma';
   readonly tenants: TenantDirectory;
   forTenant(tenantId: string): Repositories;
-  /** Readiness: can this store actually be reached right now? */
-  checkHealth(): Promise<Result<void, Error>>;
+  /**
+   * Readiness: is this store reachable *and* usable right now?
+   *
+   * "Reachable" is not the question a readiness probe is asking. A pod that
+   * joins the Service on the strength of an answered `SELECT 1` and then fails
+   * every authenticated request inside the auth hook — because the tenant table
+   * does not exist — has passed a check that measured a socket and reported it
+   * as a service. An implementation must read something the application
+   * actually depends on.
+   */
+  checkHealth(): Promise<StoreHealth>;
   close(): Promise<void>;
 }

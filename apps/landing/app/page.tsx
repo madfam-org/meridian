@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+
 import { bi } from '@/lib/i18n';
 import { plural } from '@/lib/ui';
 import { CATALOG, NOTHING_IS_COUNSEL_REVIEWED } from '@/lib/catalog-facts';
@@ -39,8 +41,32 @@ import styles from './page.module.css';
  * boundary and the credential refusal are not disclaimers appended at the
  * bottom; they are the middle of the page, because they are the reason the
  * product can be trusted with a matter at all. The status section says plainly
- * that nothing is deployed and that no rule here has been read by a lawyer.
+ * how much of the catalog a lawyer has read, and what these applications do not
+ * hold.
+ *
+ * **A limitation is only worth stating if it will still be true tomorrow.** This
+ * page used to open by saying nothing was deployed, which is a claim that
+ * falsifies itself the moment anybody loads the page from a host — and unlike
+ * the catalog figures, a hand-written sentence does not correct itself. What
+ * replaced it is the set of statements that hold in either state: no pathway is
+ * counsel-reviewed until one is signed off (counted), no government integration
+ * is provisioned, and none of the three applications has an account, a sign-in or
+ * a database. Deployment does not change any of those; shipping the corresponding
+ * feature does, and then the sentence describing it changes with it.
  */
+
+/**
+ * The canonical address, declared on the route rather than on the layout.
+ *
+ * It belongs here because it is true of exactly this route. Root-layout metadata
+ * is inherited by every page under it, including `not-found.tsx`, and a 404
+ * carrying `<link rel="canonical" href="/">` tells a crawler that the address it
+ * failed to find *is* the home page — which is the one thing the not-found page
+ * exists to deny.
+ */
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+};
 
 const CATALOG_JURISDICTIONS = CATALOG.jurisdictions.map((j) => j.code).join(', ');
 
@@ -82,7 +108,9 @@ export default function HomePage() {
       {/*
         The honest summary sits above the capabilities rather than below them. A
         visitor who reads no further than the first screen should still leave
-        knowing that nothing is running and that no lawyer has signed off a rule.
+        knowing how much of the catalog a lawyer has read and what these
+        applications do not hold. The counsel figure is counted, so the sentence
+        built on it stops applying by itself once a record is signed off.
       */}
       <Callout
         tone="info"
@@ -92,8 +120,8 @@ export default function HomePage() {
       >
         <TProse
           text={bi(
-            `Nothing is deployed. No government integration is provisioned. The catalog ships ${plural(CATALOG.pathways, 'pathway', 'pathways')} and ${CATALOG.counselReviewed} of them have been reviewed by counsel, which is why every recommendation-class output is blocked today — by design, not by accident.`,
-            `Nada está desplegado. No hay ninguna integración pública aprovisionada. El catálogo incluye ${CATALOG.pathways} vías y ${CATALOG.counselReviewed} han sido revisadas por letrado, por lo que hoy todo resultado de clase recomendación está bloqueado: por diseño, no por descuido.`,
+            `The catalog ships ${plural(CATALOG.pathways, 'pathway', 'pathways')}, of which ${CATALOG.counselReviewed} ${CATALOG.counselReviewed === 1 ? 'carries' : 'carry'} a counsel sign-off. ${NOTHING_IS_COUNSEL_REVIEWED ? 'That is why every recommendation-class output is blocked today' : 'Only the signed-off records may enter a recommendation'} — by design, not by accident. No government integration is provisioned, and no application in this product holds an account, a sign-in or a database.`,
+            `El catálogo incluye ${CATALOG.pathways} vías, de las cuales ${CATALOG.counselReviewed} ${CATALOG.counselReviewed === 1 ? 'cuenta' : 'cuentan'} con validación de letrado. ${NOTHING_IS_COUNSEL_REVIEWED ? 'Por eso hoy todo resultado de clase recomendación está bloqueado' : 'Solo los registros validados pueden formar parte de una recomendación'}: por diseño, no por descuido. No hay ninguna integración pública aprovisionada, y ninguna aplicación de este producto tiene cuenta, inicio de sesión ni base de datos.`,
           )}
         />
         <p className={styles.calloutLink}>
@@ -564,18 +592,32 @@ export default function HomePage() {
           </Facts>
         </Card>
 
+        {/*
+          Title and body both branch on the counted figure. The unreviewed state
+          is the one that holds today, but it is not written as though it were
+          permanent: the day a licensed person signs a record off, this callout
+          has to stop saying nothing has been signed off, and it does so without
+          anybody remembering to edit copy.
+        */}
         <Callout
-          tone="warn"
-          icon="!"
-          title={bi(
-            'No pathway in this catalog has been reviewed by counsel',
-            'Ninguna vía de este catálogo ha sido revisada por letrado',
-          )}
+          tone={NOTHING_IS_COUNSEL_REVIEWED ? 'warn' : 'info'}
+          icon={NOTHING_IS_COUNSEL_REVIEWED ? '!' : 'i'}
+          title={
+            NOTHING_IS_COUNSEL_REVIEWED
+              ? bi(
+                  'No pathway in this catalog has been reviewed by counsel',
+                  'Ninguna vía de este catálogo ha sido revisada por letrado',
+                )
+              : bi(
+                  'Only counsel-reviewed pathways can enter a recommendation',
+                  'Solo las vías revisadas por letrado pueden formar parte de una recomendación',
+                )
+          }
         >
           <TProse
             text={bi(
-              `All ${CATALOG.pathways} pathways ship marked unreviewed. They may be shown as a restatement of the sources they cite, and your own figures may be measured against them, but nothing here may be built into a recommendation: the ranking function returns an empty ranking and lists every pathway as excluded, with the reason attached. That is the system working as designed, not a placeholder waiting to be tidied — sign-off is a workflow step with a named licensed human attached, not a constant somebody flips.`,
-              `Las ${CATALOG.pathways} vías se publican marcadas como no revisadas. Pueden mostrarse como exposición de las fuentes que citan, y sus propias cifras pueden medirse frente a ellas, pero nada de esto puede convertirse en una recomendación: la función de clasificación devuelve una clasificación vacía y enumera todas las vías como excluidas, con el motivo adjunto. Así es como debe funcionar el sistema, no un marcador de posición pendiente de arreglar: la validación es un paso del flujo con una persona colegiada concreta detrás, no una constante que alguien cambia.`,
+              `${CATALOG.counselReviewed} of ${CATALOG.pathways} pathways carry a licensed sign-off; the rest ship marked unreviewed. An unreviewed pathway may be shown as a restatement of the sources it cites, and your own figures may be measured against it, but it may not be built into a recommendation: the ranking function excludes it and attaches the reason. That is the system working as designed, not a placeholder waiting to be tidied — sign-off is a workflow step with a named licensed human attached, not a constant somebody flips.`,
+              `${CATALOG.counselReviewed} de ${CATALOG.pathways} vías cuentan con validación de una persona colegiada; el resto se publican marcadas como no revisadas. Una vía no revisada puede mostrarse como exposición de las fuentes que cita, y sus propias cifras pueden medirse frente a ella, pero no puede convertirse en una recomendación: la función de clasificación la excluye y adjunta el motivo. Así es como debe funcionar el sistema, no un marcador de posición pendiente de arreglar: la validación es un paso del flujo con una persona colegiada concreta detrás, no una constante que alguien cambia.`,
             )}
           />
           <TProse
@@ -635,8 +677,8 @@ export default function HomePage() {
               <li>
                 <T
                   text={bi(
-                    'Nothing is deployed. No hostname serves any of this, and the applicant portal it links to is not running either.',
-                    'Nada está desplegado. Ningún nombre de host sirve esto, y el portal del solicitante al que enlaza tampoco está en marcha.',
+                    'No account, no sign-in and no database in any of the applications. Nothing a reader enters is stored, because there is nowhere yet to store it.',
+                    'Ninguna de las aplicaciones tiene cuenta, inicio de sesión ni base de datos. Nada de lo que introduzca quien lee se almacena, porque todavía no hay dónde almacenarlo.',
                   )}
                 />
               </li>
@@ -651,16 +693,16 @@ export default function HomePage() {
               <li>
                 <T
                   text={bi(
-                    'The two applications render from sample data declared in their own source; no request has yet travelled from a screen through the service to a database in any environment.',
-                    'Las dos aplicaciones se dibujan a partir de datos de ejemplo declarados en su propio código; ninguna petición ha viajado todavía desde una pantalla hasta una base de datos en ningún entorno.',
+                    'Every screen renders from sample data declared in the application’s own source, and every figure on it is computed when the site is built rather than fetched from a service.',
+                    'Cada pantalla se dibuja a partir de datos de ejemplo declarados en el propio código de la aplicación, y cada cifra se calcula al compilar el sitio en lugar de obtenerse de un servicio.',
                   )}
                 />
               </li>
               <li>
                 <T
                   text={bi(
-                    'Neither application has a test suite. The libraries underneath them do; the screens do not, and that is the largest gap in the repository.',
-                    'Ninguna de las dos aplicaciones tiene pruebas. Las bibliotecas sobre las que se apoyan sí; las pantallas no, y esa es la mayor carencia del repositorio.',
+                    'None of the three applications has a test suite. The libraries underneath them do; the screens do not, and that is the largest gap in the repository.',
+                    'Ninguna de las tres aplicaciones tiene pruebas. Las bibliotecas sobre las que se apoyan sí; las pantallas no, y esa es la mayor carencia del repositorio.',
                   )}
                 />
               </li>

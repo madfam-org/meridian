@@ -4,13 +4,17 @@
 # imports @meridian/core, @meridian/pathways and @meridian/presence through the
 # workspace.
 #
-# Requires `output: 'standalone'` in apps/web/next.config.* — the runner stage
+# Requires `output: 'standalone'` in apps/web/next.config.mjs — the runner stage
 # copies `.next/standalone`, and the builder asserts it exists so the failure
 # arrives with an explanation rather than as "COPY failed: no source files".
 #
-# Workspace packages ship TypeScript source, so apps/web/next.config.* must also
-# list them under `transpilePackages`; otherwise `next build` hands raw .ts to
-# the bundler as if it were JavaScript.
+# Workspace packages are consumed as emitted JavaScript: each builds to `dist/`
+# and points its exports default condition there, so apps/web/next.config.mjs
+# carries no `transpilePackages` and no `experimental.extensionAlias`, and must
+# not regain either — the emitted tree has real `.js` files at the paths those
+# settings would remap. The build below runs `--filter "@meridian/web..."`,
+# whose trailing dots build the workspace dependencies first; without their
+# `dist/` the imports resolve to nothing.
 
 FROM node:22-alpine AS deps
 
@@ -41,19 +45,21 @@ COPY tsconfig.base.json turbo.json ./
 COPY packages/ ./packages/
 COPY apps/web/ ./apps/web/
 
-# Next inlines NEXT_PUBLIC_* values into the client bundle at build time, so they
-# must be present as environment before `next build` runs. CI passes them with
-# --build-arg; the same values are declared in enclii.yaml for the runtime.
+# No NEXT_PUBLIC_* build arguments. Three were declared here — API URL, Janua
+# URL, Janua client id — and inlined into the bundle by `next build`. Nothing
+# read them: `grep -rn NEXT_PUBLIC apps packages` matches nothing, so the values
+# were baked into a publicly pullable image's history to be read by no code at
+# all, while telling anyone who opened this file that the portal was wired to
+# the API.
 #
-# Only public, non-secret endpoints belong here. A build argument is recorded in
-# the image history and is readable by anyone who can pull the image, and this
-# image is published to a public registry.
-ARG NEXT_PUBLIC_API_URL
-ARG NEXT_PUBLIC_JANUA_URL
-ARG NEXT_PUBLIC_JANUA_CLIENT_ID
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_JANUA_URL=$NEXT_PUBLIC_JANUA_URL
-ENV NEXT_PUBLIC_JANUA_CLIENT_ID=$NEXT_PUBLIC_JANUA_CLIENT_ID
+# When apps/web does start calling the API, the value has to arrive as a build
+# argument here as well as in the runtime environment, because Next substitutes
+# NEXT_PUBLIC_* at build time and a runtime-only value never reaches the client
+# bundle. Add the ARG, the ENV, the --build-arg in
+# .github/workflows/build-deploy.yml and the runtime declaration in enclii.yaml
+# and infra/k8s/production/web-deployment.yaml in one change — and keep it to
+# public, non-secret endpoints, since a build argument is readable by anyone who
+# can pull the image.
 
 ENV NEXT_TELEMETRY_DISABLED=1
 

@@ -52,8 +52,8 @@ export default function NotFound() {
         </ul>
         <TProse
           text={bi(
-            'Nothing is deployed yet, so a link that fails to load is at least as likely to be the deployment as the address.',
-            'Todavía no hay nada desplegado, así que un enlace que no carga se debe tanto al despliegue como a la dirección.',
+            'The portal and the source are separate applications on their own addresses, so a link that fails there is a different failure from this one, and neither is a lost record: this site holds no account and no database, and there is nothing here that could have gone missing.',
+            'El portal y el código fuente son aplicaciones distintas con sus propias direcciones, así que un enlace que falle allí es un fallo distinto de este, y ninguno de los dos es un registro perdido: este sitio no tiene cuentas ni base de datos, y aquí no hay nada que se haya podido extraviar.',
           )}
         />
       </Section>

@@ -1,0 +1,62 @@
+/*
+ * The accent tint rather than a status colour. This is not a warning and not an
+ * error — it is the most important true thing on the page, and it should read
+ * as a statement of fact rather than as an alert the reader learns to dismiss.
+ */
+.note {
+  border: 1px solid var(--accent);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: var(--measure);
+}
+
+.compact {
+  padding: var(--space-3) var(--space-4);
+  gap: var(--space-2);
+}
+
+.title {
+  font-size: 1.05rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.compact .title {
+  font-size: 0.95rem;
+}
+
+.mark {
+  color: var(--accent);
+}
+
+.lead {
+  margin: 0;
+  max-width: 100%;
+}
+
+.points {
+  margin: 0;
+  padding-left: 1.25rem;
+  max-width: 100%;
+  font-size: 0.9375rem;
+}
+
+.source {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.sourceLink {
+  margin: var(--space-1) 0 0;
+  overflow-wrap: anywhere;
+}

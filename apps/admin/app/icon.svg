@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Meridian firm console">
+  <!--
+    The same figure as the two public sites, in this application's own colour.
+
+    The shape is U+25C8 WHITE DIAMOND CONTAINING BLACK SMALL DIAMOND drawn as two
+    paths — the mark the landing and portal headers render, copied rather than
+    invented. This console's own header is a wordmark and carries no glyph, so the
+    shape is borrowed from its siblings on the grounds that all three are one
+    product; it is not a claim about what is on this page.
+
+    **The colour is not.** `app/globals.css` gives the console a blue accent where
+    the two public applications are teal, and the tab should match the application
+    it opens: a practitioner with the portal and the console open at once
+    distinguishes them by the only thing a 16-pixel tab can carry, which is hue.
+    The values below are that file's accents, so the icon moves if the palette
+    does.
+
+    No `apple-icon` ships alongside this. iOS does not render SVG for a touch
+    icon, so declaring one would point a `rel="apple-touch-icon"` at an asset that
+    resolves and then draws nothing, which is worse than the platform default.
+
+    The bare `.mark` rule is the one that has to survive a client which ignores
+    media queries inside an icon (several do), so it is a mid blue chosen to sit
+    between the two: against white it measures 4.1:1 and against a dark tab strip
+    4.0:1, both clear of the 3:1 that WCAG 1.4.11 asks of a non-text graphic, so
+    the fallback is never the invisible case. The two queries then pick the exact
+    light and dark accents where they are honoured.
+  -->
+  <style>
+    .mark { fill: #3a7fd5; }
+    @media (prefers-color-scheme: light) { .mark { fill: #0b4f9e; } }
+    @media (prefers-color-scheme: dark) { .mark { fill: #7fb0f2; } }
+  </style>
+  <path class="mark" fill-rule="evenodd" d="M16 1 31 16 16 31 1 16Z M16 5 5 16 16 27 27 16Z" />
+  <path class="mark" d="M16 10.5 21.5 16 16 21.5 10.5 16Z" />
+</svg>

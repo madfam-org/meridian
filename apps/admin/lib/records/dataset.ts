@@ -1,8 +1,8 @@
 /**
  * The console's working record set.
  *
- * **What this is.** `apps/api` is an empty shell today — there is no service to
- * read matters from — so the firm console reads from this in-process store.
+ * **What this is.** The console is wired to no service — it makes no request,
+ * in any environment — so it reads from this in-process store instead.
  * Every person, file reference, licence number and document number below is
  * invented. There is no real applicant, no real licence, and no real travel
  * document number anywhere in this file, and there must never be: this

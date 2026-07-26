@@ -1,0 +1,212 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.specimenNote {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.formatLine {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/*
+ * The zone, echoed back.
+ *
+ * Monospace with a fixed inter-character gap, a ruler above it, and its own
+ * horizontal scroll — 44 characters at a readable size does not fit a phone,
+ * and the page body must never scroll sideways.
+ */
+.zone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.zoneCaption {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  max-width: var(--measure);
+}
+
+.zoneScroll {
+  overflow-x: auto;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+  padding: var(--space-3);
+}
+
+.zoneRuler {
+  margin: 0 0 var(--space-1) 1.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  letter-spacing: 0.06em;
+  color: var(--fg-subtle);
+  white-space: pre;
+}
+
+.zoneLines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: none;
+}
+
+.zoneLine {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  white-space: pre;
+}
+
+.zoneLine + .zoneLine {
+  margin-top: 0;
+}
+
+.zoneNumber {
+  width: 1.25rem;
+  flex: none;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--fg-subtle);
+}
+
+.zoneText {
+  font-size: 0.875rem;
+  letter-spacing: 0.06em;
+  white-space: pre;
+}
+
+.fieldName {
+  font-weight: 600;
+  color: var(--fg);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.9375rem;
+  min-width: 12rem;
+}
+
+.fieldName :global(span[lang='es']) {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.value {
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * A failing value is bordered and glyph-marked by its row's verdict badge; the
+ * colour here is a third signal, never the only one.
+ */
+.valueBad {
+  color: var(--bad-fg);
+  background: var(--bad-bg);
+  border: 1px solid var(--bad-border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-2);
+}
+
+.printed {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+}
+
+.absent {
+  color: var(--fg-subtle);
+  font-size: 0.875rem;
+}
+
+.fieldNote {
+  margin: var(--space-2) 0 0;
+  font-size: 0.8125rem;
+  color: var(--fg-muted);
+  max-width: 34rem;
+}
+
+.covers {
+  margin: var(--space-2) 0 0;
+  font-weight: 400;
+  max-width: 22rem;
+}
+
+.coversLabel {
+  font-size: 0.75rem;
+  color: var(--fg-subtle);
+}
+
+.coversText {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+  color: var(--fg-muted);
+}
+
+.nowrap {
+  white-space: nowrap;
+  font-size: 0.875rem;
+}
+
+.failures {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: none;
+}
+
+.failure {
+  border: 1px solid var(--bad-border);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  background: var(--bad-bg);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.failureHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.failureMessage {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--bad-fg);
+  max-width: var(--measure);
+  overflow-wrap: anywhere;
+}
+
+.referenceLine {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.referenceDate {
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
