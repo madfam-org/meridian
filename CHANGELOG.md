@@ -15,7 +15,318 @@ Dates are ISO 8601. Times, where they appear, are `America/Mexico_City`.
 
 ## [Unreleased]
 
-Nothing released yet. Meridian has never been deployed and has no users.
+Nothing tagged yet. Three of the four surfaces are deployed and answering as of
+2026-07-26 — `meridian.madfam.io`, `meridian-app.madfam.io` and
+`meridian-admin.madfam.io` — while `meridian-api.madfam.io` returns `502` and is
+not serving. Meridian has no users.
+
+### Added — 2026-07-26: tests for the three Next.js applications
+
+`apps/landing`, `apps/web` and `apps/admin` had **no test file at all**, in any
+revision, until this date. Every root document in this repository named that as
+the largest gap in it, and every one of them was right. All three now carry
+suites: `landing` 9 files / 259 tests, `web` 16 / 385, `admin` 18 / 344 — **988
+tests where there had been none**, taking the repository to 103 files and 2521
+tests.
+
+What they assert is rendering and state derivation: the arithmetic a page shows
+a reader, the locale a document is served in, the disclosure notice that has to
+accompany an assessment, the way a console derives a caseload from its dataset,
+and the clock override that keeps a demonstration instance reproducible. There
+is still no browser automation and still nothing exercised end to end.
+
+Two entries in *Known gaps — 2026-07-25* below are retired by this: the first
+one entirely, and the framing of the whole gap list, which was ordered around
+it.
+
+### Fixed — 2026-07-26: the CUSMA profession table was two professions short
+
+8 CFR 214.6(c) reproduces USMCA Appendix 2 verbatim and lists **63** professions.
+`packages/pathways/src/catalog/cusma-professions.ts` held 61. The absentees were
+Range Manager / Range Conservationist and Sylviculturist (including Forestry
+Specialist), both "Baccalaureate or Licenciatura Degree" in the General group,
+and both were verified against the regulation directly before being added rather
+than taken on report.
+
+That one table feeds the Canadian CUSMA route **and** the American TN route, so
+two real professions were being escalated to a human on *both* corridors. That
+is the safe direction and it was still wrong: someone in either job was told
+their occupation needed a person to look at it when the regulation lists it
+plainly.
+
+The catalog carried the discrepancy in prose as well — a `humanReviewReason` told
+the reader "the regulation lists 63 and this catalog encodes 61". Correct when
+written, false the moment the table was fixed, and it would have gone on telling
+applicants about a gap that no longer existed.
+
+The unrecognised-occupation branch stays and still escalates rather than
+returning "unmet": a job title outside Appendix 2 is a question about what the
+work actually is, since titles and Appendix entries do not map one to one, and
+answering "not a listed profession" would be a false negative on somebody's
+livelihood. The test covering it had used sylviculturist as its unlisted
+example, which stopped being true; it now uses an occupation genuinely outside
+the Appendix, and a second test pins the count at 63 with both new ids named,
+because an entry dropped from this table silently narrows eligibility on two
+corridors at once.
+
+### Changed — 2026-07-26: one page, one language
+
+Every page rendered English and Spanish into the same elements, through a `bi()`
+helper with **1,673 call sites across 61 files**. The comment defending it argued
+that a mixed-language household should see both halves at once.
+
+**That reasoning was wrong, and it is worth recording why.** A screen-reader user
+heard every sentence twice. The document was about twice as long as it needed to
+be, and every reader paid scanning cost to discard half of it. `<html lang>`
+could not be correct, because the document was two languages at once — and `lang`
+is the first thing a screen reader, a hyphenation engine and a search index all
+read. Per-half `lang` attributes fixed pronunciation and nothing else. A reader
+in their own language, with a one-click switch to the other, serves that
+household better than making both people read both.
+
+- **Locale now lives in the URL.** English unprefixed, Spanish at `/es`, both
+  statically prerendered, with `hreflang` alternates and `x-default`. Routes
+  moved under `app/[locale]/` in all three applications. A `beforeFiles` rewrite
+  serves the `/en` route at `/`; a permanent redirect sends `/en` and
+  `/en/:path*` back to the unprefixed form, so one document does not answer at
+  two addresses and split its own search ranking.
+- **`middleware.ts` refuses every other address** — `/fr`, `/EN`, `/es-MX` — and
+  renders the not-found document of whichever locale the address was under, by
+  *rewrite* rather than `notFound()`, so a 404 is a complete prerendered document
+  with a correct `lang` before a line of script runs. A reader who lands on one
+  has already had something go wrong.
+- **The switcher is a real link**, server-rendered, pointing at *this* page in
+  the other language rather than at the home page. It works with scripting off,
+  it is crawlable, middle-clicking opens a tab, and there is no client state to
+  fall out of step with the URL. Each option carries its endonym with a matching
+  `lang`, because a control labelled "Spanish" is useless to the person who needs
+  it — and not a flag, because a flag is a country and a language is not.
+
+**New package: `@meridian/i18n`.** `Locale`, `LocalizedText`, `Accept-Language`
+negotiation with quality values, locale path helpers, and `instrumentLang()`. It
+shipped with **124 tests before a single call site used it**, because the path
+helpers are asymmetric — English has no prefix, so `/estimate` is not Spanish and
+`/en/pricing` is not a locale path — and a bug there would have been a bug in
+1,673 places. It **depends on nothing**, not even `@meridian/core`: every one of
+its functions can run in a client component, and the landing site had already
+learned what happens when a client module reaches into `@meridian/pathways` — the
+whole catalog and zod follow it into the browser bundle. The shapes it needs from
+other packages are declared structurally, so real catalog values satisfy them
+with no import.
+
+**Instrument names do not translate.** "Código Civil art. 22.1" rendered as
+"Civil Code art. 22.1" names an instrument that does not exist and cannot be
+verified by the person trying to verify it. `instrumentLang()` resolves the
+language an instrument name is in, independently of UI locale, and **reports when
+it does not know**, because Canada, Quebec and the EU enact in more than one
+authoritative language and the jurisdiction alone does not settle which one a
+citation used.
+
+**The catalog did not change.** A `Pathway` still carries `{ en, es }` and
+neither half is subordinate; that was always true of the data and it stays true.
+What changed is the page.
+
+`apps/admin` gained localisation it never had. Credential types stayed
+untranslated where translating them would imply an equivalence between regulators
+that does not exist: *abogado colegiado* and *gestor administrativo* are
+standard, RCIC and Quebec notary are not translated at all.
+
+### Added — 2026-07-26: the United States corridor, 35 pathways
+
+Mexico to the United States is 11,280,000 people — the largest bilateral corridor
+in the world, and the top row of our own uncovered queue. Four new catalog
+modules take the catalog from 49 records to **84**: 26 Spain, 23 Canada, 35
+United States.
+
+- **`us-family.ts`** — immediate relatives and the family preference categories.
+- **`us-employment.ts`** — the employment preferences.
+- **`us-nonimmigrant.ts`** — the nonimmigrant classes, including **TN under
+  USMCA**, the American mirror of the CUSMA route already encoded for Canada, off
+  the same 63-profession table.
+- **`us-status-bars.ts`** — the procedural layer: adjustment of status versus
+  consular processing, naturalisation, and the unlawful presence bars.
+
+What is deliberately *not* encoded, and why:
+
+- **The bars are encoded as "this may apply, see a lawyer", never as a verdict.**
+  Someone who departs to consular-process can trigger a ten-year bar *by
+  departing*, and a confident wrong answer there causes precisely the harm this
+  platform exists to prevent.
+- **No priority date, cut-off or wait estimate appears anywhere.** The Visa
+  Bulletin moves monthly, Mexico is heavily oversubscribed in several categories,
+  and any number written today is wrong within weeks. The *structure* of the
+  limit is stated; the number is not.
+- **EB-4, EB-5 and B-1/B-2 are not encoded.** Their citations were verified and
+  are kept as researched groundwork rather than deleted, held outside every
+  `Pathway` record so nothing can appear to rest on a route that is not there.
+
+The jurisdiction blocks stay in the order the catalog originally shipped in — ES,
+then CA, then US. The United States block was added last and goes last; that says
+nothing about the corridor's size, which is the largest in the world, and
+everything about not renumbering what came before. Catalog order is a legal
+constraint: `evaluateAll` and `assess` return reports in it, so it must say
+nothing about merit, likelihood or priority.
+
+Source notes: `docs/research/2026-07-26-us-immigration-frame.md`.
+
+### Added — 2026-07-26: `@meridian/atlas`, and a coverage number that states its own denominator
+
+The catalog had grown but the product had no way to say what it did *not* reach.
+Someone living in Spain without status could open the eligibility tool, answer
+honestly, get "ineligible", and reasonably conclude they had no path — while
+*arraigo social* might have granted them residence. That is harm by omission, and
+the user has no way to detect it.
+
+`@meridian/atlas` maps the whole problem so coverage can be measured rather than
+asserted: **249 jurisdictions** across five region files, **22 mobility
+agreements**, and a migrant-stock table weighting **280 corridors**.
+
+It deliberately does **not** model ~40,000 country pairs. Immigration rules are
+overwhelmingly destination-side; origin nationality modifies the terms through
+blocs and bilateral instruments. A corridor is derived, never stored. Measured
+against forty thousand pairs, the coverage number would read a fraction of a
+percent forever while real work happened.
+
+Coverage is reported twice, because migration is extremely concentrated and a
+structural count treats Mexico → United States and Tuvalu → San Marino as equal
+units of progress. As at 2026-07-26: **structural 1.20%** (3 of 249) and
+**weighted 0.6076%**, where covered requires *both* ends encoded — the honest
+test, since a corridor is only as known as its least-known end. Destination-side
+reach is 18.4% of world migrant stock and is printed explicitly as **not** a
+coverage figure.
+
+The report states its own denominator and its own faults in both directions: it
+includes places with no permanent population and no residence route, which
+permanently depress structural coverage; it excludes roughly seven authorities
+that control entry to territory but have no ISO alpha-2 code, each recorded as a
+note on the nearest coded entry rather than given an invented key; and the stock
+table's completeness ceiling is **92.7%**, not 100%, because 7.3% of world stock
+is recorded against origin "Others" in the UN DESA 2024 bilateral matrix and is
+unattributable in any bilateral source.
+
+The integrity checker found **13 defects in its own denominator** before anyone
+trusted a number computed from it: six jurisdictions citing a CEMAC bloc the
+registry lacked, three claiming Mercosur residence rights it did not grant, and
+four transcontinental codes supplied by both the Asia and Europe files. All were
+fixed against primary sources rather than papered over — CEMAC confers visa-free
+entry only, which the 2013 Libreville act makes explicit, and encoding it as free
+movement would have fabricated a right to live in six countries.
+`ATLAS_INTEGRITY` is empty today and is exported anyway, because a denominator
+with a known fault is usable and one with a hidden fault is not.
+
+`scripts/atlas-coverage.mjs` prints the report. It is not a guard and is not in
+CI; `--strict` makes it exit non-zero when the atlas has integrity findings.
+**Nothing inside the product consumes the atlas yet** — only that script and the
+package's own tests.
+
+### Added — 2026-07-26: `scripts/check-workspace-manifests.mjs`
+
+Adding `packages/atlas` left it out of the lockfile and out of all four
+Dockerfiles, so CI's root install failed on `--frozen-lockfile`. The image builds
+passed at the same time, which made it look like an infrastructure flake rather
+than a missing file — they were still resolving the pre-atlas lockfile.
+
+This was the second time. Adding `apps/landing` did the same thing. A
+`--frozen-lockfile` install validates against the **whole** workspace, so the
+failure is always remote from its cause, and it names the lockfile rather than
+the missing `COPY`.
+
+`Dockerfile.api` already carried a comment saying exactly this, in capitals,
+directly above the `COPY` block. It was not enough. **A comment is not a
+control**, so the rule is now a script: every workspace manifest present in every
+Dockerfile, no stale `COPY` of a package that no longer exists, and an importer
+in the lockfile for every project. It runs in the policy job, before any install
+— the install being the thing it predicts. Proven able to fail: a `COPY` line was
+deleted, the check named the exact file and manifest, and the line was restored.
+
+The CI `policy` job now runs four guards, not three.
+
+### Fixed — 2026-07-26: `check-pathway-citations` re-anchored
+
+The guard located the shipped set by matching `MERIDIAN_PATHWAY_CATALOG … = [`,
+which the module-list assembly introduced on 2026-07-25 does not produce, so it
+reported "declares no `MERIDIAN_PATHWAY_CATALOG` array" and exited 1. That was
+its anti-vacuity check working: it refused to confirm a shipped set it could not
+read, because a check that reads nothing agrees with everything.
+
+The script was taught to follow the module list. **The check was not relaxed.**
+It now reads all 84 records and reports `15 catalog files, 84 pathways, 378
+citations, 1094 criterion references resolved`. This retires the item under *Open
+after this change*, below, and the corresponding claim that stood in `README.md`
+for a day.
+
+### Changed — 2026-07-26: the landing site, and the commercial boundary written down
+
+The landing page explained the value and let nobody feel it. Everything on it was
+prose about a product the reader had not used, so the advice boundary, the
+citations and the refusals all read as marketing — they only read as integrity
+after someone has watched the thing work.
+
+There is now a **real Schengen 90/180 calculator on the page itself**. A stranger
+enters two trips and gets their own number, with the 180-day window, a per-trip
+table showing which days were charged and why each uncharged day was not, the
+citation, and a statement of what the number is not. No account, no
+click-through, no email. It runs in the browser because the domain packages are
+pure computation, which is also why "nothing is transmitted" is a property of the
+code rather than a promise.
+
+**The part that was nearly a latent defect.** The calculator shipped with the two
+thresholds and the Schengen citation copied verbatim out of `@meridian/presence`,
+because `apps/landing` did not declare that dependency. A differential test over
+twelve cases proved the copies agreed *on the day they were written* — which is
+exactly the guarantee that decays. Nothing would have failed when a `verifiedOn`
+moved in one file and not the other, and a landing page showing a stale
+verification date beside a legal rule is the precise defect `staleness()` exists
+to catch. The dependency is now declared and the values are imported and
+re-exported, at a cost of 1.2 kB. `@meridian/presence` pulls only
+`@meridian/core` — no zod, no catalog — so the rule about what a `'use client'`
+module may reach still holds and still names `@meridian/pathways` specifically.
+That rule was earned: the default reference date was being imported from
+`catalog-facts`, which dragged the entire rule catalog into the browser at 194 kB
+before a leaf module fixed it.
+
+Also added: `/pricing`, six `/for/[audience]` pages, and
+`docs/COMMERCIAL_POSTURE.md` — the advice boundary and the pricing boundary are
+the same boundary, so what is free is decided by IRPA s.91 rather than by us.
+Both paid doors carry a "not built yet" badge and no call to action, since there
+is no account system, no billing and no API serving. A door you cannot walk
+through should say so before it says what is behind it. No invented prices, no
+testimonials, no user counts, no gated results.
+
+### Fixed — 2026-07-25/26: four defects behind a green pipeline
+
+Each of these would have passed CI and then produced a dead or lying service.
+
+- **The API would have `CrashLoopBackOff`'d on first start.** `config.ts`
+  requires `JANUA_ISSUER` and `JANUA_AUDIENCE` and neither appeared in any
+  manifest.
+- **Kyverno would have rejected all four Deployments.**
+  `disallow-privileged-containers` is Enforce and requires
+  `securityContext.privileged` to be *present*, not merely not-true, and no
+  container had the field. The onboarding gate also reads each Deployment raw
+  from GitHub with no kustomize render, so digests living only in
+  `kustomization.yaml` would have read as unpinned; they are now in both.
+- **The readiness probe lied.** The database check was `SELECT 1`, which proves a
+  socket and not a schema: against a schema-less database it returned ready, the
+  pod would have joined the Service, and every authenticated request would have
+  500'd inside the auth hook. It now distinguishes *unreachable*,
+  *reachable-but-no-schema* and *healthy*, and says which. An empty `tenants`
+  table is a legitimate fresh deployment and is not confused with a missing one.
+- **Two tool routes shipped as 404s.** `/tools/schengen` and
+  `/tools/nationality-es` had their components written but not the `page.tsx`
+  that turns a directory into a route. Next built no route, emitted no error, and
+  `pnpm build` went green having built less than intended. Same green-by-vacuity
+  shape as the readiness probe: a check that passes because it examined nothing.
+  The build output now gets read for the routes, not just the exit code.
+
+**Forty `NEXT_PUBLIC_*` declarations across Dockerfiles, manifests and CI were
+read by zero lines of source.** Configuration that lies is worse than absent
+configuration: it tells the next engineer a wiring exists that does not. Removed,
+with a comment at each site so nobody restores them by reflex.
+
+**The initial Prisma migration now exists** at `apps/api/prisma/migrations/`.
+There were none. Nothing in the deploy path runs it, which remains an operator
+decision, and it has never been applied to a live Postgres.
 
 ### Added — 2026-07-25, later the same day: pathway catalog expansion
 
@@ -155,7 +466,11 @@ would be a claim about importance. Appending never renumbers an existing record.
 
 ### Open after this change
 
+> Historical. The first item was resolved on 2026-07-26 — see *Fixed —
+> 2026-07-26: `check-pathway-citations` re-anchored* above. The rest stand.
+
 - **`scripts/check-pathway-citations.mjs` needs re-anchoring and is failing.**
+  *(Resolved 2026-07-26.)*
   It locates the shipped set by matching `MERIDIAN_PATHWAY_CATALOG … = [`, which
   the new module-list assembly does not produce, so it reports "declares no
   `MERIDIAN_PATHWAY_CATALOG` array" and exits 1. This is the guard's anti-vacuity
@@ -471,10 +786,13 @@ applications, 8000 for the API. Meridian claims **no port block**.
 Measured at 17:50 America/Mexico_City, during the initial build. Recorded here
 rather than left to be discovered.
 
+> Historical. Three of these were resolved on 2026-07-26 and are marked below:
+> the application tests, the migration, and the deployment. The rest stand.
+
 - **The three Next.js applications have no tests.** `apps/landing`, `apps/web`
   and `apps/admin` contain no test files. Nothing asserts what a browser renders
   or how these applications derive their state. **This is the largest gap in the
-  repository.**
+  repository.** *(Resolved 2026-07-26.)*
 - **No contract test suite for the repository ports.** All 108 API tests run
   over `InMemoryRepositoryProvider`, which is a complete implementation rather
   than a mock; the Prisma adapter is covered by `tsc` and nothing else. The two
@@ -482,12 +800,16 @@ rather than left to be discovered.
 - **No migration.** `apps/api/prisma/` holds `schema.prisma` and nothing else,
   and `prisma generate` has never been run in this workspace — only inside
   `Dockerfile.api`, where it writes into the image and nowhere else.
+  *(An initial migration exists as of 2026-07-26; nothing in the deploy path
+  runs it and it has never been applied.)*
 - **Nothing has been exercised end to end.** No request has travelled from a
   screen through the service to a database in any environment. None of the three
   Next apps reads an API host from the environment, so none of them would call
   the API yet even if it were running.
 - **No deployment.** The manifests and the Enclii service definitions exist; no
-  namespace, DNS record or tunnel route does.
+  namespace, DNS record or tunnel route does. *(As of 2026-07-26 the namespace,
+  DNS and tunnel routes exist and three of the four services answer `200`;
+  `meridian-api.madfam.io` answers `502`.)*
 - **No formatting check.** Prettier is a root devDependency with no config file,
   and CI does not check formatting. Existing code follows a roughly 100-110
   character line width.
@@ -544,12 +866,17 @@ rather than left to be discovered.
 
 Reserved for the first tagged release. Nothing has been released.
 
-Of the four conditions this section originally set, two are now met: the API
-starts — its image builds, boots and validates its environment — and its
-disclosure gate is covered by tests. A 0.1.0 tag should not be cut before, at
-minimum, the other two: the repository ports have a contract suite run against
-**both** adapters, and at least one pathway has moved to `counsel_reviewed`. Add
-to those a migration that has actually been applied to a Postgres, and a first
-test for whichever Next.js application ships first.
+Of the conditions this section originally set, three are now met: the API starts
+— its image builds, boots and validates its environment — its disclosure gate is
+covered by tests, and all three Next.js applications have test suites.
+
+A 0.1.0 tag should not be cut before, at minimum:
+
+- the repository ports have a contract suite run against **both** adapters;
+- at least one pathway has moved to `counsel_reviewed`;
+- the initial migration has actually been applied to a Postgres, by a path that
+  is written down;
+- `meridian-api.madfam.io` serves, and one request has travelled from a screen
+  through the service to a database.
 
 [Unreleased]: https://github.com/madfam-org/meridian/commits/main

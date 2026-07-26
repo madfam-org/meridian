@@ -15,17 +15,27 @@ that supersedes the old one and mark the old one `superseded by NNNN`. Do not
 edit the reasoning of a decision after the fact; the reasoning at the time is the
 thing worth preserving.
 
-Implementation status below was measured on 2026-07-25, during the repository's
-initial build. Re-check it rather than trusting it.
+Implementation status below was measured on **2026-07-26**. Re-check it rather
+than trusting it. The **Status** column is the decision's own state and does not
+move; the **Implemented?** column is a measurement and does.
 
-| # | Title | Status | Implemented? |
+| # | Title | Status | Implemented? (2026-07-26) |
 |---|---|---|---|
 | [0001](0001-civil-date-arithmetic.md) | Civil-date arithmetic without `Date` | Accepted 2026-07-25 | Yes — `@meridian/core`, used everywhere |
-| [0002](0002-advice-boundary-as-a-type.md) | The advice boundary as a type, not a disclaimer | Accepted 2026-07-25 | Yes — libraries, API gate, route registry, CI guard. No API tests. |
-| [0003](0003-no-credential-custody.md) | No custody of government credentials | Accepted 2026-07-25 | Yes — types, runtime guard, and CI guard |
-| [0004](0004-fastify-over-nestjs.md) | Fastify over NestJS for the API | Accepted 2026-07-25 | Yes — but `apps/api` has no `src/main.ts` |
-| [0005](0005-data-driven-pathway-catalog.md) | Data-driven pathway catalog with mandatory citations | Accepted 2026-07-25 | Yes — `@meridian/pathways`, 8 pathways, 0 reviewed |
-| [0006](0006-ports-and-adapters-repositories.md) | Ports and adapters for repositories | Accepted 2026-07-25 | Yes — ports + both adapters. No contract test suite. |
+| [0002](0002-advice-boundary-as-a-type.md) | The advice boundary as a type, not a disclaimer | Accepted 2026-07-25 | Yes — libraries, API gate, route registry, CI guard. **API tests now exist** (7 files, 115 tests). |
+| [0003](0003-no-credential-custody.md) | No custody of government credentials | Accepted 2026-07-25 | Yes — types, runtime guard, and CI guard (404 files scanned, 3 rules) |
+| [0004](0004-fastify-over-nestjs.md) | Fastify over NestJS for the API | Accepted 2026-07-25 | Yes — **`apps/api/src/main.ts` now exists** |
+| [0005](0005-data-driven-pathway-catalog.md) | Data-driven pathway catalog with mandatory citations | Accepted 2026-07-25 | Yes — `@meridian/pathways`, **84 pathways across 3 jurisdictions, 0 reviewed** |
+| [0006](0006-ports-and-adapters-repositories.md) | Ports and adapters for repositories | Accepted 2026-07-25 | Yes — ports + both adapters. Still no contract test suite. |
+| [0007](0007-url-locale-segments.md) | One language per page, addressed by URL | Accepted 2026-07-26 | Yes — `@meridian/i18n` + all three apps. **Apps have no tests.** |
+| [0008](0008-atlas-coverage-measurement.md) | Corridors are derived, and coverage is reported twice | Accepted 2026-07-26 | Yes — `@meridian/atlas` + `scripts/atlas-coverage.mjs`. One stale prose defect, named in the ADR. |
+
+**A note on the older records.** ADRs 0001 and 0004 quote "901 tests" and "six
+packages", which were true when they were written and are not now — there are
+eight packages and 1,533 tests across 60 files. Those figures have **not** been
+edited, because an ADR is a record of the reasoning at the time and silently
+refreshing a number inside one destroys exactly what it is for. Current figures
+live in [ARCHITECTURE.md](../ARCHITECTURE.md).
 
 ## Statuses
 

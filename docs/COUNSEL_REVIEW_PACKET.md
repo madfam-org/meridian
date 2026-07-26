@@ -7,27 +7,48 @@
 > [`madfam-org/internal-devops`](https://github.com/madfam-org/internal-devops)
 > (`legal/`). Do not commit counsel correspondence to this repository.
 
-Prepared: 2026-07-25. Figures below were derived by counting the catalog, not
-from any summary; the method is recorded in [Appendix A](#appendix-a--how-every-figure-in-this-packet-was-derived).
+Prepared: 2026-07-25. **Revised 2026-07-26**, when the catalog went from two
+jurisdictions to three: 35 United States records were added, taking it from 49
+pathways to 84. Figures below were derived by counting the catalog, not from any
+summary; the method is recorded in
+[Appendix A](#appendix-a--how-every-figure-in-this-packet-was-derived).
 
-Companion document: [LEGAL_CATALOG_REVIEW.md](LEGAL_CATALOG_REVIEW.md) holds the
+**What changed on 2026-07-26, in one paragraph.** Four new source modules
+(`us-family.ts`, `us-employment.ts`, `us-nonimmigrant.ts`, `us-status-bars.ts`)
+added 35 United States pathways, 177 distinct citations and 188 criteria. The
+catalog grew by 71%. Nothing in it became reviewed. The United States block needs
+its own reading and gets its own section — [§9, United States](#united-states) —
+because it escalates to a human far more often than either other jurisdiction,
+for a structural reason set out there. Everything said in this packet about
+Spain and Canada on 2026-07-25 still stands; the figures around it moved.
+
+Companion documents: [LEGAL_CATALOG_REVIEW.md](LEGAL_CATALOG_REVIEW.md) holds the
 item-by-item checklist and the staleness protocol. This packet is the framing —
 what you are being asked to do, what the artefact is, what turns on your
 signature, and where we most need your judgement. Read this first, then work
-from that checklist.
+from that checklist. The two research briefs the encoders worked from are
+[`research/2026-07-25-spain-reglamento-2025.md`](research/2026-07-25-spain-reglamento-2025.md)
+and [`research/2026-07-26-us-immigration-frame.md`](research/2026-07-26-us-immigration-frame.md);
+each has a section on what its author could **not** establish, and reading that
+section is the fastest way to find where the catalog is thinnest.
 
 ---
 
 ## 1. The single most important fact
 
-**No pathway in this catalog has been reviewed by anyone qualified. All 49
+**No pathway in this catalog has been reviewed by anyone qualified. All 84
 records carry `reviewStatus: 'unreviewed'`.**
 
 That is not a gap awaiting a deadline. It is the system's live state, and the
 software is built so that state has teeth: `recommend()` refuses to rank an
 unreviewed pathway and returns it in an `excluded` list with the code
-`not_counsel_reviewed`. Today that function returns an empty ranking and 49
+`not_counsel_reviewed`. Today that function returns an empty ranking and 84
 exclusions. Nothing in the product recommends anything to anyone.
+
+The number moved from 49 to 84 on 2026-07-26 and the fact did not move at all.
+That is worth stating plainly, because it is the whole argument: adding a
+jurisdiction does not approach the gate, it moves the gate further away. An
+eighty-fifth unreviewed record would add an eighty-fifth exclusion.
 
 We are asking you to change that for a subset of records, deliberately, one
 record at a time, with your identifier attached to each.
@@ -80,45 +101,69 @@ This matters as much as the list above, and we would rather over-state it.
 
 ## 3. The artefact, in numbers
 
-Verified on 2026-07-25 by loading the built catalog and counting.
+Verified on 2026-07-26 by loading the built catalog and counting.
 
-| | |
-|---|---|
-| Pathway records in `packages/pathways/src/catalog/` | **49** |
-| Of those, exported through `MERIDIAN_PATHWAY_CATALOG` and reachable by the engine | **49** — all |
-| Reviewed by counsel | **0** |
-| Jurisdictions | ES (26 records), CA (23 records) |
-| Status as recorded | 42 `open`, 5 `closed`, 2 `suspended` |
-| Eligibility criteria | **261** |
-| Criterion weights | 183 `blocking`, 50 `material`, 28 `informational` |
-| Criteria escalated to a human unconditionally (`requiresHumanReview`) | **65** |
-| Criteria escalated conditionally (`humanReviewWhen`) | **22** |
-| Pathways carrying at least one unconditional escalation | **32 of 49** |
-| Distinct citations | **196** |
-| Of those, marked `discretionary` | **47** |
-| Of those, carrying a URL | **178** (18 deliberately carry none) |
-| Citations by kind | 114 regulation, 37 official guidance, 34 statute, 6 treaty, 4 policy, 1 case law |
-| `verifiedOn` on every citation | 2026-07-25 |
-| Pathways publishing a processing-time estimate | **0** |
-| `leadsTo` edges between pathways | 53, none dangling |
+| | | Spain | Canada | United States |
+|---|---|---|---|---|
+| Pathway records in `packages/pathways/src/catalog/` | **84** | 26 | 23 | 35 |
+| Of those, exported through `MERIDIAN_PATHWAY_CATALOG` and reachable by the engine | **84** — all | 26 | 23 | 35 |
+| **Reviewed by counsel** | **0** | **0** | **0** | **0** |
+| Status as recorded | 77 `open`, 5 `closed`, 2 `suspended` | 23 / 3 / 0 | 19 / 2 / 2 | 35 / 0 / 0 |
+| Eligibility criteria | **449** | 140 | 121 | 188 |
+| Criterion weights | 291 `blocking`, 109 `material`, 49 `informational` | 92 / 31 / 17 | 91 / 19 / 11 | 108 / 59 / 21 |
+| Criteria escalated unconditionally (`requiresHumanReview`) | **154** | 21 | 44 | 89 |
+| Criteria escalated conditionally (`humanReviewWhen`) | **67** | 5 | 17 | 45 |
+| Pathways carrying at least one unconditional escalation | **62 of 84** | 13 of 26 | 19 of 23 | 30 of 35 |
+| Distinct citations | **373** | 96 | 100 | 177 |
+| Of those, marked `discretionary` | **82** | 21 | 26 | 35 |
+| Of those, carrying a URL | **346** (27 deliberately carry none) | 86 | 91 | 169 |
+| Of those, `kind: 'statute'` | **130** | 23 | 11 | 96 |
+| `verifiedOn` | two dates | 2026-07-25 | 2026-07-25 | 2026-07-26 |
+| Pathways publishing a processing-time estimate | **0** | 0 | 0 | 0 |
+| `leadsTo` edges between pathways | 63, none dangling | — | — | — |
 
-Two figures deserve a sentence each, because they are the ones most likely to be
+Citations across the whole catalog by kind: 170 regulation, 130 statute,
+57 official guidance, 8 treaty, 5 policy, 3 case law.
+
+Four figures deserve a sentence each, because they are the ones most likely to be
 misread.
 
-**All 49 are reachable, and the catalog's order means nothing.**
+**All 84 are reachable, and the catalog's order means nothing.**
 `packages/pathways/src/catalog/index.ts` assembles `MERIDIAN_PATHWAY_CATALOG` by
-concatenating the nine source modules in a written-out, append-stable order. That
-order is deliberately arbitrary with respect to merit: a list whose order changed
-with the applicant's facts, or which ranked routes by anything substantive, would
-be a ranking, and a ranking is advice. Do not read the position of a record in
-any output as a statement about it.
+concatenating the thirteen source modules in a written-out, append-stable order.
+That order is deliberately arbitrary with respect to merit: a list whose order
+changed with the applicant's facts, or which ranked routes by anything
+substantive, would be a ranking, and a ranking is advice. Do not read the
+position of a record in any output as a statement about it. In particular, the
+United States block is last because it was added last and appending never
+renumbers what came before — **not** because that corridor is small. Mexico to
+the United States is the largest bilateral migration corridor in the world.
 
-**32 of 49 can only ever say "a person must look at this".** A criterion marked
+**62 of 84 can only ever say "a person must look at this".** A criterion marked
 `requiresHumanReview` escalates the whole report, ahead of every other rule in
-the verdict order. Those 32 records therefore return `requires_human_review`
-whenever they are open, for every applicant, no matter how strong the facts.
-That is a deliberate design answer to a real problem — see Section 6 — and it is
-one of the things we most want you to agree with or push back on.
+the verdict order except closure. Those records therefore return
+`requires_human_review` whenever they are **open**, for every applicant, no
+matter how strong the facts. That is a deliberate design answer to a real
+problem — see Section 6 — and it is one of the things we most want you to agree
+with or push back on.
+
+**The closure exception is why 62 and 56 are both true.** Of those 62 records,
+six are `closed` or `suspended`, and closure outranks escalation, so they return
+`ineligible` rather than `requires_human_review`. Behaviourally, 56 records
+return `requires_human_review` for every fact set we tested. Both numbers are in
+this packet on purpose; neither is a correction of the other.
+
+**The United States block is where the escalation design shows most**, and the
+reason is structural rather than editorial: 89 of the 154 unconditional
+escalations are in it, and 30 of its 35 records carry at least one. See
+[§9, United States](#united-states).
+
+**`kind: 'statute'` is 96 of the 177 United States citations, against 23 of 96
+for Spain and 11 of 100 for Canada.** The United States block is the first that
+is statute-led, because 8 U.S.C. carries thresholds that the Spanish and
+Canadian systems leave to a *reglamento* or to a ministerial instruction. A
+reviewer used to reading Spanish or Canadian records will find the centre of
+gravity has moved.
 
 ---
 
@@ -154,11 +199,15 @@ Two conventions in `durations` are worth knowing before you read one:
   that way unless an authority published a service standard and we cite them. An
   applicant who books a flight against an invented number pays for the
   invention.
-- **`countsTowardNaturalisation` is left unset on 21 of 49 records.** Unset means
-  "we did not establish this", which is different from `false`. Where the answer
-  turns on an instrument the record does not otherwise cite, the encoder left it
-  absent rather than guessing. Confirming or filling these is genuine review
-  value.
+- **`countsTowardNaturalisation` is left unset on 43 of 84 records** (21 `true`,
+  20 `false`, 43 unset). Unset means "we did not establish this", which is
+  different from `false`. Where the answer turns on an instrument the record does
+  not otherwise cite, the encoder left it absent rather than guessing. Confirming
+  or filling these is genuine review value.
+- **On the United States records, `durations.note` carries more weight than its
+  name suggests.** It is where the structure of a numerical limit lives, and on
+  the three immediate-relative records it is where the *absence* of a queue is
+  explained. Read those notes as part of the rule, not as commentary.
 
 ---
 
@@ -206,9 +255,9 @@ Read it as five separate claims, each independently checkable:
 
 | Weight | Effect of failing it | Count |
 |---|---|---|
-| `blocking` | Verdict becomes `ineligible`. | 183 |
-| `material` | Caps the verdict at `indeterminate`. **Can never on its own produce a "no".** | 50 |
-| `informational` | Never affects the verdict; shown to the reader. | 28 |
+| `blocking` | Verdict becomes `ineligible`. | 291 |
+| `material` | Caps the verdict at `indeterminate`. **Can never on its own produce a "no".** | 109 |
+| `informational` | Never affects the verdict; shown to the reader. | 49 |
 
 The `material` tier exists because "likely to be refused on discretionary
 grounds" is a prediction, and predictions are advice. Where an encoder judged
@@ -223,9 +272,19 @@ in this system. It is checklist item 7 in
 ### Escalation — `requiresHumanReview` and `humanReviewWhen`
 
 - `requiresHumanReview: true` — this criterion can never be decided by software.
-  **65 criteria carry it.**
+  **154 criteria carry it** (21 Spanish, 44 Canadian, 89 United States).
 - `humanReviewWhen: <spec>` — conditional. Escalates only when the question
-  actually arises. **22 criteria carry it.**
+  actually arises. **67 criteria carry it** (5, 17, 45).
+
+The United States files use one conditional idiom heavily enough that it is worth
+naming before you meet it: a criterion whose `humanReviewWhen` is **deep-equal to
+its `evaluator`** escalates precisely when it would otherwise pass. A definite
+failure still reads as a failure; no pass is ever asserted. That is the shape of
+`us-h1b-specialty-occupation`, `us-l1a-managerial-or-executive-capacity`,
+`us-l1b-specialized-knowledge-capacity`, `us-eb1b-qualifying-job-offer` and
+several others. **The mirror image of it — escalating on failure and green-ticking
+on success — would be invisible in a passing test suite and catastrophic in a
+report**, so confirming the direction on each is worth the minute it takes.
 
 Escalation outranks everything except closure in the verdict order, so one
 escalated criterion makes the whole report `requires_human_review`. That is
@@ -247,9 +306,9 @@ as failure would tell people they do not qualify for routes they do qualify for.
 
 ## 6. The design decision we most want you to rule on
 
-Six of the nine catalog files were written this sweep, and their encoders
-converged independently on the same answer to the same problem. You should
-decide whether it is the right one.
+Ten encoders across two sweeps — six of the nine catalog files on 2026-07-25,
+all four United States files on 2026-07-26 — converged independently on the same
+answer to the same problem. You should decide whether it is the right one.
 
 **The problem.** Meridian's fact model, `ApplicantFacts`, describes *one
 person*. A large share of migration law does not: sponsorship turns on the
@@ -259,16 +318,38 @@ several thresholds are denominated in units the model cannot express (hours of
 work, months of absence, per-ability language scores, funds as a balance rather
 than a stream).
 
+**The United States block hits this harder than anything before it**, which is
+why 30 of its 35 records escalate unconditionally. United States family and
+employment routes are at least half a test about somebody who is not the
+applicant — a petitioner's citizenship, a sponsor's income and household size, a
+sponsor's domicile, an employer's corporate relationship to a foreign affiliate,
+the state of a labor certification — and the fact model holds none of them. Nor
+does it hold the **manner of somebody's last entry**, which is the single fact
+that most often decides a Mexican case: `currentStatus: 'irregular'` is not a
+proxy for it, because an overstayer after a lawful admission is irregular now and
+*was* admitted, and the § 1255(c)(2) immediate-relative exception reaches that
+person while it does not reach somebody who entered without inspection. Getting
+that backwards is the difference between a filing fee and a decade.
+
 **The answer taken.** Rather than point a criterion at a fact path that means
 something adjacent-but-different, the encoders marked those criteria
 `requiresHumanReview: true`, wrote a `humanReviewReason` naming the exact missing
 fact, and said in the bilingual guidance what the engine did and did not read.
 
-**The consequence.** 32 of 49 records can only return `requires_human_review`.
-Every Spanish arraigo figure, every Spanish family route, all four Canadian
-provincial and Quebec routes, all nine Canadian family and pilot routes, and
-every Canadian temporary-residence route in `ca-work-study.ts` behave this way,
-for every applicant.
+**The consequence.** 62 of 84 records carry an unconditional escalation, and the
+56 of them that are open can only return `requires_human_review`. Every Spanish
+arraigo figure, every Spanish family route, all four Canadian provincial and
+Quebec routes, all nine Canadian family and pilot routes, every Canadian
+temporary-residence route in `ca-work-study.ts`, and 30 of the 35 United States
+records behave this way, for every applicant.
+
+**Five United States records can reach a verdict**, and the split is instructive:
+`us-tn-usmca-professional` and `us-b1-b2-visitor` can return `eligible` or
+`ineligible`, because they turn on the applicant's own facts;
+`us-h1b-specialty-occupation`, `us-l1a-intracompany-manager-executive` and
+`us-l1b-specialized-knowledge` can return `ineligible` but never `eligible`,
+because specialty occupation, managerial capacity and specialized knowledge are
+characterisations an adjudicator makes.
 
 **Why we think it is right.** The alternative — say, measuring "two years of
 physical presence" against a field documented as *legal* residence — would
@@ -302,35 +383,63 @@ Every applied rule carries at least one `Citation`:
   an id the pathway does not carry, fails CI.
 - **`verifiedOn` is a claim about a human.** It means a person opened that source
   and read the cited text on that date. It is not a build timestamp and it is not
-  automatically refreshed. Every citation in the catalog currently reads
-  `2026-07-25`.
-- **`url` is present on 178 of 196 citations and absent on 18, deliberately.**
+  automatically refreshed. **The catalog now carries two dates**: 196 Spanish and
+  Canadian citations read `2026-07-25`, and 177 United States citations read
+  `2026-07-26`. Nothing was re-read on the later date that had been read on the
+  earlier one, and moving the first set forward to tidy the table would be
+  exactly the falsification this field exists to prevent.
+- **`url` is present on 346 of 373 citations and absent on 27, deliberately.**
   Where the encoder could not reach a canonical source, they omitted the link
   rather than guessing one, because a dead or wrong link teaches the reader to
-  stop checking. The absences are concentrated in Quebec instruments and the
-  Canada–Québec Accord (the publishing sites refused automated access) and in one
-  Spanish closing date. Supplying a confirmed canonical URL during review is a
-  genuine improvement to the artefact.
+  stop checking. The Spanish and Canadian absences are concentrated in Quebec
+  instruments and the Canada–Québec Accord (the publishing sites refused
+  automated access) and in one Spanish closing date. **Eight of the 27 are United
+  States citations** and each names its reason: `travel.state.gov` refused
+  automated retrieval, so both Visa Bulletin citations carry no link and instead
+  tell the reader to open the current bulletin by hand; `federalregister.gov`
+  served its API but refused its HTML, so the three Federal Register citations
+  carry document number, publication date and effective date without a URL; and
+  `fam.state.gov`'s certificate chain did not verify, so the two 9 FAM citations
+  and *Matter of Arrabally and Yerrabelly* carry none. **Nothing in the catalog
+  rests solely on a proposition from a source that could not be retrieved**,
+  except where the citation's own note says it does. Supplying a confirmed
+  canonical URL during review is a genuine improvement to the artefact.
 - **`kind` is a legal distinction, not a taxonomy.** `official_guidance` versus
   `regulation` is the difference between "the department currently does" and
-  "the law says". 37 citations are `official_guidance`; each is a place where
+  "the law says". 57 citations are `official_guidance`; each is a place where
   the number in the catalog is the administration's published practice.
 
 ### Staleness bands
 
 Computed by `staleness()` in `packages/core/src/citation.ts`.
 
-| Band | Age since `verifiedOn` | Meaning | For this catalog |
-|---|---|---|---|
-| `fresh` | ≤ 90 days | Usable without comment | through **2026-10-23** |
-| `aging` | 91–180 days | Usable; flagged in the admin console | through **2027-01-21** |
-| `stale` | > 180 days | Not to be silently trusted; **CI fails** | from 2027-01-22 |
+| Band | Age since `verifiedOn` | Meaning |
+|---|---|---|
+| `fresh` | ≤ 90 days | Usable without comment |
+| `aging` | 91–180 days | Usable; flagged in the admin console |
+| `stale` | > 180 days | Not to be silently trusted; **CI fails** |
+
+Because the catalog has two verification dates it has two sets of bands, and the
+build therefore goes red in two steps:
+
+| Citations | `verifiedOn` | `fresh` through | `aging` through | `stale` from |
+|---|---|---|---|---|
+| 196 Spanish and Canadian | 2026-07-25 | 2026-10-23 | 2027-01-21 | **2027-01-22** |
+| 177 United States | 2026-07-26 | 2026-10-24 | 2027-01-22 | **2027-01-23** |
 
 The bands are Meridian's operational choice, recorded as such, not a legal
 requirement. The reason they are short is tempo: Spain repealed its
-investor-residency route with roughly three months' notice, and one instrument in
+investor-residency route with roughly three months' notice; one instrument in
 this catalog was amended four months ago in a way that removed a federal review
-step (Canada, `SOR/2026-63`).
+step (Canada, `SOR/2026-63`); and the United States replaces duration of status
+for F, J and I admissions on 2026-09-15 under a rule published eight weeks
+earlier.
+
+**One record has a deadline earlier than any staleness band.**
+`us-f1-academic-student` must be re-verified on **2026-09-15**, when 91 FR 44976
+takes effect, regardless of which band its citations are in. Duration of status
+is what stops unlawful presence accruing before a formal violation finding, so
+this is not a cosmetic change.
 
 **Do not refresh a `verifiedOn` for a source you did not open.** It is the single
 action that quietly destroys the value of the whole mechanism, and nothing
@@ -344,7 +453,8 @@ the truth is worth more than a passing one that does not.
 
 `discretionary: true` marks a citation whose rule is **administrative practice,
 a screening criterion, published operational guidance, or case-law-derived** —
-rather than a bright-line statutory threshold. 47 of 196 citations carry it.
+rather than a bright-line statutory threshold. **82 of 373 citations carry it**:
+21 Spanish, 26 Canadian, 35 United States.
 
 Consumers of the engine are required to surface it. A note is attached to the
 report (`code: 'discretionary_source'`) whenever a criterion leans on such a
@@ -369,10 +479,26 @@ Two worked examples of the standard expected, both already in the tree:
   the ministry's *Instrucciones SEM 1/2025* rather than on the Reglamento. Those
   are flagged, and the encoder recorded which limb of each rule is the
   discretionary part in the citation `note`.
+- The United States block flags both **Visa Bulletin** citations, *Matter of
+  Dhanasar*, and every **USCIS Policy Manual** citation. The bulletin is the
+  clearest case in the whole catalog: an administrative publication re-issued
+  monthly whose own text warns that a date may retrogress. Its note records that
+  **no figure from it is recorded anywhere in this catalog** — no priority date,
+  no cut-off date, no queue position, no wait estimate. A test asserts that no
+  string in the United States block matches the bulletin's own date format.
 
 For each flagged citation, confirm the flag **in both directions**, and confirm
 the `note` says *which part* is discretionary rather than merely that something
 is.
+
+On the United States records, expect the flag on anything resting on adjudicator
+judgement rather than a statutory threshold, and there is a great deal of it:
+extraordinary ability, exceptional ability, the national interest, specialty
+occupation, managerial and executive capacity, specialized knowledge,
+substantiality of trade and of investment, the public charge ground, good moral
+character, and the whole of the § 1182(a)(9) analysis. **Where the flag is
+present the criterion should also escalate. A discretionary citation on a
+criterion that green-ticks is the combination to look for.**
 
 ---
 
@@ -603,6 +729,145 @@ branch applies.
 intended province, so `ca-provincial-nominee-program` can only test the Quebec
 side. The guidance says so rather than leaving a silent false negative.
 
+### United States
+
+Added 2026-07-26 across four files. **Read this preamble before the numbered
+points.** The United States records need different handling from the Spanish and
+Canadian ones, for a reason that is structural rather than a matter of care:
+
+- **89 of the catalog's 154 unconditional escalations are here**, and 30 of the
+  35 records carry at least one. `ApplicantFacts` holds nothing about a
+  petitioner, nothing about a sponsor, and nothing about the manner of somebody's
+  last entry — and United States family and employment law is at least half a
+  test about exactly those things. The escalations are therefore not a judgement
+  that the law is hard; they are the model saying it does not hold the fact.
+- **The block is statute-led.** 96 of its 177 citations are `kind: 'statute'`.
+  Where a Spanish record cites a *reglamento* and a Canadian one cites a
+  ministerial instruction, a United States record usually cites 8 U.S.C.
+  directly. Two consequences: the pin-cites are longer and more mechanical to
+  check, and where a *regulation* is cited it is worth asking whether it has been
+  conformed to the statute — see US-6.
+- **Nothing here is quantified.** No priority date, no cut-off date, no queue
+  position, no wait estimate, no probability of any discretionary grant appears
+  anywhere in the 35 records. The *structure* of the numerical limits is encoded
+  and cited; the numbers are not. Mexico's position is stated as "one of four
+  oversubscribed chargeability areas" with no figure attached.
+
+**US-1 — The immediate-relative / preference divide is encoded as an absence,
+and that is the most consequential thing in `us-family.ts`.** The three
+immediate-relative records carry **no** visa-availability criterion. The five
+preference records each carry **exactly one**, weighted `material`. That
+asymmetry is the encoding of § 1151(a)'s "Exclusive of aliens described in
+subsection (b)" read with § 1151(b)(2)(A)(i): an immediate relative sits outside
+the numerical limits, a preference beneficiary sits inside them, and on the
+Mexican corridor the difference is years. Confirm the divide, and then confirm
+the second half: that **no criterion keys chargeability to nationality**, because
+it follows place of birth under § 1152(b). Both properties are pinned by
+`tests/catalog-us-family.test.ts`, so if you disagree the test must change too.
+
+**US-2 — Manner of last entry is absent, and § 1255(a) is the casualty.**
+There is no honest adjustment-of-status criterion without it. The catalog does
+**not** use `currentStatus: 'irregular'` as a proxy, and the reason is worth your
+confirmation: an overstayer after a lawful admission is irregular *now* and *was*
+admitted, so the § 1255(c)(2) immediate-relative exception reaches them, while it
+does not reach somebody who entered without inspection. The two people look
+identical in this fact model and their answers are years apart. Is escalation the
+right response, or should the record refuse to render at all?
+
+**US-3 — The two screening records are deliberately unable to decide anything.**
+`us-unlawful-presence-bar-screening` and `us-permanent-bar-screening` are not
+routes. They exist to raise the § 1182(a)(9) question, and each carries an
+unconditional escalation so `evaluate` can only ever return
+`requires_human_review`. **That polarity must not be "fixed".** Telling somebody
+the ten-year bar does not reach them, from a fact set holding no departure date,
+is the most expensive wrong answer available in this corridor. Five propositions
+in these records are commonly stated backwards and each deserves a direct check:
+
+1. § 1182(a)(9)(B)(v)'s qualifying relative does **not** include a United States
+   citizen child.
+2. The (B) bars do **not** aggregate across separate trips; (C) does, across the
+   whole history since 1 April 1997.
+3. The three-year bar requires a departure before proceedings commenced; the
+   ten-year bar carries no equivalent condition.
+4. The (B)(iii) exceptions — including time spent under 18 — do **not** reach (C).
+5. The unlawful-presence count excludes **both** the I-94 expiry date and the day
+   of departure. That is two exclusive endpoints in a codebase where every
+   `DateRange` is closed and inclusive at both ends, which is exactly the kind of
+   mismatch that produces an off-by-two nobody notices.
+
+**US-4 — The EB-5 amounts in the regulation contradict the statute, and the
+catalog encodes the statute.** 8 CFR 204.6(f) still states USD 1,800,000 and
+USD 900,000, from a 2019 rule that USCIS's own Policy Manual (6 USCIS-PM G.2)
+records as vacated, citing *Behring Regional Center LLC v. Wolf*, 544 F. Supp. 3d
+937 (N.D. Cal. 2021). Congress enacted USD 1,050,000 and USD 800,000 in 2022. The
+record encodes the statutory figures and cites the dead paragraph **explicitly**,
+so that a reader who finds the regulation is not misled by it. **Please confirm
+the vacatur independently:** the catalog attributes it to USCIS's statement
+rather than to the report, which the encoder did not read.
+
+**US-5 — The EB-4 religious-worker sunset is a live date trap and the record
+declines to resolve it.** § 1101(a)(27)(C)(ii)(II) and (III) still read "before
+September 30, 2015" in the codified text, and Congress extends the date by
+appropriations rider rather than by amending it. The most recent extension
+visible in the 2024 edition of the Code is Pub. L. 118-47, div. G, tit. I, § 104,
+substituting 30 September 2024. **Whether a later extension is in force could not
+be established**, so the criterion says so and escalates rather than picking an
+answer. The minister branch, clause (ii)(I), carries no expiry. If you can
+establish the current date, that is one of the highest-value single facts you
+could add to this block.
+
+**US-6 — The NIW regulation is narrower than the statute it implements.** 8 CFR
+204.5(k)(4)(ii) speaks only of exceptional ability; § 1153(b)(2)(B)(i) waives
+subparagraph (A) generally, and USCIS applies the waiver to advanced-degree
+professionals as well. Recorded as a divergence rather than smoothed over.
+Confirm that recording the divergence — rather than encoding either limb as the
+rule — is the right posture.
+
+**US-7 — Two United States weightings are decisions, not defaults.**
+`us-eb2-advanced-degree` is `material` rather than `blocking`, because
+exceptional ability is an independent route into the same preference that this
+model cannot measure, so an `ineligible` on the degree branch would shut a door
+the statute leaves open. Every `*-visa-number-available` criterion is `material`
+because a number that is not available today is a **wait**, not a refusal.
+Both should be confirmed as decisions.
+
+**US-8 — Naturalisation escalates on one missing field, and § 1101(f) could not
+be retrieved.** Both naturalisation records escalate unconditionally and can
+never return `eligible`, because there is no United States State or USCIS
+district in the fact model. Separately: good moral character rests on
+§ 1427(a)(3), § 1427(d)–(e) and 8 CFR 316.10 and does **not** cite § 1101(f),
+because that section could not be retrieved during the sweep. Naturalisation was
+also researched from primary text rather than from the research brief the rest of
+the block worked from, so it has had less cross-checking than its neighbours.
+
+**US-9 — TN reads the same profession table as Canada, with one deliberate
+divergence.** `us-tn-usmca-professional` reads `CUSMA_PROFESSIONS` — the table
+`ca-cusma-professional` also reads — rather than re-transcribing Appendix 2,
+because 8 CFR 214.6(c) reproduces the Appendix verbatim and the substantive test
+is identical on both sides. The table holds **63 professions, matching the
+regulation's enumeration**, of which 4 are flagged for heightened scrutiny. The
+divergence: the United States record accepts a licence issued by a US, Canadian
+or Mexican state, provincial or federal government, following the footnote in
+214.6(c), while `ca.ts` narrows it to Canadian licences. Read the two records
+together and confirm both the shared table and the divergence.
+
+**US-10 — Six United States records carry a `leadsTo` bridge and 29 carry none,
+and no United States edge leaves the file that declares it.** Four of the six
+make a legal claim rather than a convenience, and should be read as claims.
+`us-fiance-k1` leads only to `us-immediate-relative-spouse`, because the marriage
+happens after admission and the adjustment that follows is conditional under
+§ 1186a. `us-f1-academic-student` leads to H-1B, TN and O-1A, and the file says
+in terms that a bridge is not a recommendation.
+`us-unlawful-presence-bar-screening` leads to the provisional waiver, and the
+waiver leads to consular processing, which is the actual sequence. All ten
+employment records deliberately carry none.
+
+**US-11 — There is no closed or suspended United States record, and that is a
+research gap rather than a fact about the system.** Spain's investor route and
+Canada's two paused programs are in the catalog precisely because people hold
+status under routes that have shut. No United States route was traced back
+through a repeal in this sweep. Treat the empty columns as work not done.
+
 ---
 
 ## 10. Scope: what this catalog is not
@@ -641,16 +906,40 @@ self-serve checker.
 
 ### Named gaps
 
-Not encoded, and disclosed in the file that would have held them: Spanish
-Título IV Cap. VII (family of Spanish nationals); art. 128 humanitarian grounds
-and Título VII Caps. II–V; art. 69 independent residence as its own pathway;
-Ley 12/2015 as a closed pathway (its closing wording is ambiguous by a day and
-we would not risk it); the Francophone Community Immigration Pilot; the Canadian
-super visa; intercountry adoption and orphaned-relative sponsorship; the
-"lonely Canadian" relative provision; UK nationals and their family members under
-the Withdrawal Agreement; and admissibility grounds beyond a self-declared
+Not encoded, and disclosed in the file that would have held them.
+
+**Spain and Canada.** Spanish Título IV Cap. VII (family of Spanish nationals);
+art. 128 humanitarian grounds and Título VII Caps. II–V; art. 69 independent
+residence as its own pathway; Ley 12/2015 as a closed pathway (its closing
+wording is ambiguous by a day and we would not risk it); the Francophone
+Community Immigration Pilot; the Canadian super visa; intercountry adoption and
+orphaned-relative sponsorship; the "lonely Canadian" relative provision; UK
+nationals and their family members under the Withdrawal Agreement; and
+provincial nominee stream criteria for any province.
+
+**United States — out of scope by the same permanent decision as asylum:**
+refugee status under 8 U.S.C. 1157, withholding of removal, protection under the
+Convention Against Torture, U and T classification, and **VAWA self-petitions**
+under § 1154(a)(1)(A) and (B). VAWA is the one a reader is most likely to
+mistake for missing law rather than excluded scope, so it is named three times —
+in the `us-family.ts` header, in the immediate-relative-spouse relationship
+guidance, and in the F2A relationship guidance — each pointing to a licensed
+attorney or a representative accredited by the Department of Justice. Special
+immigrant juveniles are excluded on the same ground and named on the EB-4 record.
+
+**United States — not researched, rather than excluded:** the diversity immigrant
+programme of 8 U.S.C. 1153(c); temporary protected status; the H-2A and H-2B
+classifications; the E-3 Australian route; the O-1B, P and R classifications;
+every EB-4 special-immigrant branch other than religious workers; the EB-5
+regional-centre programme's own requirements beyond the ceilings on indirect
+jobs; and any closed or repealed United States route at all.
+
+**All three jurisdictions:** admissibility grounds beyond a self-declared
 criminal record — medical, security and misrepresentation are untouched
-throughout.
+throughout. In the United States block the § 1182(a)(9) unlawful-presence and
+prior-removal grounds are the ones that most often decide a Mexican case; they
+are named where they arise and encoded only as the two screening records
+described in US-3.
 
 ### Engineering items open at the time of writing
 
@@ -659,17 +948,39 @@ what you are reviewing.
 
 1. **The `es.ts` defects in ES-14 are unrepaired.** This is the one item that
    should gate review: do not sign the six `es.ts` records until it is closed.
-2. **Test coverage for the 41 new records was still being written as this packet
-   was finalised.** The record files themselves were stable; the suites around
-   them were not. Confirm the package is green before relying on any claim about
-   catalog behaviour.
-3. **`scripts/check-pathway-citations.mjs` needs re-anchoring.** The catalog
-   index was refactored to assemble the shipped array from a list of modules
-   rather than from a literal array, and the guard reads it by pattern. It fails
-   with "declares no `MERIDIAN_PATHWAY_CATALOG` array" until the script is
-   updated. Nothing legal turns on this — it is the guard's anti-vacuity check
-   refusing to confirm a shape it cannot parse, which is the behaviour it was
-   built for — but it means CI is red until someone fixes the script.
+   Still true on 2026-07-26 — `es.ts` line 167 still cites RD 557/2011, which the
+   2025 Reglamento repealed in full. One correction to ES-14 itself: the constant
+   it names as `SPANISH_OFFICIAL_LANGUAGE_COUNTRIES` does not exist under that
+   name. The nearest thing is
+   `SPAIN_REDUCED_RESIDENCY_NATIONALITIES` in `packages/core/src/jurisdiction.ts`,
+   which carries 23 entries — 19 Ibero-American states plus Andorra, the
+   Philippines, Equatorial Guinea and Portugal — and Puerto Rico is absent from
+   it. Whether that list is the right one for the rule it serves is a question for
+   you; the packet's earlier description of it was wrong about the name and the
+   count, and is corrected here rather than quietly deleted.
+2. ~~Test coverage for the 41 new records was still being written.~~ **Closed.**
+   `packages/pathways` reports 17 test files and 443 passing tests
+   (`pnpm --filter @meridian/pathways exec vitest run`, 2026-07-26).
+3. ~~`scripts/check-pathway-citations.mjs` needs re-anchoring.~~ **Closed, and
+   closed in the right direction.** `catalog/index.ts` writes
+   `MERIDIAN_PATHWAY_CATALOG` out as a literal spread again, with a comment at the
+   declaration explaining that the guard anchors on it. The check was **not**
+   relaxed. It now reports: `OK — as of 2026-07-26: 15 catalog files, 84 pathways,
+   378 citations, 1094 criterion references resolved`.
+4. **`validateCatalog()` now returns nine warnings where the 2026-07-25 packet
+   reported zero.** Zero are errors and none blocks a build. All nine are
+   Canadian, all nine predate the United States block, and each is an editorial
+   inconsistency between two records that are individually sound — they only
+   misrender when several pathways appear side by side in one bibliography. Four
+   citation ids are involved: `ca-cusma-citizenship-requirement`, `ca-irpa-s-11-1`
+   and `ca-irpa-s-10-3` are declared on more than one record with a different
+   `url` or `provision`; `ca-irpr-s-87-1` is annotated differently on four
+   records. **This contradicts Appendix A of the 2026-07-25 packet**, which said
+   the re-declared ids were byte-identical. They were then; they are not now.
+   Nothing legal turns on it, but a footnote that resolves to whichever record
+   loaded last is worse than no footnote, so it is listed here rather than left
+   for a reader to trip over. They are enumerated in
+   [LEGAL_CATALOG_REVIEW.md](LEGAL_CATALOG_REVIEW.md#known-warnings).
 
 ---
 
@@ -681,7 +992,7 @@ state change. It opens a gate.
 **Before:** the pathway may appear in an **assessment** — a restatement of a
 published rule with the applicant's own arithmetic against it, showing the
 citations and the working. Restating published law and counting someone's own
-days is not a reserved act in either jurisdiction Meridian operates in.
+days is not a reserved act in Spain or Canada, on our reading.
 
 **After:** the pathway becomes eligible to enter **advice-class output**. It can
 be ranked against other routes, given a position, and given a `rationale` string
@@ -689,6 +1000,27 @@ be ranked against other routes, given a position, and given a `rationale` string
 Immigration and Refugee Protection Act and Spain's reserved-activity rules for
 legal advice, that is a regulated act. `recommend()` will include it; the
 `not_counsel_reviewed` exclusion disappears from its output.
+
+> ### ⚠ If you are reviewing a United States record, read this first
+>
+> **There is no United States reserved-activity analysis anywhere in this
+> repository.** [REGULATORY_POSTURE.md](REGULATORY_POSTURE.md) has a section on
+> Canada (IRPA s. 91) and a section on Spain. It has none on the United States,
+> and the 35 United States records were added on 2026-07-26 without one.
+>
+> That means the two sentences above — what an assessment is, and what changes
+> when you sign — are stated on a reading of Canadian and Spanish law and have
+> **not** been checked against the unauthorized-practice-of-law rules of any
+> United States state, against the federal practitioner rules at 8 CFR 292 and
+> 1292, or against the EOIR accredited-representative regime. Whether Meridian's
+> `assessment` class is on the right side of any of those lines is an open
+> question that nobody here is qualified to answer.
+>
+> We are recording this rather than assuming the Spanish and Canadian analysis
+> transfers, because it may well not. **A United States reviewer should treat the
+> scope of their own signature as undetermined until that analysis exists**, and
+> we would rather hear that the gap must be closed before any United States
+> record is signed than discover later that it should have been.
 
 A second gate still applies. Advice-class output passes through `canRelease()`,
 which decides per audience whether it may be released and downgrades it if not.
@@ -749,45 +1081,90 @@ the least review:
    in the Spanish corridor and which turn almost entirely on ES-1 to ES-5.
 4. Everything else, jurisdiction by jurisdiction.
 
+**Where the United States block sits in that order is not settled**, and we would
+rather say so than pick. Two arguments pull against each other. It is the largest
+corridor in the world and the one Meridian's own atlas puts at row 1 of its
+uncovered work queue, which argues for early attention. But 30 of its 35 records
+can only escalate, so reviewing them buys no rankable output at all until the fact
+model grows — and the reserved-activity gap boxed in Section 11 means the scope of
+a United States signature is itself undetermined. **Our reading is that the
+regulatory gap should be closed before any United States record is signed**, and
+that the five records able to reach a verdict —
+`us-tn-usmca-professional`, `us-b1-b2-visitor`, `us-h1b-specialty-occupation`,
+`us-l1a-intracompany-manager-executive`, `us-l1b-specialized-knowledge` — are the
+sensible first batch after it. Tell us if you disagree.
+
 ---
 
 ## Appendix A — how every figure in this packet was derived
 
-Nothing here was taken from a summary. The counts were produced by loading the
-compiled catalog under Node and counting the objects: pathway records by
-enumerating every exported `readonly Pathway[]` aggregate across
-`packages/pathways/dist/catalog/`, criteria by summing `criteria.length`,
-citations by collecting `citations[].id` into a set (196 distinct; 201 constants
-are declared across files, because five ids are re-declared in a second file with
-byte-identical `instrument` strings so that one id keeps meaning one thing), and
+Nothing here was taken from a summary. The counts were produced on **2026-07-26**
+by loading the compiled catalog under Node and counting the objects: pathway
+records from `MERIDIAN_PATHWAY_CATALOG` in
+`packages/pathways/dist/catalog/index.js`, criteria by summing
+`criteria.length`, citations by collecting `citations[].id` into a set, and
 weights, flags and statuses by direct inspection of each field.
 
-The escalation claim in Section 3 was checked two ways: structurally, by counting
-records carrying at least one `requiresHumanReview: true` criterion (32), and
-behaviourally, by running `evaluate()` over all 49 records against three fact
-sets — an empty profile, a maximally favourable Spain-directed profile and a
-maximally favourable Canada-directed profile — and confirming all 32 returned
-`requires_human_review` in every case.
+**373 distinct citation ids; 378 constants are declared across the files.** The
+difference is five ids re-declared in a second file. On 2026-07-25 all five were
+byte-identical. **They are no longer** — four of them now diverge in `url`,
+`provision` or `note`, which is what produces the nine `validateCatalog()`
+warnings recorded in Section 10 item 4. The earlier packet's claim that one id
+keeps meaning one thing is corrected there.
 
-The verification commands and their output on 2026-07-25:
+Two counts of citation *references* circulate and both are right. The guard
+reports **1094**, because it counts every `citationIds: [...]` array in the
+source text. Counting only `criteria[].citationIds` at runtime gives **867**; the
+remaining 227 are `durations[].citationIds`. 867 + 227 = 1094.
+
+The escalation claim in Section 3 was checked two ways. **Structurally**, by
+counting records carrying at least one `requiresHumanReview: true` criterion:
+**62**. **Behaviourally**, by running `evaluate()` over all 84 records against
+four fact sets — an empty profile and one directed at each of ES, CA and US — and
+confirming **56** returned `requires_human_review` in every case. The six-record
+difference is exactly the closed and suspended records that carry an escalation,
+where closure outranks it: `es-arraigo-extraordinario`,
+`es-nationality-democratic-memory-option`, `ca-family-parent-grandparent`,
+`ca-start-up-visa`, `ca-rural-northern-pilot` and `ca-agri-food-pilot`. (The
+seventh non-open record, `es-golden-visa`, carries no escalation at all.)
+
+`recommend()` was run over the whole catalog and returned an empty ranking with
+**84 exclusions, every one coded `not_counsel_reviewed`**.
+
+The verification commands and their output on 2026-07-26:
 
 ```
-pnpm build --filter "./packages/*"          7 tasks, all successful
-node scripts/check-pathway-citations.mjs    OK — 11 catalog files, 49 pathways,
-                                            201 citations, 511 criterion references
-                                            resolved  (run before the index refactor;
-                                            failing after it — see Section 10 item 3)
+pnpm typecheck                              19 successful, 19 total
+pnpm build                                  12 successful, 12 total
+node scripts/check-pathway-citations.mjs    OK — as of 2026-07-26: 15 catalog files,
+                                            84 pathways, 378 citations,
+                                            1094 criterion references resolved
+node scripts/check-advice-boundary.mjs      OK — gate and producer anchors verified,
+                                            189 application files read, 16 routes examined
+node scripts/check-no-credential-custody.mjs OK — 404 files scanned, 3 rules,
+                                            3 path exemptions, 2 structural anchors verified
+node scripts/check-workspace-manifests.mjs  OK — 12 workspace projects present in all
+                                            4 Dockerfiles and in the lockfile
 ```
 
-`validateCatalog()` was additionally run over all 49 records as a single combined
-catalog and returned zero issues and zero errors.
+`validateCatalog(catalog, '2026-07-26')` over all 84 records returned **9 issues,
+0 of them errors** — see Section 10 item 4.
 
-The `packages/pathways` test suite was being extended by other work while this
-packet was written and its counts were still moving; it is deliberately not
-quoted here. Run `pnpm exec tsc --noEmit && pnpm exec vitest run` in that package
-for the current state. Nothing in the counts above depends on the tests: they
-were derived from the pathway records themselves.
+The `packages/pathways` suite now reports **17 test files, 443 tests, all
+passing** (`pnpm --filter @meridian/pathways exec vitest run`). Nothing in the
+counts above depends on the tests; they were derived from the pathway records
+themselves.
+
+**`pnpm test` at the repository root may exit non-zero without any catalog
+failure.** Vitest exits 1 when a project has no test files at all, which is how
+an empty application test directory reads, and the three Next.js applications
+were acquiring their first suites while this revision was written. Every one of
+the eight packages and `apps/api` passes. This is recorded because a reviewer who
+runs the documented command may see a red result and should know it says nothing
+about the catalog — `pnpm --filter @meridian/pathways exec vitest run` is the
+command that does.
 
 The citations check prints the UTC date it ran on, so a run after midnight UTC
-reports the following day. All citations in this catalog were verified on
-2026-07-25.
+reports the following day. Citations in this catalog carry two verification
+dates: 2026-07-25 for the Spanish and Canadian records, 2026-07-26 for the United
+States records.

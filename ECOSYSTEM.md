@@ -21,7 +21,7 @@ This file is self-contained: a session on a fresh machine can orient in this
 service by reading only this one document. No external links are load-bearing —
 the MADFAM ecosystem map and the enclii CLI reference are embedded below.
 
-Last updated: 2026-07-25.
+Last updated: 2026-07-26.
 
 ---
 
@@ -34,9 +34,15 @@ sworn-translation routing, machine-readable travel-document validation to ICAO
 Doc 9303, and continuous presence tracking for tax-residency day counts,
 Schengen 90/180, continuous-residence clocks and qualifying-work accumulation.
 
-Two foundational corridors seed the catalog: **Mexico → Spain** and
-**Mexico → Canada**. The engine itself is jurisdiction-generic; the corridors
-are data.
+Three corridors seed the catalog: **Mexico → Spain**, **Mexico → Canada** and
+**Mexico → United States**, the last of which is the largest bilateral corridor
+in the world. The engine itself is jurisdiction-generic; the corridors are data.
+
+A ninth package, `@meridian/atlas`, exists to say what three corridors is a
+fraction *of*: 249 jurisdictions, 22 mobility agreements and a migrant-stock
+table weighting 280 corridors, so coverage can be measured rather than asserted.
+It reports 1.20% structural coverage and 0.6076% weighted by people, and prints
+its own denominator and its own faults beside both numbers.
 
 The defining architectural constraint is the **advice boundary**: every engine
 output is born classified `information`, `assessment` or `advice`, and a single
@@ -57,25 +63,33 @@ test and no reviewer behind it, so this one has the catalog behind it instead.
 
 **Pillar**: Mobility
 **Type**: service (TypeScript monorepo — pnpm + turbo, Node 22, ESM)
-**Status**: **pre-deploy.** Six libraries and the API build and test clean —
-39 test files, 1021 tests, measured 2026-07-25; the three Next.js applications
-have no tests; nothing is deployed; no pathway has been counsel-reviewed. See
+**Status**: **three of four surfaces live; the API is not serving.** Twelve
+workspace projects — eight libraries and four deployables — all typecheck, test
+and build clean (`pnpm typecheck` 19/19, `pnpm test` 19/19, `pnpm build` 12/12,
+measured 2026-07-26). All three Next.js applications now have test suites; they
+had none before that date. No pathway has been counsel-reviewed. See
 [README.md](README.md) for the measured status section.
 **Repo visibility**: PUBLIC — `github.com/madfam-org/meridian`, AGPL-3.0-only.
 
 ### Deployed services
 
-**None yet.** The table below is the claimed allocation, not a live deployment.
-No namespace, DNS record, or tunnel route exists for Meridian as of 2026-07-25.
+Observed on 2026-07-26 by requesting each hostname. Re-check before relying on
+it: a status table is a claim about a moment that has already passed.
 
 | Service | Public domain | Container port | State |
 |---|---|---|---|
-| `meridian-landing` | meridian.madfam.io | 3000 | not deployed; builds |
-| `meridian-app` | meridian-app.madfam.io | 3000 | not deployed; builds |
-| `meridian-admin` | meridian-admin.madfam.io | 3000 | not deployed; builds |
-| `meridian-api` | meridian-api.madfam.io | 8000 | not deployed; builds and runs |
+| `meridian-landing` | meridian.madfam.io | 3000 | **live** — `200`; `/` English, `/es` Spanish, `/en` `308`s to `/` |
+| `meridian-app` | meridian-app.madfam.io | 3000 | **live** — `200` |
+| `meridian-admin` | meridian-admin.madfam.io | 3000 | **live** — `200` |
+| `meridian-api` | meridian-api.madfam.io | 8000 | **not serving** — `502`; the tunnel answers, no origin does |
 
-**Kubernetes namespace**: `meridian` (not created)
+The three Next applications read no API host from their environment, so nothing
+they render depends on the API being up. That is why three surfaces can be live
+while the fourth is not, and it is also why "live" here means *serving pages*
+and not *end to end*: no request has travelled from a screen through the service
+to a database in any environment.
+
+**Kubernetes namespace**: `meridian`
 **Registry**: two path shapes coexist, both under `ghcr.io/madfam-org/`. The
 first three images predate the landing split and use `meridian-api`,
 `meridian-web`, `meridian-admin`; the landing image uses the nested
@@ -152,12 +166,12 @@ a decision rather than an oversight.
 | **Compliance** | **Karafiel** | NOM-151 timestamping. The natural home for Meridian's immutable audit trail: what was released to whom, under which classification, on which citation, at which point in time. |
 | **Legal corpus** | **Tezca** | Mexican-law oracle, informational only. Relevant to the origin side of the MX corridors. |
 | **Deploy** | **Enclii** | PaaS control plane. `enclii onboard --repo madfam-org/meridian`. |
-| **Data** | Postgres | Matters, applicants, presence ledgers, documents, audit trail. Prisma is the client; `apps/api/prisma/schema.prisma` defines 10 models and 15 enums. No migration has been **generated**, let alone applied — `apps/api/prisma/` holds a schema and nothing else, and `prisma generate` runs only inside `Dockerfile.api`. |
+| **Data** | Postgres | Matters, applicants, presence ledgers, documents, audit trail. Prisma is the client; `apps/api/prisma/schema.prisma` defines 10 models and 15 enums. An initial migration now exists at `apps/api/prisma/migrations/`; **nothing in the deploy path runs it**, which remains an operator decision, and it has never been applied to a live Postgres. |
 
 ### Downstream consumers (this repo is consumed by)
 
-None today. Meridian is not deployed and exposes no API. The intended consumers
-are:
+None today. Three Meridian surfaces serve pages, but the API is not answering,
+so nothing consumes Meridian programmatically. The intended consumers are:
 
 - **PhyndCRM** — client-facing deliverables portal, for firm tenants running a
   migration engagement alongside other work.
@@ -205,14 +219,20 @@ demonstration instance or a screenshot that must not rot; `MERIDIAN_ADMIN_DATASE
 selects which sample dataset the console serves, falling back visibly rather than
 failing the render.
 
+**The `NEXT_PUBLIC_*` set has been removed.** Forty declarations across the
+Dockerfiles, the manifests and CI — `NEXT_PUBLIC_API_URL`,
+`NEXT_PUBLIC_JANUA_URL`, `NEXT_PUBLIC_JANUA_CLIENT_ID`, `NEXT_PUBLIC_APP_URL` —
+were read by zero lines of source. Configuration that lies is worse than absent
+configuration: it tells the next engineer a wiring exists when it does not.
+`grep -rn NEXT_PUBLIC apps packages` matches nothing today, and each site that
+used to declare one carries a comment saying why it should not be restored by
+reflex. Reintroduce them in the change that makes an application read them, not
+before.
+
 **Declared in `enclii.yaml` and the Deployments, read by no application code
 yet**: `MERIDIAN_ENV`, `JANUA_URL`, `MERIDIAN_WEB_ORIGIN`,
-`MERIDIAN_ADMIN_ORIGIN`, and the `NEXT_PUBLIC_*` set (`NEXT_PUBLIC_API_URL`,
-`NEXT_PUBLIC_JANUA_URL`, `NEXT_PUBLIC_JANUA_CLIENT_ID`, `NEXT_PUBLIC_APP_URL`).
-The three Next apps render from data in their own source and call nothing, so
-these document the intended runtime contract ahead of the code that will consume
-it. Next inlines `NEXT_PUBLIC_*` at build time, which is why they are also passed
-as `--build-arg` in `.github/workflows/build-deploy.yml`.
+`MERIDIAN_ADMIN_ORIGIN`. These document the intended runtime contract ahead of
+the code that will consume it.
 
 **Named for ecosystem edges not yet built**: `DHANAM_WEBHOOK_SECRET` (billing
 events), `SELVA_BASE_URL` / `SELVA_API_KEY` (inference routing),
@@ -299,10 +319,11 @@ other public repo.
 The CLI routes through the Switchyard API, which gives audit logging, lifecycle
 event tracking and service-scoped context.
 
-> Meridian is **not onboarded**. Every command below will fail with a
-> project-not-found style error until the operator gates in
-> `internal-devops` are run. They are recorded here so the intended operation is
-> unambiguous when that happens.
+> Meridian is onboarded far enough that three services are serving. `meridian-api`
+> is not: it has no origin behind its hostname, so anything below that targets it
+> will report an unhealthy or absent workload rather than a project-not-found
+> error. Read a failure against `meridian-api` as the missing operator gates
+> listed at the end of this document, not as a broken CLI.
 
 ### Install
 
@@ -436,18 +457,28 @@ bootstrap and break-glass use only.
 ## Operator gates before this service can run
 
 These are owner and operator work, not engineering work. They are tracked
-privately; the public-safe summary is:
+privately; the public-safe summary is what remains after the three Next
+applications went live:
 
-- Onboard the `meridian` namespace, ArgoCD app, tunnel routes, Janua client and
-  network policies through Enclii.
-- Register the Janua OIDC client and seed the `JANUA_*` configuration.
-- Provision Postgres and seed `DATABASE_URL` through the approved secret path.
-- Create Cloudflare DNS and tunnel routes for the four hostnames —
-  `meridian.madfam.io`, `meridian-app.madfam.io`, `meridian-admin.madfam.io`,
-  `meridian-api.madfam.io`.
+- **Provision Postgres and seed `DATABASE_URL`** through the approved secret
+  path. `meridian-api.madfam.io` answers `502` today; `config.ts` requires seven
+  variables and exits 78 naming all of them when any is absent.
+- **Register the Janua OIDC client and seed `JANUA_JWKS_URL`, `JANUA_ISSUER`
+  and `JANUA_AUDIENCE`.** All three are required with no default, and both
+  `iss` and `aud` are checked — without `aud`, a token minted for a neighbouring
+  service in the same realm would authenticate here.
+- **Decide how the initial Prisma migration is applied.** It exists at
+  `apps/api/prisma/migrations/` and nothing in the deploy path runs it. The
+  readiness probe distinguishes *unreachable*, *reachable but no schema* and
+  *healthy*, so a schema-less database will hold the pod out of the Service
+  rather than admitting requests that 500 inside the auth hook.
 - Add `meridian` to the status-page monitor set.
 - **Counsel review of the pathway catalog.** Blocks all advice-class output.
 - **A licensing decision** on the `madfam_represented` tenant kind.
+
+Already done: the `meridian` namespace, the ArgoCD app, and the Cloudflare DNS
+and tunnel routes for all four hostnames — three of which serve, and the fourth
+of which returns `502` because there is no origin behind it yet.
 
 Canonical sequencing, evidence and the private detail:
 `madfam-org/internal-devops` — RFC 0036 and the operator console gate catalog.
@@ -457,7 +488,10 @@ Canonical sequencing, evidence and the private detail:
 ## Document provenance
 
 Written 2026-07-25 as part of Meridian's initial documentation set, following
-the shape of the ecosystem's other per-repo `ECOSYSTEM.md` files. If the
-ecosystem map or CLI reference drifts from reality, fix it at the ecosystem
-source (`madfam-org/enclii/docs/templates/ECOSYSTEM.md.template`) rather than
-in this copy alone.
+the shape of the ecosystem's other per-repo `ECOSYSTEM.md` files. Reconciled
+against measured reality on 2026-07-26: the deployment table, the removal of the
+`NEXT_PUBLIC_*` set, the existence of a Prisma migration, the third corridor,
+the atlas, and the operator gates that had already been run. If the ecosystem
+map or CLI reference drifts from reality, fix it at the ecosystem source
+(`madfam-org/enclii/docs/templates/ECOSYSTEM.md.template`) rather than in this
+copy alone.

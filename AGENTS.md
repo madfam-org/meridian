@@ -13,7 +13,7 @@ redirect and must not become the source of truth again.
 > per [`docs/repo-boundary-contract.md`](https://github.com/madfam-org/internal-devops/blob/main/docs/repo-boundary-contract.md).
 > When in doubt, put the detail there and leave a one-line summary plus a link here.
 
-Last updated: 2026-07-25.
+Last updated: 2026-07-26.
 
 ---
 
@@ -76,8 +76,8 @@ under `packages/`: `todayUtc()` in `@meridian/mrtd`, which exists so a caller ca
 override it. Every other reference date in every package is a parameter, and
 adding a second clock there is not an acceptable trade.
 
-Three reads exist under `apps/`, and each is documented at the top of the file
-that makes it. Do not add a fourth without the same treatment:
+Two reads exist under `apps/`, and each is documented at the top of the file
+that makes it. Do not add a third without the same treatment:
 
 - `apps/api/src/clock.ts` — delegates its civil date to `todayUtc()` and reads
   the current *instant* separately, for audit stamps only. An audit event needs a
@@ -106,7 +106,9 @@ can re-verify it when the law moves. Spain repealed the investor-residency route
 with roughly three months' notice; that is the tempo this field is designed for.
 
 - `verifiedOn` is when a **human** last checked the cited text against the
-  source. Use `'2026-07-25'` for anything verified in the current sweep.
+  source. Use the date you actually opened it. Never bump it for a citation you
+  did not open: that single act destroys the value of the whole field. The
+  shipped catalog carries `2026-07-25` and `2026-07-26`.
 - `discretionary: true` when the rule is administrative practice, a screening
   criterion, or a published operational equivalence rather than statutory text.
   Consumers must surface this instead of presenting the number as settled law.
@@ -114,6 +116,16 @@ with roughly three months' notice; that is the tempo this field is designed for.
   link teaches the reader to stop checking.
 - Staleness bands: `fresh` ≤90d, `aging` ≤180d, `stale` >180d. See
   [docs/LEGAL_CATALOG_REVIEW.md](docs/LEGAL_CATALOG_REVIEW.md).
+- **An instrument name is never translated.** `instrument` is the identity of a
+  source, not prose about it. "Código Civil art. 22.1" rendered as "Civil Code
+  art. 22.1" names a thing that does not exist and cannot be looked up by the
+  person trying to check the rule that governs their life. The `{ en, es }`
+  fields on a pathway are its *label*, *summary* and *guidance*; the citation is
+  not among them. Use `instrumentLang()` from `@meridian/i18n` to mark what
+  language a name is in, and let it return `null` when it does not know — Canada,
+  Quebec and the EU enact in more than one authoritative language, so
+  jurisdiction alone does not settle which one a citation used, and a confident
+  wrong `lang` on a statute is worse than an absent one.
 
 ### 3. Every engine output is born disclosure-classified
 
@@ -142,23 +154,85 @@ not an assessment — see the deliberate exception documented at the top of
 
 ---
 
+## One page, one language
+
+Not a fourth invariant, but the rule most likely to be broken by an agent
+working from an older revision of this repository, because the old shape looked
+deliberate and was defended in a comment.
+
+**What it used to be.** Every page rendered English and Spanish into the same
+elements, through a `bi()` helper with 1,673 call sites across 61 files. The
+comment defending it argued that a mixed-language household should see both
+halves at once.
+
+**Why that reasoning was wrong.** A screen-reader user heard every sentence
+twice. The document was about twice as long as it needed to be, and every reader
+paid scanning cost to discard half of it. `<html lang>` could not be correct,
+because the document was two languages at once — and `lang` is the first thing a
+screen reader, a hyphenation engine and a search index all read. Per-half `lang`
+attributes fixed pronunciation and nothing else. A reader in their own language,
+with a one-click switch to the other, serves that household better than making
+both people read both.
+
+**What it is now.**
+
+- **Locale is in the URL.** English unprefixed, Spanish at `/es`. Both variants
+  are statically prerendered, with `hreflang` alternates and `x-default`.
+  Routes live under `app/[locale]/` in all three Next applications; a rewrite in
+  `next.config.mjs` serves the `/en` route at `/`, and a permanent redirect
+  sends `/en` to `/` so one document does not answer at two addresses.
+- **`@meridian/i18n` is the contract** and depends on nothing — not even
+  `@meridian/core`. Every one of its functions can run in a client component,
+  and a leaf package that reached into `@meridian/pathways` would drag the whole
+  catalog and zod into the browser bundle. That has already happened once here.
+  The shapes it needs from other packages are declared *structurally*, so real
+  catalog values satisfy them with no import.
+- **The path helpers are asymmetric, and that is the point.** English has no
+  prefix, so adding and removing a locale are not inverses. Use `localizedPath`,
+  `splitLocalePath` and `alternatePaths`. Do **not** hand-roll
+  `startsWith('/es')`: it decides `/estimate` is Spanish.
+- **The switcher is a link, not a control.** A server-rendered anchor with a
+  real `href` pointing at *this* page in the other language. It works with
+  scripting off, it is crawlable, middle-clicking opens a tab, and there is no
+  client state to fall out of step with the URL. It must never substitute the
+  home page for the current route: sending someone halfway through the day
+  counter back to `/` loses their place and everything they typed.
+- **`negotiateLocale` may decide exactly one thing**: where to send a reader who
+  stated no preference. It must never override an explicit locale in a URL. No
+  application calls it today.
+- **Data stays bilingual.** Nothing about this changed `packages/pathways` or
+  `packages/atlas`. A `Pathway` still carries `{ en, es }`; the page picks a
+  half. `pick` is for validated catalog data; `resolveText` is for anything that
+  crossed a network or database boundary and might be missing a half, and it
+  reports the defect rather than rendering a blank string as content.
+- **Instrument names are exempt.** See invariant 2 above.
+
+---
+
 ## Where things live
 
 ```
 packages/core/        the shared contract — read before writing anything
 packages/mrtd/        ICAO Doc 9303 MRZ. Imports nothing from Meridian.
 packages/presence/    presence ledger and day-count engines
-packages/pathways/    declarative rules engine + the pathway catalog
+packages/pathways/    declarative rules engine + the pathway catalog (ES · CA · US)
 packages/documents/   legalisation, translation, freshness, checklist, gaps
 packages/govtech/     government adapters, capability reporting, credential refusal
+packages/atlas/       249 jurisdictions, 22 mobility blocs, 280 weighted corridors,
+                      and the coverage arithmetic. Depends on nothing.
+packages/i18n/        Locale, LocalizedText, Accept-Language negotiation, locale
+                      paths, instrumentLang(). Depends on nothing, deliberately.
 apps/api/             Fastify. auth/ · disclosure/ · repositories/ · audit/ · routes/
-                      prisma/schema.prisma · src/main.ts is the composition root.
-                      7 test files, 108 tests.
-apps/landing/         public marketing site, Next.js 15 App Router, local dev port 3000. No tests.
-apps/web/             applicant portal, Next.js 15 App Router, local dev port 3001. No tests.
-apps/admin/           firm console, Next.js 15 App Router, local dev port 3002. No tests.
-docs/                 PRD, architecture, regulatory posture, catalog review, ADRs
-scripts/              the three policy guards — all three run clean
+                      prisma/schema.prisma + prisma/migrations/ · src/main.ts is
+                      the composition root.
+apps/landing/         public marketing site + Schengen calculator, Next.js 15
+                      App Router, local dev port 3000.
+apps/web/             applicant portal, Next.js 15 App Router, local dev port 3001.
+apps/admin/           firm console, Next.js 15 App Router, local dev port 3002.
+                      All three route under app/[locale]/.
+docs/                 PRD, architecture, regulatory + commercial posture, catalog
+                      review, counsel packet, personas, research notes, ADRs
+scripts/              four policy guards (CI policy job) + atlas-coverage, a report
 infra/k8s/production/ namespace, four deployment/service pairs, kustomization,
                       secrets template
 enclii.yaml           five documents: a project record + one Service per deployable
@@ -166,12 +240,23 @@ Dockerfile.{api,web,admin,landing}
 .github/workflows/    ci.yml (policy · typecheck · test · build) + build-deploy.yml
 ```
 
-The `packages/` are mature — 32 test files, 913 tests — and are the stable
-contract. `apps/api` is close behind: it has a composition root and 7 test files
-carrying 108 tests, all against the in-memory repository adapter, so the Prisma
-adapter is covered by nothing but `tsc`. **The three Next.js applications have no
-tests at all**, which is the largest gap in the repository; treat any status
-claim about them as needing re-verification.
+Twelve workspace projects. `check-workspace-manifests.mjs` asserts every one of
+them appears in all four Dockerfiles and in the lockfile — adding a package
+without doing that breaks the root `--frozen-lockfile` install for every image,
+and the failure names the lockfile rather than the missing `COPY`. It has cost
+this repository two debugging sessions; a comment saying so was not enough, so
+the rule is a script.
+
+The `packages/` are the stable contract and carry the bulk of the assertions.
+`apps/api` has a composition root and a suite that runs entirely against the
+in-memory repository adapter, so the Prisma adapter is still covered by nothing
+but `tsc`. **The three Next.js applications now have tests** — they had none at
+all until 2026-07-26, and that was the largest gap in the repository. What they
+assert is rendering and state derivation, not browser automation, and nothing
+has been exercised end to end.
+
+Counts move. Get them by running `pnpm test` rather than by trusting this file
+or any other.
 
 The four surfaces do not map one-to-one onto their directory names.
 `meridian.madfam.io` is the landing site; the applicant portal is
@@ -213,9 +298,11 @@ incidental:
 - `src/auth/verifier.ts` — RS256 checked twice (before and during verification);
   issuer **and** audience both required.
 
-Dependency direction is strictly one-way: `core` ← everything;
-`pathways` ← `documents`. `mrtd` depends on nothing. There are no cycles and
-adding one is not an acceptable trade.
+Dependency direction is strictly one-way: `core` ← `presence`, `pathways`,
+`documents`, `govtech`; `pathways` ← `documents`. **`mrtd`, `atlas` and `i18n`
+depend on nothing** — `i18n` deliberately not even on `core`, because a client
+component importing it must not pull the catalog into a browser bundle. There
+are no cycles and adding one is not an acceptable trade.
 
 ### Package boundaries you must not cross
 
@@ -292,10 +379,12 @@ pnpm exec vitest run
 Both must exit clean. Iterate until they do. **Never report success without
 having run them and seen them pass.**
 
-As of 2026-07-25 that is 39 test files and 1021 tests across the seven projects
-that have suites: `core` 2/60, `mrtd` 5/111, `presence` 6/147, `pathways` 5/139,
-`documents` 6/146, `govtech` 8/310, `api` 7/108. If your change moves a count,
-say the new number in your report rather than "tests pass".
+As of 2026-07-26, all twelve projects have suites. Measured that day with
+`pnpm exec vitest run` in each — 103 files, 2521 tests: `core` 2/60, `mrtd`
+5/111, `presence` 6/147, `pathways` 17/443, `documents` 6/146, `govtech` 8/310,
+`atlas` 3/77, `i18n` 6/124, `api` 7/115, `landing` 9/259, `web` 16/385, `admin`
+18/344. If your change moves a count, say the new number in your report rather
+than "tests pass".
 
 Repo-wide, packages only. Build first — packages are consumed as emitted
 JavaScript, so a cross-package import reads `dist/`, and a stale `dist` means you
@@ -307,8 +396,8 @@ pnpm -r --filter "./packages/*" typecheck
 pnpm -r --filter "./packages/*" test
 ```
 
-Whole repo, through turbo — this is what CI runs. On 2026-07-25 that is 16
-typecheck tasks, 13 test tasks and 10 build tasks, all green:
+Whole repo, through turbo — this is what CI runs. On 2026-07-26 that is 19
+typecheck tasks, 19 test tasks and 12 build tasks, all green:
 
 ```bash
 pnpm typecheck && pnpm test && pnpm build
@@ -324,14 +413,27 @@ docker build -f Dockerfile.api -t meridian-api:local .
 docker run --rm meridian-api:local   # reaches config validation, exits 78
 ```
 
-And the three policy guards, which need no install and are the fastest signal
-that an invariant broke rather than a build:
+And the four policy guards, which need no install and are the fastest signal
+that an invariant broke rather than a build. They are the CI `policy` job, and
+they run before any install:
 
 ```bash
 node scripts/check-advice-boundary.mjs
 node scripts/check-no-credential-custody.mjs
 node scripts/check-pathway-citations.mjs
+node scripts/check-workspace-manifests.mjs
 ```
+
+Each prints what it examined, not only its verdict — a guard that has quietly
+stopped matching anything passes exactly as silently as one that is working. If
+you change a detector, prove it can still fail: write a deliberate violation,
+watch the script name the file, then remove it.
+
+`scripts/atlas-coverage.mjs` is a fifth script and is **not** a guard. It prints
+the coverage arithmetic with its own denominator and caveats, needs
+`packages/atlas/dist` built because it reads the real objects rather than
+parsing source, and takes `--strict` to exit non-zero when the atlas has
+integrity findings. It is not in CI.
 
 `check-no-credential-custody` scans the whole tree including `docs/`. If you
 write documentation about the credential refusal, **describe the forbidden field
@@ -400,7 +502,9 @@ Full detail and the enclii CLI reference: [ECOSYSTEM.md](ECOSYSTEM.md).
 
 - [`README.md`](README.md) — status first, then architecture and quickstart
 - [`ECOSYSTEM.md`](ECOSYSTEM.md) — ecosystem position and enclii day-to-day
-- [`docs/`](docs/) — PRD, architecture, regulatory posture, catalog review, ADRs
+- [`docs/`](docs/) — PRD, architecture, regulatory and commercial posture,
+  catalog review, counsel packet, personas, dated research notes, ADRs
 - `infra/k8s/production/`, `enclii.yaml`, the four `Dockerfile.*` files and
-  `.github/workflows/` — deployment configuration and CI. Present; nothing is
-  deployed yet.
+  `.github/workflows/` — deployment configuration and CI. The three Next
+  applications are deployed and answering; the API is not. Check, do not assume:
+  a status line in a document is a claim about a moment that has passed.

@@ -38,6 +38,7 @@ import {
   WORKED_NOTES,
   WORKED_REPORT,
   WORKED_TALLY,
+  workedNoteKey,
 } from '@/lib/worked-example';
 import { Badge, Chip, type Tone } from '@/components/Badge';
 import { Instrument, Lang, Prose } from '@/components/Text';
@@ -558,8 +559,8 @@ export default async function HomePage({ params }: LocaleParams) {
                 )}
               </Prose>
               <ul className={styles.notes}>
-                {WORKED_NOTES.map((note, index) => (
-                  <li key={`${note.code}-${note.citationId ?? index}`}>
+                {WORKED_NOTES.map((note) => (
+                  <li key={workedNoteKey(note)}>
                     <Chip>{note.code}</Chip> <Lang code="en">{note.text}</Lang>
                   </li>
                 ))}

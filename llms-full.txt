@@ -1,6 +1,6 @@
 # Meridian — Full LLM Context
 
-Generated: 2026-07-25.
+Generated: 2026-07-25. Reconciled against measured reality: 2026-07-26.
 
 Durable full-context map and operating contract for LLM agents working in
 `github.com/madfam-org/meridian`. This file is tool-agnostic: it does not depend
@@ -22,7 +22,8 @@ whole tree first.
    way it is.
 3. `README.md` — honest status, architecture, quickstart, repository map.
 4. `ECOSYSTEM.md` — ecosystem position, domain layout, and Enclii day-to-day.
-5. `docs/` — PRD, architecture, regulatory posture, catalog review, ADRs.
+5. `docs/` — PRD, architecture, regulatory and commercial posture, catalog
+   review, counsel packet, personas, dated research notes, ADRs.
 6. The specific package `src/` you are changing.
 
 `AGENTS.md` is the source of truth. `CLAUDE.md` exists only to redirect Claude
@@ -42,62 +43,91 @@ A platform for the end-to-end migration lifecycle:
 - **Identity** — machine-readable travel-document validation to ICAO Doc 9303.
 - **Presence** — continuous cross-border day counting: tax residency, Schengen
   90/180, continuous-residence clocks, qualifying-work accumulation.
+- **Coverage** — a registry of the whole problem, so how much of it is solved
+  can be measured rather than asserted.
 
-Two foundational corridors seed the catalog: **Mexico → Spain** (nationality by
-residence on the reduced two-year period) and **Mexico → Canada** (CUSMA
-Chapter 16 professional entry, bridging to the Canadian Experience Class). The
-engine is jurisdiction-generic; the corridors are data.
+Three corridors seed the catalog: **Mexico → Spain**, **Mexico → Canada** and
+**Mexico → United States**. The engine is jurisdiction-generic; the corridors
+are data.
 
 **Pillar**: Mobility. **Visibility**: PUBLIC. **Licence**: AGPL-3.0-only.
 **Owner**: Innovaciones MADFAM S.A.S. de C.V., Cuernavaca, Morelos, Mexico.
 
 ---
 
-## Verified status — 2026-07-25
+## Verified status — 2026-07-26
 
-Measured at 17:50 America/Mexico_City, not assumed. Every figure below was
-produced by running the command named.
+Every figure below was produced by running the command named. Counts move; run
+them again rather than quoting this section.
 
 ### Built and passing
 
-`pnpm exec tsc --noEmit` exits clean in all six packages and in `apps/api`.
-Whole-repo through turbo: `pnpm typecheck` 16/16 tasks, `pnpm test` 13/13,
-`pnpm build` 10/10. `pnpm exec vitest run` per project:
+Twelve workspace projects — eight libraries under `packages/`, four deployables
+under `apps/`. `pnpm exec tsc --noEmit` exits clean in all twelve. Whole-repo
+through turbo: `pnpm typecheck` 19/19 tasks, `pnpm test` 19/19, `pnpm build`
+12/12.
+
+`pnpm exec vitest run` per project, 2026-07-26:
 
 | Project | Test files | Tests |
 |---|---|---|
 | `@meridian/core` | 2 | 60 |
 | `@meridian/mrtd` | 5 | 111 |
 | `@meridian/presence` | 6 | 147 |
-| `@meridian/pathways` | 5 | 139 |
+| `@meridian/pathways` | 17 | 443 |
 | `@meridian/documents` | 6 | 146 |
 | `@meridian/govtech` | 8 | 310 |
-| *packages subtotal* | *32* | *913* |
-| `@meridian/api` | 7 | 108 |
-| **Total** | **39** | **1021** |
+| `@meridian/atlas` | 3 | 77 |
+| `@meridian/i18n` | 6 | 124 |
+| *packages subtotal* | *53* | *1418* |
+| `@meridian/api` | 7 | 115 |
+| `@meridian/landing` | 9 | 259 |
+| `@meridian/web` | 16 | 385 |
+| `@meridian/admin` | 18 | 344 |
+| **Total** | **103** | **2521** |
 
-`apps/landing`, `apps/web` and `apps/admin` have **no test files at all**. They
-typecheck and `next build` succeeds; nothing asserts their rendering or their
-state derivation. That is the largest gap in the repository.
+**All three Next.js applications now have test suites.** Until 2026-07-26 they
+had no test file at all, and that was the largest gap in the repository. What
+they assert is rendering and state derivation — the arithmetic a page shows a
+reader, the locale a document is served in, the disclosure notice that must
+accompany an assessment — not browser automation. These counts were still moving
+while this file was written; get them from `pnpm test` rather than from here.
 
 ### Present and passing
 
-The three policy guards run clean, and each reports what it examined rather than
-only its verdict:
+Four policy guards run clean, and each reports what it examined rather than only
+its verdict:
 
 ```
 check-advice-boundary:       OK — gate and producer anchors verified,
-                             123 application files read, 16 routes examined
-check-no-credential-custody: OK — 273 files scanned, 3 rules,
+                             233 application files read, 16 routes examined
+check-no-credential-custody: OK — 454 files scanned, 3 rules,
                              3 path exemptions, 2 structural anchors verified
-check-pathway-citations:     OK — as of <run date>: 4 catalog files, 8 pathways,
-                             20 citations, 64 criterion references resolved
+check-pathway-citations:     OK — as of 2026-07-26: 15 catalog files, 84 pathways,
+                             378 citations, 1094 criterion references resolved
+check-workspace-manifests:   OK — 12 workspace projects present in all 4
+                             Dockerfiles and in the lockfile
 ```
 
 The citations check prints the UTC date it ran on, because citation staleness is
-measured against it. The counts are the fixed part.
+measured against it. The file counts in the first two move as the tree grows —
+they read 185 and 400 earlier the same day, before the application tests landed
+— which is exactly why each guard reports what it examined: a guard you cannot
+catch reading nothing is a guard that agrees with everything.
 
-CI at `.github/workflows/ci.yml` — jobs `policy` (the three guards, before any
+An earlier revision of the root documents recorded this check as *failing*:
+the catalog index had moved
+from a literal array to a list of modules and the guard could not locate the
+shipped set, so its anti-vacuity check refused to confirm a set it could not
+read. It was re-anchored on the new shape rather than relaxed.
+
+`scripts/atlas-coverage.mjs` is a fifth script and is **not** a guard. It prints
+the coverage arithmetic with its own denominator and caveats, reads the built
+objects from `packages/atlas/dist` rather than parsing source, and takes
+`--strict` to exit non-zero when the atlas has integrity findings. It is not in
+CI.
+
+CI at `.github/workflows/ci.yml` — jobs `policy` (the four guards, before any
 install), `typecheck`, `test`, `build` — plus `build-deploy.yml`, which builds
 and signs four images. Deployment configuration: `enclii.yaml` (five YAML
 documents: a project-level record plus one Service per deployable),
@@ -105,6 +135,22 @@ documents: a project-level record plus one Service per deployable),
 local development), `infra/k8s/production/` (namespace, four deployment/service
 pairs, kustomization, and a secrets template that is deliberately not a
 kustomize resource).
+
+### Deployed
+
+Observed 2026-07-26 by requesting each hostname:
+
+| Service | Hostname | Observed |
+|---|---|---|
+| `meridian-landing` | meridian.madfam.io | `200`; `/` English, `/es` Spanish, `/en` `308`s to `/` |
+| `meridian-app` | meridian-app.madfam.io | `200` |
+| `meridian-admin` | meridian-admin.madfam.io | `200` |
+| `meridian-api` | meridian-api.madfam.io | `502` — the tunnel answers, no origin does |
+
+The three Next applications read no API host from their environment, so nothing
+they render depends on the API. "Live" here means *serving pages*, not *end to
+end*: no request has travelled from a screen through the service to a database
+in any environment.
 
 ### The API, as built
 
@@ -130,15 +176,23 @@ kustomize resource).
 - `repositories/` — ports with **structural tenant scoping** (no method takes a
   tenant id; a repository comes from `forTenant()`), Prisma and memory adapters.
 - `audit/` — append-only: `append` and `list`, nothing else.
-- `prisma/schema.prisma` — 10 models, 15 enums. No migration generated.
+- `prisma/schema.prisma` — 10 models, 15 enums. `prisma/migrations/` holds an
+  initial migration; **nothing in the deploy path runs it**, and it has never
+  been applied to a live Postgres.
 - `routes/` — health, tenants, applicants, matters, tasks, presence, documents,
   pathways, identity, govtech, audit: 41 HTTP routes across 11 modules. The
   identity route returns an MRZ verdict and persists none of the document.
-- `tests/` — 7 files, 108 tests: token verification against the attacks actually
-  used against JWT APIs, the advice boundary end to end, tenant isolation at the
-  HTTP boundary with a valid token for the wrong tenant, readiness with the
-  dependency down, and the case-file routes at the Schengen 90/91 boundary. All
-  of them run over `InMemoryRepositoryProvider`.
+- The readiness probe distinguishes *unreachable*, *reachable but no schema* and
+  *healthy*, and says which. It used to be `SELECT 1`, which proves a socket and
+  not a schema: against a schema-less database it returned ready, the pod would
+  have joined the Service, and every authenticated request would have 500'd
+  inside the auth hook. An empty `tenants` table is a legitimate fresh
+  deployment and is not confused with a missing one.
+- `tests/` — token verification against the attacks actually used against JWT
+  APIs, the advice boundary end to end, tenant isolation at the HTTP boundary
+  with a valid token for the wrong tenant, readiness with the dependency down,
+  and the case-file routes at the Schengen 90/91 boundary. All of them run over
+  `InMemoryRepositoryProvider`.
 
 The image builds and starts: `docker build -f Dockerfile.api` then `docker run`
 reaches configuration validation and exits 78. The build imports every workspace
@@ -148,67 +202,165 @@ container.
 
 ### The applications
 
-`apps/landing` — the public marketing site, Next.js 15 App Router, local dev
-port 3000, deployed as `meridian-landing` on `meridian.madfam.io`. One page plus
-a not-found page, bilingual English/Spanish with each half carrying its own
-`lang` attribute. It imports `@meridian/core` and `@meridian/pathways` and
-computes every published figure from the catalog at build time — pathways
-shipped, pathways counsel-reviewed, routes open, criteria, distinct sources
-cited, how many of those are `discretionary`, how many carry a URL, how many have
-left the freshest staleness band — all as at one fixed civil date declared in
-`lib/catalog-facts.ts`, never from a clock. There are no adoption numbers, no
-processing-time estimates and no success rates, because none of those would be
-true. `output: 'standalone'` is load-bearing: `Dockerfile.landing` copies
-`.next/standalone` and fails the build with an explicit message if it is absent.
+All three are Next.js 15 App Router applications routing under `app/[locale]/`.
 
-`apps/web` (applicant portal, port 3001) and `apps/admin` (firm console, port
-3002) are Next.js 15 App Router applications with real components and lib
-modules, rendering from sample data declared in their own source. `apps/web`
-carries `DisclosureNotice`, `Citations`, `Bilingual`, `Working`, `WorkedExample`,
-`PhaseTimeline` and `TaskList`; `apps/admin` carries caseload, catalog review,
-audit trail, integrations board, roster and spec-language rendering.
+`apps/landing` — the public marketing site, local dev port 3000, deployed as
+`meridian-landing` on `meridian.madfam.io`. It carries **a working Schengen
+90/180 calculator on the page itself**: a stranger enters two trips and gets
+their own number, with the 180-day window, a per-trip table showing which days
+were charged and why each uncharged day was not, the citation, and a statement
+of what the number is not. No account, no click-through, no email. It runs in
+the browser because the domain packages are pure computation, which is also why
+"nothing is transmitted" is a property of the code rather than a promise. Every
+published figure is **counted, not written**: `lib/catalog-facts.ts` imports
+`@meridian/core` and `@meridian/pathways` and derives pathways shipped,
+counsel-reviewed, routes open, criteria, distinct sources cited, how many are
+`discretionary`, how many carry a URL and how many have left the freshest
+staleness band — all at build time, as at one fixed civil date. The Schengen
+thresholds and citation are **imported from `@meridian/presence`**, not copied:
+an earlier revision copied them verbatim because the app did not declare that
+dependency, and a differential test proved the copies agreed *on the day they
+were written*, which is exactly the guarantee that decays. There are no adoption
+numbers, no processing-time estimates and no success rates. `output:
+'standalone'` is load-bearing: `Dockerfile.landing` copies `.next/standalone`
+and fails the build with an explicit message if it is absent.
+
+`apps/web` — applicant portal, port 3001, deployed as `meridian-app`. Routes:
+`/`, `/pathways`, `/pathways/[id]`, `/matters`, `/matters/[id]` with `documents`
+and `presence` sub-pages, `/tools` with `schengen`, `mrz` and `nationality-es`,
+`/pricing`, and `/for` with `/for/[audience]`. The three tools are client-side
+and assessment-class: the user's own facts against a cited rule with the
+arithmetic shown, nothing transmitted, nothing stored. Schengen surfaces the
+Bulgaria/Romania staged-accession window as needing a human rather than
+resolving it silently; the nationality check returns indeterminate, as its own
+state, when the acquisition mode is unrecorded.
+
+`apps/admin` — firm console, port 3002, deployed as `meridian-admin`. Routes:
+`/`, `/matters`, `/matters/[id]`, `/catalog`, `/catalog/[id]`, `/audit`,
+`/integrations`, `/representatives`. `MERIDIAN_ASOF` pins its reference date and
+`MERIDIAN_ADMIN_DATASET` selects which dataset it serves, falling back visibly
+rather than failing the render. Credential types are deliberately **not**
+translated where translating them would imply an equivalence between regulators
+that does not exist: *abogado colegiado* and *gestor administrativo* are
+standard; RCIC and Quebec notary are not translated at all.
 
 None of the three reads an API host from the environment, so none of them calls
-the API yet.
+the API.
 
 **The gaps, in order of importance:**
 
-1. **The three Next.js applications have no tests.**
-2. No contract test suite for the repository ports, which ADR 0006 names as its
+1. No contract test suite for the repository ports, which ADR 0006 names as its
    own main risk. The Prisma adapter is covered by `tsc` and nothing else.
-3. No migration has been generated or applied anywhere. `prisma generate` has
-   never been run in this workspace — only inside `Dockerfile.api`.
-4. Nothing has been exercised end to end; no request has travelled from a screen
+2. The migration exists but has never been applied anywhere, and nothing in the
+   deploy path runs it.
+3. Nothing has been exercised end to end; no request has travelled from a screen
    through the service to a database in any environment.
-5. Nothing is deployed. No namespace, DNS record or tunnel route exists.
+4. `meridian-api.madfam.io` returns `502`. The operator gates that provision its
+   database and its Janua configuration have not all been run.
+5. `@meridian/atlas` has no consumer inside the product — it is read by
+   `scripts/atlas-coverage.mjs` and by its own tests. The coverage figures are
+   reported to us, not to a reader deciding whether Meridian reaches their
+   country.
+6. `negotiateLocale` is implemented and tested in `@meridian/i18n` and called by
+   no application.
 
 ### Legal catalog
 
-- 8 pathways: 6 Spain, 2 Canada. **0 counsel-reviewed.** 7 open on 2026-07-25;
-  the Spanish investor route is recorded as closed, because a person already
-  holding that status still needs an answer.
-- 43 eligibility criteria across the catalog.
-- 20 distinct citations in the pathway catalog; 5 marked `discretionary`; 7
-  carry a URL.
+Counted by loading the built catalog and walking the shipped `Pathway` objects:
+
+- **84 pathways** — 26 Spain, 23 Canada, 35 United States — across **13 source
+  modules** in `packages/pathways/src/catalog/`. **0 counsel-reviewed.**
+  77 open, 5 closed, 2 suspended. Closed routes stay in the catalog with a
+  `closureNote`, because a person already holding that status still needs an
+  answer.
+- **449 criteria**: 291 `blocking`, 109 `material`, 49 `informational`. 154
+  escalate to a human unconditionally and 67 conditionally, so **62 of the 84
+  records can only ever return `requires_human_review`** — by design, and each
+  escalation names the fact it is waiting for.
+- **373 distinct citations** on shipped records; 82 `discretionary`; 347 carry a
+  URL. `check-pathway-citations` reports 378 and 1094 because it parses source:
+  378 is the count of citation *literals*, five of whose ids are declared twice,
+  and 1094 counts every `citationIds` entry anywhere inside a record, of which
+  867 sit on criteria and the rest on duration records.
+- **63 CUSMA/USMCA professions** in `catalog/cusma-professions.ts`, matching
+  8 CFR 214.6(c) which reproduces USMCA Appendix 2 verbatim. That one table
+  feeds both the Canadian CUSMA route and the American TN route, so an entry
+  dropped from it silently narrows eligibility on two corridors at once. An
+  occupation *outside* the Appendix escalates rather than returning "unmet",
+  because titles and Appendix entries do not map one to one and "not a listed
+  profession" would be a false negative on somebody's livelihood.
 - `@meridian/presence`: 6 citations, 3 `discretionary`.
 - `@meridian/documents`: 23 citations, 15 `discretionary`.
 - `@meridian/govtech`: 16 citations, 9 `discretionary`.
-- All `verifiedOn: '2026-07-25'` → `fresh` until 2026-10-23, `aging` until
-  2027-01-21, `stale` thereafter.
+- `verifiedOn` values are `2026-07-25` and `2026-07-26` → `fresh` until
+  2026-10-23 at the earliest.
 
 Because nothing is reviewed, `recommend()` returns an empty ranking and lists
-all 8 pathways as excluded with code `not_counsel_reviewed`. **That is the
+all 84 pathways as excluded with code `not_counsel_reviewed`. **That is the
 system working.**
+
+Deliberate absences that must not be quietly filled:
+
+- **Asylum, refugee protection and humanitarian/compassionate claims**, in every
+  jurisdiction. They turn on credibility assessment rather than criteria, they
+  concern people at risk, and a self-serve eligibility checker is the wrong
+  instrument.
+- **No priority date, visa-bulletin cut-off or wait estimate**, anywhere. The
+  Visa Bulletin moves monthly and Mexico is heavily oversubscribed in several
+  categories; any number written today is wrong within weeks. The *structure* of
+  the limit is stated; the number is not.
+- **The US unlawful-presence bars are encoded as "this may apply, ask a
+  lawyer"**, never as a verdict. Someone who departs to consular-process can
+  trigger a ten-year bar *by departing*, and a confident wrong answer there
+  causes exactly the harm the platform exists to prevent.
+- **No processing-time estimate on any record.**
+- **No Comprehensive Ranking System number of any kind** — no cut-off, no
+  maximum, no factor value.
+- No operational figure from IRCC's program delivery instructions; canada.ca
+  refused automated access throughout the Canadian sweep.
+
+### Coverage — `@meridian/atlas`
+
+The package exists so coverage can be measured rather than asserted, and is
+built so the answer cannot be improved by looking away. From
+`node scripts/atlas-coverage.mjs --as-of=2026-07-26`:
+
+- **249 jurisdictions** across five region files, deduplicated by ISO 3166-1
+  alpha-2, plus **22 mobility agreements**.
+- Research status: 123 `stub`, 123 `researched`, 3 `encoded` (CA, ES, US),
+  0 `counsel_reviewed`. `researched` means a source was consulted, usually
+  establishing only autonomy and bloc membership — it does **not** mean the
+  system is mapped.
+- **Structural coverage 1.20%** (3 of 249). **Weighted coverage 0.6076%**, where
+  covered requires *both* ends encoded — the honest test, since a corridor is
+  only as known as its least-known end.
+- Destination-side reach, printed explicitly as **not** a coverage figure: 66
+  rows carrying 56,078,000 people, 18.4% of world stock.
+- Stock table: 280 corridors, 198,645,000 people, **65.34%** of the world total
+  of 304,021,813, against a **92.7% ceiling** — 7.3% of world stock is recorded
+  against origin "Others" in the UN DESA 2024 bilateral matrix and is
+  unattributable in any bilateral source. The cutoff is every country pair at or
+  above 200,000 persons.
+
+The denominator errs in both directions and the errors do not cancel: it
+*includes* places with no permanent population and no residence route, which
+permanently depress structural coverage; it *excludes* roughly seven authorities
+that control entry to territory but have no ISO alpha-2 code, each recorded as a
+note on the nearest coded entry rather than given an invented key; and three
+codes hide more than one control each. A corridor is **derived** from a
+destination and an origin, never stored — there is no list of ~40,000 country
+pairs, because immigration rules are overwhelmingly destination-side and origin
+nationality modifies the terms through blocs and bilateral instruments.
 
 ### Government integration capability board
 
 15 declared capabilities across three adapters (`es-clave`, `es-dicireg`,
 `ca-ircc`): 6 `available` (**all `local_computation`**), 2 `not_provisioned`,
-3 `not_implemented`, 4 `refused_by_policy`, 0 `degraded`, 0 defects, board
-`consistent: true`. **Zero `government_system` capabilities are `available`**,
-and every remote capability additionally requires an injected transport this
-repository does not ship, so `available` is unreachable from inside the package
-even with every environment variable set.
+3 `not_implemented`, 4 `refused_by_policy`, 0 `degraded`, 0 defects.
+**Zero `government_system` capabilities are `available`**, and every remote
+capability additionally requires an injected transport this repository does not
+ship, so `available` is unreachable from inside the package even with every
+environment variable set.
 
 ---
 
@@ -234,8 +386,8 @@ Use `@meridian/core`: `addDays`, `addMonths` (clamps to month end), `addYears`,
 `diffDays + 1`. `lookbackWindow(end, 180)` starts at `end - 179`.
 
 **No package reads a clock.** The one sanctioned read under `packages/` is
-`todayUtc()` in `@meridian/mrtd`, present so callers can override it. Three
-reads exist under `apps/`, each documented at the top of its file:
+`todayUtc()` in `@meridian/mrtd`, present so callers can override it. Two reads
+exist under `apps/`, each documented at the top of its file:
 `apps/api/src/clock.ts` delegates its civil date to `todayUtc()` and separately
 reads an *instant* for audit stamps only (an audit event needs a moment, not a
 calendar day, because two events on the same day need an order — it must never
@@ -243,7 +395,13 @@ be truncated to ten characters and used as a civil date); and
 `apps/admin/lib/clock.ts` reproduces the same UTC civil-date read once, because
 `@meridian/mrtd` is not a dependency of that app, with `?asOf=` and
 `MERIDIAN_ASOF` overriding it in that order. `apps/web` and `apps/landing` read
-no clock. Do not add a fourth.
+no clock — the nationality tool makes its reference date an editable field
+rather than a hidden `new Date()`, so every figure it shows can be reproduced
+later by anyone who knows the date it was run for. Do not add a third.
+
+`scripts/atlas-coverage.mjs` reads a clock once, in a reporting script, only to
+label the report; `--as-of` and `MERIDIAN_ASOF` override it so a report can be
+reproduced exactly.
 
 → `docs/adr/0001-civil-date-arithmetic.md`
 
@@ -267,6 +425,14 @@ interface Citation {
 - A wrong pin-cite is worse than none. Leave `provision` empty rather than
   guessing. Same for `url`.
 - Staleness: `fresh` ≤90d, `aging` ≤180d, `stale` >180d.
+- **An instrument name is never translated.** It is the identity of a source.
+  "Código Civil art. 22.1" rendered as "Civil Code art. 22.1" names a thing that
+  does not exist and cannot be looked up by the person trying to check the rule
+  that governs their life. `instrumentLang()` in `@meridian/i18n` resolves the
+  language an instrument name is in, independently of the UI locale, and returns
+  `null` when it does not know — Canada, Quebec and the EU enact in more than
+  one authoritative language, and a confident wrong `lang` on a statute is worse
+  than an absent one.
 
 → `docs/adr/0005-data-driven-pathway-catalog.md`,
 `docs/LEGAL_CATALOG_REVIEW.md`
@@ -302,9 +468,74 @@ An `assessment` or `advice` with an empty `citationIds` is a defect.
 Why: s.91 of Canada's IRPA makes advising for consideration an offence absent an
 authorised representative; Spain has reserved-activity exposure for
 *asesoramiento jurídico*. Meridian is deliberately **stricter than the
-statute** — it downgrades whether or not the reader is paying.
+statute** — it downgrades whether or not the reader is paying. The commercial
+consequence is written down: the advice boundary and the pricing boundary are
+the same boundary, so what is free is decided by IRPA s.91 rather than by us.
 
-→ `docs/adr/0002-advice-boundary-as-a-type.md`, `docs/REGULATORY_POSTURE.md`
+→ `docs/adr/0002-advice-boundary-as-a-type.md`, `docs/REGULATORY_POSTURE.md`,
+`docs/COMMERCIAL_POSTURE.md`
+
+---
+
+## One page, one language
+
+Not a fourth invariant, but the rule most likely to be broken by an agent
+working from an older revision, because the old shape looked deliberate and was
+defended in a comment.
+
+Every page used to render English and Spanish into the same elements, through a
+`bi()` helper with 1,673 call sites across 61 files. The comment defending it
+argued that a mixed-language household should see both halves at once. **The
+reasoning was wrong.** A screen-reader user heard every sentence twice. The
+document was about twice as long as it needed to be, and every reader paid
+scanning cost to discard half of it. `<html lang>` could not be correct, because
+the document was two languages at once — and `lang` is the first thing a screen
+reader, a hyphenation engine and a search index all read. Per-half `lang`
+attributes fixed pronunciation and nothing else.
+
+The resolution:
+
+- **Locale is in the URL.** English unprefixed, Spanish at `/es`, both
+  statically prerendered, with `hreflang` alternates and `x-default`. Routes
+  live under `app/[locale]/` in all three Next applications. A `beforeFiles`
+  rewrite in `next.config.mjs` serves the `/en` route at `/`; a permanent
+  redirect sends `/en` and `/en/:path*` back to the unprefixed form, so one
+  document does not answer at two addresses and split its own search ranking.
+- **`middleware.ts` refuses every other address** — `/fr`, `/EN`, `/es-MX` — and
+  renders the not-found document of whichever locale the address was under, by
+  *rewrite* rather than `notFound()`, so the 404 is a complete prerendered
+  document with a correct `lang` before any script runs. `Accept-Language` is
+  deliberately not consulted there: the reader's URL said which document they
+  wanted, and the URL is the authority.
+- **`@meridian/i18n` is the contract** and depends on nothing — not even
+  `@meridian/core`. Every one of its functions can run in a client component,
+  and a leaf package that reached into `@meridian/pathways` would drag the whole
+  catalog and zod into the browser bundle. That has already happened here once:
+  a default reference date imported from `catalog-facts` cost 194 kB before a
+  leaf module fixed it. The shapes `i18n` needs from other packages are declared
+  **structurally**, so real catalog values satisfy them with no import.
+- **The path helpers are asymmetric, and that is the point.** English has no
+  prefix, so adding and removing a locale are not inverses. Use `localizedPath`,
+  `splitLocalePath`, `alternatePaths`. Do not hand-roll `startsWith('/es')`: it
+  decides `/estimate` is Spanish. `alternatePaths` returns *paths*, not URLs,
+  because three applications have three hostnames and a leaf package has no
+  business knowing any of them; the origin is added once, per app.
+- **The switcher is a link, not a control.** A server-rendered anchor with a
+  real `href` pointing at *this* page in the other language. It works with
+  scripting off, it is crawlable, middle-clicking opens a tab, and there is no
+  client state to fall out of step with the URL. It must never substitute the
+  home page for the current route. Each option carries its **endonym** with a
+  matching `lang`, because a control labelled "Spanish" is useless to the person
+  who needs it. Not a flag: a flag is a country and a language is not.
+- **`negotiateLocale` may decide exactly one thing** — where to send a reader
+  who stated no preference — and must never override an explicit locale in a
+  URL. Nothing calls it today.
+- **Data stays bilingual.** Nothing about this changed `packages/pathways` or
+  `packages/atlas`. A `Pathway` still carries `{ en, es }`; the page picks a
+  half. `pick` is for validated catalog data; `resolveText` is for anything that
+  crossed a network or database boundary and might be missing a half, and it
+  reports the defect rather than rendering a blank string as content.
+- **Instrument names are exempt.** See invariant 2.
 
 ---
 
@@ -313,24 +544,32 @@ statute** — it downgrades whether or not the reader is paying.
 ```
 packages/core/        the shared contract — civil-date, disclosure, citation,
                       jurisdiction, tenancy, matter, result, errors
-packages/mrtd/        ICAO Doc 9303. Imports nothing from Meridian.
-packages/presence/    ledger, schengen, tax-residency, continuity, work-experience
+packages/mrtd/        ICAO Doc 9303 — bac, check-digit, dates, parse, types,
+                      validate. Imports nothing from Meridian.
+packages/presence/    ledger, schengen, tax-residency, continuity,
+                      work-experience, catalog-meta
 packages/pathways/    schema, facts, evaluate, recommend, integrity, catalog/
 packages/documents/   language, model, legalisation, translation, freshness,
                       checklist, gaps
 packages/govtech/     capability, adapter, credential-guard, handoff, citations,
                       adapters/{clave,dicireg,ircc}
+packages/atlas/       types, blocs, corridor, coverage, stock,
+                      regions/{africa,americas,asia,europe,oceania}
+packages/i18n/        locale, text, negotiate, path, instrument
                       every package builds to dist/ via tsconfig.build.json
 apps/api/             Fastify — auth/ disclosure/ repositories/ audit/ routes/
                       http/ services.ts config.ts clock.ts request-context.ts
-                      prisma/schema.prisma · src/main.ts. 7 test files, 108 tests.
-apps/landing/         marketing site, Next.js 15, local dev port 3000. NO tests.
-apps/web/             applicant portal, Next.js 15, local dev port 3001. NO tests.
-apps/admin/           firm console, Next.js 15, local dev port 3002. NO tests.
-docs/                 PRD, ARCHITECTURE, REGULATORY_POSTURE,
-                      LEGAL_CATALOG_REVIEW, adr/README + adr/0001-0006
+                      prisma/schema.prisma + prisma/migrations/ · src/main.ts
+apps/landing/         marketing site + Schengen calculator, Next.js 15, port 3000
+apps/web/             applicant portal, Next.js 15, port 3001
+apps/admin/           firm console, Next.js 15, port 3002
+                      all three route under app/[locale]/ with middleware.ts
+docs/                 PRD, ARCHITECTURE, REGULATORY_POSTURE, COMMERCIAL_POSTURE,
+                      LEGAL_CATALOG_REVIEW, COUNSEL_REVIEW_PACKET, PERSONAS,
+                      research/, adr/README + adr/0001-0006
 scripts/              check-advice-boundary · check-no-credential-custody
-                      check-pathway-citations   (all three pass)
+                      check-pathway-citations · check-workspace-manifests
+                      (the CI policy job) + atlas-coverage (a report, not a guard)
 infra/k8s/production/ namespace, four deployment/service pairs, kustomization,
                       secrets-template (deliberately not a kustomize resource)
 enclii.yaml           five documents: a project record + four Services
@@ -339,8 +578,9 @@ Dockerfile.{api,web,admin,landing} · docker-compose.yml (Postgres only)
                       build-deploy.yml (builds and signs four images)
 ```
 
-Dependency direction is one-way with no cycles: `core` ← everything;
-`pathways` ← `documents`; `mrtd` depends on nothing.
+Dependency direction is one-way with no cycles: `core` ← `presence`, `pathways`,
+`documents`, `govtech`; `pathways` ← `documents`. **`mrtd`, `atlas` and `i18n`
+depend on nothing.**
 
 The deployed names do not match the directory names, on purpose:
 `apps/web` → service `meridian-app` on `meridian-app.madfam.io`, while the
@@ -364,6 +604,28 @@ and `kustomization.yaml`, before changing any of them.
   purpose; do not widen it "for testing", and do not point a default condition
   back at `src/`.
 - **No engine package ever sees a repository or performs I/O.**
+- **`@meridian/i18n` must not gain a dependency.** It runs in client components.
+- **The catalog order is a legal constraint, not a style choice.**
+  `MERIDIAN_PATHWAY_CATALOG` is the concatenation of `MERIDIAN_CATALOG_MODULES`
+  in a fixed, append-stable order, so `evaluateAll` and `assess` return reports
+  in an order that says nothing about merit, likelihood or priority — a ranking
+  is advice, and only `recommend()` may produce one. Sorting by id was rejected
+  because renaming a slug would reshuffle what every reader sees first; sorting
+  by anything substantive would be a claim about importance. New modules go on
+  the end of their jurisdiction's block; new pathways go on the end of their
+  module's array. Appending never renumbers an existing record.
+
+### A new workspace package breaks every image
+
+Adding a package leaves it out of the lockfile and out of all four Dockerfiles,
+so CI's root install fails on `--frozen-lockfile` — and the failure names the
+lockfile rather than the missing `COPY`, while the image builds keep passing
+against the pre-change lockfile, which makes the whole thing look like an
+infrastructure flake. This has happened twice, once for `apps/landing` and once
+for `packages/atlas`. `Dockerfile.api` carried a comment saying exactly this, in
+capitals, directly above the `COPY` block; it was not enough. A comment is not a
+control, so the rule is now `scripts/check-workspace-manifests.mjs`, and it runs
+in the policy job before any install — the install being the thing it predicts.
 
 ### Why the packages emit JavaScript
 
@@ -407,22 +669,32 @@ Strict: `noUncheckedIndexedAccess`, `noUnusedLocals`, `noUnusedParameters`,
 - No prettier config exists; existing code runs to roughly 100-110 columns.
   Match the file you are editing.
 
-Tests live in `tests/*.test.ts`, use vitest, and target what would actually hurt
-a person: boundary off-by-ones (exactly 90 compliant, 91 breaching), leap years
-and 29 February, empty input, the difference between absent (`unknown`) and
-empty array (a positive `false`), ordering independence via a seeded shuffle,
-adversarial input (prototype pollution, a host parsing as the wrong half of a
-URL, data on the prototype chain), and timezone traps.
+Tests live in `tests/*.test.ts` (or `.test.tsx` in the Next applications), use
+vitest, and target what would actually hurt a person: boundary off-by-ones
+(exactly 90 compliant, 91 breaching), leap years and 29 February, empty input,
+the difference between absent (`unknown`) and empty array (a positive `false`),
+ordering independence via a seeded shuffle, adversarial input (prototype
+pollution, a host parsing as the wrong half of a URL, data on the prototype
+chain), and timezone traps.
 
 Prefer a test that cross-checks against an independent recomputation over one
 that restates the implementation.
+
+**Beware green-by-vacuity.** Two instances are on record here and both shipped:
+a readiness probe whose `SELECT 1` proved a socket and not a schema, and two
+tool routes whose components existed without a `page.tsx`, so Next built no
+route, emitted no error, and `pnpm build` went green having built less than
+intended — two 404s reached production behind a passing check. A verification
+that asks "did the command exit 0" is not the same as one that asks "does the
+thing I expected exist". The four guards each print what they examined for the
+same reason.
 
 ---
 
 ## Verification commands
 
-From the project directory — `packages/<name>`, or `apps/api`, which also has a
-suite:
+From any project directory — the eight `packages/<name>` and the four `apps/*`
+all carry suites:
 
 ```bash
 pnpm exec tsc --noEmit
@@ -447,13 +719,20 @@ Whole repo, which is what CI runs:
 pnpm typecheck && pnpm test && pnpm build
 ```
 
-And the three policy guards, which need no install and are the fastest signal
+And the four policy guards, which need no install and are the fastest signal
 that an invariant broke rather than a build:
 
 ```bash
 node scripts/check-advice-boundary.mjs
 node scripts/check-no-credential-custody.mjs
 node scripts/check-pathway-citations.mjs
+node scripts/check-workspace-manifests.mjs
+```
+
+Plus the coverage report, which needs the packages built:
+
+```bash
+node scripts/atlas-coverage.mjs --as-of=YYYY-MM-DD
 ```
 
 If you change how a package is built, resolved or exported, also build and run
@@ -497,6 +776,8 @@ standard library or what is already there, and say so in your report.
 - **No score, percentage or probability of success**, anywhere.
 - **No invented law.** Omit, or mark `discretionary: true` with a note saying
   counsel must verify.
+- **No asylum, refugee or humanitarian/compassionate route in the catalog**, in
+  any jurisdiction, ever.
 
 ---
 
@@ -517,18 +798,25 @@ standard library or what is already there, and say so in your report.
 - **Images**: `@sha256:`-pinned in every manifest.
 - **Dates**: ISO 8601 everywhere; times in `America/Mexico_City`.
 
-Allocation (not deployed): namespace `meridian`; `meridian-landing` :3000 on
-meridian.madfam.io, `meridian-app` :3000 on meridian-app.madfam.io,
-`meridian-admin` :3000 on meridian-admin.madfam.io, `meridian-api` :8000 on
-meridian-api.madfam.io. Registry `ghcr.io/madfam-org/` with two path shapes —
-`meridian-api`, `meridian-web`, `meridian-admin` from before the landing split
-and the nested `meridian/landing` after it. Container ports are framework
-defaults and have no production effect: pods have their own network namespaces
-and the tunnel routes by hostname. The port is named `http` throughout so
-containerPort, Service targetPort, probes and the generated NetworkPolicy agree
-by construction. No port block is claimed. Local dev uses 3000/3001/3002 and
-whatever `PORT` says for the API. `ECOSYSTEM.md` carries the full argument —
-reference it rather than restating it.
+Namespace `meridian`. `meridian-landing` :3000 on meridian.madfam.io,
+`meridian-app` :3000 on meridian-app.madfam.io, `meridian-admin` :3000 on
+meridian-admin.madfam.io — all three answering `200` on 2026-07-26 — and
+`meridian-api` :8000 on meridian-api.madfam.io, answering `502`. Registry
+`ghcr.io/madfam-org/` with two path shapes — `meridian-api`, `meridian-web`,
+`meridian-admin` from before the landing split and the nested `meridian/landing`
+after it. Container ports are framework defaults and have no production effect:
+pods have their own network namespaces and the tunnel routes by hostname. The
+port is named `http` throughout so containerPort, Service targetPort, probes and
+the generated NetworkPolicy agree by construction. No port block is claimed.
+Local dev uses 3000/3001/3002 and whatever `PORT` says for the API.
+`ECOSYSTEM.md` carries the full argument — reference it rather than restating it.
+
+**The `NEXT_PUBLIC_*` set has been removed.** Forty declarations across the
+Dockerfiles, manifests and CI were read by zero lines of source. Configuration
+that lies is worse than absent configuration: it tells the next engineer a
+wiring exists when it does not. `grep -rn NEXT_PUBLIC apps packages` matches
+nothing, and each former site carries a comment saying why. Reintroduce them in
+the change that makes an application read them, not before.
 
 ## Enclii-first operations contract
 
@@ -594,29 +882,30 @@ public-safe summary plus a link here.
 
 Recorded so no agent mistakes them for a decision:
 
-1. **The three Next.js applications have no tests.** The disclosure gate's
-   HTTP-layer boundary conditions *are* asserted now, by
-   `apps/api/tests/disclosure.test.ts`; what remains unasserted is everything the
-   browser renders. Largest gap in the repository.
-2. No contract test suite for the repository ports. The in-memory and Prisma
+1. No contract test suite for the repository ports. The in-memory and Prisma
    adapters can drift, and ADR 0006 names that as its main risk.
-3. No pathway is counsel-reviewed. Legal review is the gating item between the
+2. The initial migration exists at `apps/api/prisma/migrations/` and nothing in
+   the deploy path runs it. It has never been applied to a live Postgres.
+3. Nothing has been exercised end to end; no request has travelled from a screen
+   through the service to a database in any environment.
+4. `meridian-api.madfam.io` returns `502`. Operator gates outstanding.
+5. No pathway is counsel-reviewed. Legal review is the gating item between the
    engine and a sellable product.
-4. No migration has been generated. `apps/api/prisma/` holds a schema and
-   nothing else; `prisma generate` runs only inside `Dockerfile.api`.
-5. The source PRD text is not committed; `docs/PRD.md` holds the editorial
+6. `@meridian/atlas` has no consumer inside the product — only
+   `scripts/atlas-coverage.mjs` and its own tests read it.
+7. `negotiateLocale` is implemented and tested and called by nothing.
+8. The source PRD text is not committed; `docs/PRD.md` holds the editorial
    preface, the record of our departures and a marked block awaiting the
    verbatim origin document.
-6. `packages/mrtd/package.json` declares no dependencies while `src/bac.ts`
+9. `packages/mrtd/package.json` declares no dependencies while `src/bac.ts`
    imports `node:crypto`. Types resolve from the hoisted root `@types/node`, so
    `tsc` is clean today. Add `"@types/node": "^22.10.2"` to that package's
    devDependencies the next time the lockfile is touched. There is no runtime
    dependency — `node:crypto` is standard library.
-7. No formatting check. Prettier is a root devDependency with no config file and
-   CI does not run it.
-8. Data residency for EU subjects is an open architectural question.
-9. Document storage and presence-ledger ingestion are undesigned. Persistence is
-   designed but unproven: the Prisma schema exists and has never met a database.
+10. No formatting check. Prettier is a root devDependency with no config file
+    and CI does not run it.
+11. Data residency for EU subjects is an open architectural question.
+12. Document storage and presence-ledger ingestion are undesigned.
 
 ## Maintenance
 
@@ -624,3 +913,8 @@ Recorded so no agent mistakes them for a decision:
 agent guidance is needed, it goes in `AGENTS.md`, not `CLAUDE.md`. These context
 files are hand-curated for this repository — if the ecosystem doc-sync tooling
 offers to regenerate them, read the diff before accepting it.
+
+Every status figure in this file decays. The ones most likely to be wrong first
+are the test counts, the deployment table and the catalog totals. Re-measure
+before quoting: `pnpm test`, a request to each hostname, and
+`node scripts/check-pathway-citations.mjs`.

@@ -172,6 +172,33 @@ export const WORKED_CITATION = (() => {
 /** The report's own notes: why a rule is discretionary, why it is unreviewed. */
 export const WORKED_NOTES = WORKED_REPORT.notes;
 
+/**
+ * A stable React key for one report note.
+ *
+ * The engine deduplicates notes on `criterionId:citationId` — see the
+ * `discretionary_source` loop in `@meridian/pathways`'s `evaluate.ts`. That is
+ * deliberate: one discretionary instrument can be cited by several criteria, and
+ * a rule resting on administrative practice has to say so *at every criterion
+ * that rests on it*, not once per document. Two notes with the same `code` and
+ * the same `citationId` are therefore a normal outcome, not a duplicate.
+ *
+ * This key must use the same triple the engine uses. An earlier version keyed on
+ * `code` and `citationId` alone and collided on
+ * `discretionary_source-es-cc-art-22-4`, because art. 22.4 is discretionary and
+ * two criteria of the reduced-residency route both rest on it. React warned, and
+ * the warning was right about the key while being wrong about the cause: nothing
+ * was duplicated, the key was simply narrower than the identity.
+ *
+ * Index is deliberately not used. A key that is really a position is stable only
+ * until the list is filtered or reordered, at which point React reuses the
+ * previous element's state under a new meaning — and these notes carry legal
+ * qualifications, so quietly re-attaching one to a different rule is the exact
+ * class of error this page exists to avoid.
+ */
+export function workedNoteKey(note: (typeof WORKED_NOTES)[number]): string {
+  return `${note.code}:${note.criterionId ?? '-'}:${note.citationId ?? '-'}`;
+}
+
 /** Counts for the summary line above the table. Derived, never typed. */
 export const WORKED_TALLY = {
   total: WORKED_CRITERIA.length,

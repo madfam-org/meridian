@@ -5,7 +5,7 @@ Compact LLM context index for this repository.
 Global migration law and logistics platform. TypeScript monorepo (pnpm + turbo,
 Node 22, ESM). PUBLIC repo, AGPL-3.0-only. `github.com/madfam-org/meridian`.
 
-Last updated: 2026-07-25.
+Last updated: 2026-07-26.
 
 ## Read first
 
@@ -17,18 +17,17 @@ Last updated: 2026-07-25.
 
 ## Status in one paragraph
 
-Measured 2026-07-25 17:50 America/Mexico_City, during the initial build —
-re-verify rather than trusting it. Six libraries under `packages/` are mature and
-pass **913 tests across 32 files**. `apps/api` is a running Fastify service:
-`src/main.ts` is its composition root, it has **108 tests across 7 files**, and
-its image builds and starts (it reaches environment validation and names the
-variables it needs). **The three Next.js applications — `apps/landing`,
-`apps/web`, `apps/admin` — have no tests**, which is the largest gap in the
-repository. Repo total: **1021 tests across 39 files**; `pnpm typecheck` 16/16
-and `pnpm build` 10/10 green. The three policy guard scripts exist and pass; CI
-exists (`policy` · `typecheck` · `test` · `build`); deployment configuration
-exists (`enclii.yaml` with five documents, four Dockerfiles,
-`infra/k8s/production/`). **Nothing is deployed. No pathway has been
+Measured 2026-07-26 — re-verify rather than trusting it. **Twelve workspace
+projects**: eight libraries under `packages/` and four deployables under
+`apps/`. All twelve typecheck, test and build clean — `pnpm typecheck` 19/19,
+`pnpm test` 19/19, `pnpm build` 12/12, and 103 test files carrying 2521 tests.
+**All three Next.js applications now have test suites**; they had none at all
+before 2026-07-26, and that was the largest gap in the repository. `apps/api` is
+a running Fastify service whose image builds and starts. Four policy guards
+pass; CI runs them in a `policy` job before any install. **Three of the four services are live** —
+`meridian.madfam.io`, `meridian-app.madfam.io` and `meridian-admin.madfam.io`
+all answered `200` on 2026-07-26 — while `meridian-api.madfam.io` answered `502`
+and is not serving. Nothing has been exercised end to end. **No pathway has been
 counsel-reviewed**, so `recommend()` ranks nothing. No government-system
 capability is `available`.
 
@@ -39,11 +38,33 @@ capability is `available`.
    both ends: 2025-01-01 to 2025-01-01 is one day.
 2. **Every applied rule carries a `Citation`** — instrument, provision,
    jurisdiction, `verifiedOn`. `discretionary: true` where the source is
-   administrative practice, not statute.
+   administrative practice, not statute. **An instrument name is never
+   translated**; use `instrumentLang()` and let it return `null` when it does
+   not know.
 3. **Every engine output is born disclosure-classified** —
    `information` | `assessment` | `advice`. `canRelease()` is the gate.
    Downgrading is possible; upgrading is not. Anything that ranks, orders,
    scores, or says what someone should do is `advice`.
+
+## One page, one language
+
+The applications used to render English and Spanish into the same elements. The
+comment defending it argued for mixed-language households; the reasoning was
+wrong, because a screen-reader user heard everything twice and `<html lang>`
+could not be correct. Now:
+
+- Locale lives in the URL: **English unprefixed, Spanish at `/es`**, both
+  statically prerendered, with `hreflang` alternates and `x-default`. Routes are
+  under `app/[locale]/` in all three Next applications.
+- `@meridian/i18n` holds the contract and **depends on nothing**, not even
+  `@meridian/core`, so a client component importing it cannot drag the catalog
+  into the browser bundle.
+- Path helpers are **asymmetric** — English has no prefix, so a hand-rolled
+  `startsWith('/es')` decides `/estimate` is Spanish. Use `localizedPath`,
+  `splitLocalePath`, `alternatePaths`.
+- The switcher is a **server-rendered link** to the same page in the other
+  locale, never to the home page.
+- Catalog data stays bilingual: a `Pathway` still carries `{ en, es }`.
 
 ## Hard rules
 
@@ -57,11 +78,14 @@ capability is `available`.
 - Workspace packages are consumed as **emitted JavaScript** from `dist/`, not as
   TypeScript source. Build before you typecheck or test across a boundary; turbo
   does this for you (`typecheck` and `test` both depend on `^build`).
+- A new workspace package must be added to **all four Dockerfiles** and the
+  lockfile, or the root `--frozen-lockfile` install breaks every image.
+  `check-workspace-manifests.mjs` enforces this.
 
 ## Verification
 
 ```bash
-cd packages/<name>        # or apps/api
+cd packages/<name>        # or any of the four apps
 pnpm exec tsc --noEmit
 pnpm exec vitest run
 ```
@@ -73,7 +97,12 @@ pnpm typecheck && pnpm test && pnpm build
 node scripts/check-advice-boundary.mjs
 node scripts/check-no-credential-custody.mjs
 node scripts/check-pathway-citations.mjs
+node scripts/check-workspace-manifests.mjs
 ```
+
+`scripts/atlas-coverage.mjs` is a fifth script and is a **report, not a guard**.
+It needs `packages/atlas/dist` built and takes `--strict` to fail on integrity
+findings. It is not in CI.
 
 `check-no-credential-custody` scans `docs/` too — documentation about the
 credential refusal must **describe** the forbidden field names rather than
@@ -85,35 +114,61 @@ the same worktree.
 ## Packages
 
 Each builds with `tsc -p tsconfig.build.json`; `exports` resolves to
-`./dist/index.js`.
+`./dist/index.js`. Counts measured 2026-07-26 — re-run rather than trusting.
 
 | Package | Role | Tests |
 |---|---|---|
 | `@meridian/core` | civil dates, disclosure boundary, citations, tenancy, matter | 60 |
 | `@meridian/mrtd` | ICAO Doc 9303 MRZ. Depends on nothing. | 111 |
 | `@meridian/presence` | Schengen 90/180, tax day counts, continuous residence, work hours | 147 |
-| `@meridian/pathways` | declarative rules engine (22 operations) + catalog (8, all unreviewed) | 139 |
+| `@meridian/pathways` | declarative rules engine (22 operations) + catalog (84, all unreviewed) | 443 |
 | `@meridian/documents` | legalisation, translation, freshness, checklists, gaps | 146 |
 | `@meridian/govtech` | government adapters, capability board, credential refusal | 310 |
+| `@meridian/atlas` | 249 jurisdictions, 22 mobility blocs, 280 weighted corridors, coverage arithmetic. Depends on nothing. Consumed only by `scripts/atlas-coverage.mjs`. | 77 |
+| `@meridian/i18n` | `Locale`, text selection, `Accept-Language` negotiation, locale paths, `instrumentLang()`. Depends on nothing. | 124 |
 
 ## Applications
 
-| App | Role | Tests |
-|---|---|---|
-| `apps/api` | Fastify. `src/main.ts` composition root · auth (JWKS RS256) · disclosure gate + route registry + leak detector · repository ports with structural tenant scoping · append-only audit · Prisma schema (10 models, 15 enums) · 41 routes across 11 modules. Image builds and runs. | 108 |
-| `apps/landing` | public marketing site, Next.js 15, local dev port 3000. Bilingual EN/ES; catalog figures counted from `@meridian/pathways` at build time. Deployed as `meridian-landing` on meridian.madfam.io. | none |
-| `apps/web` | applicant portal, Next.js 15, local dev port 3001. Deployed as `meridian-app` on meridian-app.madfam.io — the package and directory keep the `web` name. | none |
-| `apps/admin` | firm console, Next.js 15, local dev port 3002. Deployed as `meridian-admin`. | none |
+| App | Role |
+|---|---|
+| `apps/api` | Fastify. `src/main.ts` composition root · auth (JWKS RS256) · disclosure gate + route registry + leak detector · repository ports with structural tenant scoping · append-only audit · Prisma schema (10 models, 15 enums) and an initial migration · 41 routes across 11 modules. Image builds and runs; the hostname returns 502. |
+| `apps/landing` | marketing site + a working client-side Schengen 90/180 calculator, Next.js 15, dev port 3000. Catalog figures counted from `@meridian/pathways` at build time; thresholds and the Schengen citation imported from `@meridian/presence` rather than copied. Live as `meridian-landing` on meridian.madfam.io. |
+| `apps/web` | applicant portal, Next.js 15, dev port 3001. `/pathways`, `/matters`, `/tools/{schengen,mrz,nationality-es}`, `/pricing`, `/for/[audience]`. Live as `meridian-app` on meridian-app.madfam.io — the package and directory keep the `web` name. |
+| `apps/admin` | firm console, Next.js 15, dev port 3002. `/matters`, `/catalog`, `/audit`, `/integrations`, `/representatives`. `MERIDIAN_ASOF` pins its reference date, `MERIDIAN_ADMIN_DATASET` selects its dataset. Live as `meridian-admin`. |
 
-The API's 108 tests all run against the in-memory repository adapter; the Prisma
-adapter is covered by `tsc` and nothing else, and no migration has been generated.
+All three Next applications route under `app/[locale]/` and now carry test
+suites. The API's tests all run against the in-memory repository adapter; the
+Prisma adapter is covered by `tsc` and nothing else, and the migration has never
+been applied to a live database.
+
+## Catalog
+
+84 pathways — 26 Spain, 23 Canada, 35 United States — across 13 source modules
+in `packages/pathways/src/catalog/`. **0 counsel-reviewed.** 449 criteria; 62 of
+the 84 records can only return `requires_human_review`. 373 distinct citations,
+82 `discretionary`, 347 with a URL. 63 CUSMA/USMCA professions, matching
+8 CFR 214.6(c), shared by the Canadian and American routes. No pathway publishes
+a processing-time estimate; no priority date, cut-off or wait estimate is
+encoded anywhere.
+
+Asylum, refugee protection and humanitarian/compassionate claims are
+deliberately out of scope and will not be added.
+
+Coverage, from `node scripts/atlas-coverage.mjs`: **1.20%** structural (3 of 249
+jurisdictions) and **0.6076%** weighted by people. The stock table is 65.34%
+complete against a 92.7% ceiling.
 
 ## Documentation
 
 - `docs/PRD.md` — origin document + the two departures we made from it
 - `docs/ARCHITECTURE.md` — module map, data flow, where the disclosure gate sits
 - `docs/REGULATORY_POSTURE.md` — tenancy model, IRPA s.91, the Spanish position
+- `docs/COMMERCIAL_POSTURE.md` — why the advice boundary and the pricing
+  boundary are the same boundary
 - `docs/LEGAL_CATALOG_REVIEW.md` — the counsel review protocol
+- `docs/COUNSEL_REVIEW_PACKET.md` — the document a reviewing lawyer opens
+- `docs/PERSONAS.md` — who the doors are for
+- `docs/research/` — dated source notes behind the catalog sweeps
 - `docs/adr/README.md` and `docs/adr/0001`-`0006` — architecture decision records
 - `SECURITY.md` — Article 9 data sensitivity, what we do not store
 - `CONTRIBUTING.md`, `CHANGELOG.md`

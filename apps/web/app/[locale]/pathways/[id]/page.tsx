@@ -420,9 +420,15 @@ export default async function PathwayPage({ params }: { readonly params: Promise
 
             {report.notes.length > 0 ? (
               <Stack gap="sm">
-                {report.notes.map((note, index) => (
+                {report.notes.map((note) => (
                   <Callout
-                    key={`${note.code}-${index}`}
+                    // Same identity the engine deduplicates on —
+                    // `criterionId:citationId` — never the array index. One
+                    // discretionary instrument can be cited by several criteria
+                    // and must say so at each; an index key survives only until
+                    // the list is filtered, and then re-attaches a legal
+                    // qualification to a different rule.
+                    key={`${note.code}:${note.criterionId ?? '-'}:${note.citationId ?? '-'}`}
                     tone={note.code === 'pathway_closed' ? 'bad' : 'warn'}
                     icon="!"
                     title={t(NOTE_TITLE[note.code])}

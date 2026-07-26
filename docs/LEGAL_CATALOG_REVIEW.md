@@ -14,6 +14,24 @@ do, what they are not, and what changes when they sign, is
 [COUNSEL_REVIEW_PACKET.md](COUNSEL_REVIEW_PACKET.md). Read that first; work from
 this.
 
+### Research briefs
+
+The encoders worked from two briefs, kept in [`research/`](research/). **Read the
+relevant one before writing any criterion in that jurisdiction**, and read its
+"what I could not establish" section before trusting anything adjacent to it —
+that section is the fastest way to find where the catalog is thinnest.
+
+| Brief | Researched | Covers |
+|---|---|---|
+| [Spain — the 2025 Reglamento de Extranjería](research/2026-07-25-spain-reglamento-2025.md) | 2026-07-25 | RD 1155/2024, its single amendment RD 316/2026, the five *arraigo* figures, and what the repeal of RD 557/2011 does to the existing catalog |
+| [The United States — statutory frame](research/2026-07-26-us-immigration-frame.md) | 2026-07-26 | The immigrant/nonimmigrant split, the visa ≠ admission ≠ status ≠ benefit distinction, the numerical limits, and the scope exclusions in §9 |
+
+Both were written by an agent, not by counsel. Neither is a review. Every pathway
+built from either still ships `reviewStatus: 'unreviewed'`. **Canada has no
+brief** — the Canadian records were researched per-file against Justice Laws, and
+[COUNSEL_REVIEW_PACKET.md](COUNSEL_REVIEW_PACKET.md) CA-7 records what could not
+be reached.
+
 ---
 
 ## Current state
@@ -382,11 +400,14 @@ the substantive test is identical on both sides. A reviewer should read the two
 records together, and note the one deliberate divergence: the US record accepts a
 licence issued by a US, Canadian or Mexican state, provincial or federal
 government, following the footnote in 214.6(c); `ca.ts` narrows it to Canadian
-licences. **The shared table holds 61 of the regulation's 63 professions** —
-Range Manager/Range Conservationist and Sylviculturist (including Forestry
-Specialist) are absent — so an applicant in either falls into the
-unrecognised-occupation branch and is routed to a person, which is the safe
-direction. `us-f1-academic-student` must be re-verified in September 2026: 91 FR
+licences. **The shared table now holds all 63 of the regulation's professions**,
+4 of them flagged for heightened scrutiny. A previous revision of this document
+recorded 61, with Range Manager/Range Conservationist and Sylviculturist
+(including Forestry Specialist) absent; both have since been added, so the
+gap-to-a-person routing described there no longer applies to either. Verify with
+`node -e "import('./packages/pathways/dist/index.js').then(m =>
+console.log(m.CUSMA_PROFESSIONS.length))"`.
+`us-f1-academic-student` must be re-verified in September 2026: 91 FR
 44976 replaces duration of status with a fixed admission period on 2026-09-15,
 and duration of status is what stops unlawful presence accruing before a formal
 violation finding.

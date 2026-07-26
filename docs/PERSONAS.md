@@ -42,13 +42,18 @@ directly they map onto the paid tier.
 
 ### The one constraint that applies to all seven
 
-**Zero of 49 pathways in the catalog are counsel-reviewed.** `recommend()`
-therefore returns an empty ranking and 49 exclusions coded
+**Zero of 84 pathways in the catalog are counsel-reviewed.** `recommend()`
+therefore returns an empty ranking and 84 exclusions coded
 `not_counsel_reviewed`, for *every* audience — including a licensed practitioner,
 because the catalog gate runs before the release gate. Wherever an entry below
 says a persona gets `advice`-class output, read it as *would get, once counsel
 review has happened*. Today nobody gets it. This is not repeated in every
 section; assume it everywhere.
+
+The number was 49 until 2026-07-26, when 35 United States records were added. **The
+number moved; the fact did not.** That is the point rather than a footnote: no
+persona in this document got closer to being served by the catalog growing 71%,
+because what every one of them is waiting on is a signature, not a record.
 
 ---
 
@@ -98,9 +103,10 @@ And, separately:
 - **A pin-cite on every applied rule.** `Citation` carries instrument,
   provision, jurisdiction and `verifiedOn`, plus `discretionary: true` where the
   rule rests on administrative practice rather than statutory text. The catalog
-  ships 49 records carrying **196 distinct citation ids** — note that
-  `check-pathway-citations.mjs` reports 201, because it counts declarations in
-  the source files and five ids are declared in two files each.
+  ships 84 records carrying **373 distinct citation ids**, 82 of them
+  `discretionary` — note that `check-pathway-citations.mjs` reports 378, because
+  it counts declarations in the source files and five ids are declared in two
+  files each.
 - **Day counting that is not a spreadsheet.** `packages/presence` — Schengen
   90/180 including the *worst* day across a range (the window slides underneath
   a traveller, so the departure date is not the date that decides), continuous
@@ -127,7 +133,7 @@ attached to it.
 
 ### What Meridian cannot do for them today
 
-- **The ranking function returns nothing.** 0 of 49 records reviewed; see the
+- **The ranking function returns nothing.** 0 of 84 records reviewed; see the
   constraint above. The single most valuable practitioner feature is inert.
 - **Nothing persists.** The portal renders worked examples from
   `apps/web/lib/sample/`; the firm console reads a static dataset chosen by an
@@ -135,8 +141,18 @@ attached to it.
 - **No caseload exists to monitor.** No notification, reminder, scheduling or
   alerting subsystem is in the repository. The deadline anxiety in their own
   words above is, today, entirely unaddressed.
-- **Two jurisdictions.** Spain (26 records) and Canada (23). If they practise
-  anywhere else, there is nothing here.
+- **Three jurisdictions, and the third is thinner than its record count.** Spain
+  (26 records), Canada (23) and the United States (35, added 2026-07-26). If they
+  practise anywhere else, there is nothing here. And a United States practitioner
+  should read the third number carefully: **30 of those 35 records can only ever
+  return `requires_human_review`**, because `ApplicantFacts` holds nothing about a
+  petitioner, a sponsor or the manner of somebody's last entry — and United States
+  family and employment law is at least half a test about exactly those. Five
+  records can reach a verdict. Separately, there is **no United States
+  reserved-activity analysis in the repository at all**
+  ([REGULATORY_POSTURE.md](REGULATORY_POSTURE.md) covers Canada and Spain), so
+  what Meridian may lawfully offer a United States practitioner is undetermined
+  rather than merely unbuilt.
 - **No filing.** Zero government-system capabilities are available: some are
   `not_provisioned` pending formal agreements, some `not_implemented`, and four
   are `refused_by_policy` permanently. Meridian will never file as the user —
@@ -241,10 +257,14 @@ licensee, and the boundary does not move because the reader is a company.
   the per-record attribution. `detectInconsistencies` reports contradictions in
   the record itself — two countries on one day, unaccounted gaps, an imputed
   departure — which is precisely what an auditor pokes at.
-- **The routes they actually use are encoded.** CUSMA professionals (61
-  professions, 4 flagged for heightened scrutiny), CUSMA traders, investors and
+- **The routes they actually use are encoded.** CUSMA/USMCA professionals (**63
+  professions**, 4 flagged for heightened scrutiny), CUSMA traders, investors and
   intra-company transferees; the LMIA-based work permit; Spain's
-  highly-qualified-professional and employed/self-employed authorisations.
+  highly-qualified-professional and employed/self-employed authorisations; and
+  since 2026-07-26 the US side — TN, H-1B, L-1A, L-1B, O-1A, E-1 and E-2. The
+  profession table is shared: `us-tn-usmca-professional` and
+  `ca-cusma-professional` read the same 63 entries, because 8 CFR 214.6(c)
+  reproduces CUSMA Appendix 2 verbatim.
 - **Employer-side capability reporting that does not lie.** The IRCC adapter
   declares offer-of-employment validation, employer-portal handoff and
   employer-portal submission as *distinct* capabilities with distinct states, so
@@ -275,9 +295,12 @@ document status in one place, watched continuously, exportable to whoever asks.
 - **No submission on anyone's behalf.** Employer-portal *submission* is a
   declared capability that is not available, and it is deliberately distinct
   from *handoff*, which is.
-- **Two jurisdictions**, against a persona defined by operating in several at
+- **Three jurisdictions**, against a persona defined by operating in several at
   once. An eleven-person cohort across four countries is, today, at best a
-  two-country answer.
+  three-country answer — and on the United States leg, mostly an escalation
+  rather than an answer, since the employer-side facts these routes turn on (the
+  corporate relationship to a foreign affiliate, the state of a labor
+  certification) are exactly what the fact model does not hold.
 
 ---
 
@@ -393,7 +416,11 @@ their questions repeat.
 - **Free tooling requiring no account**, which matters when the user is a
   nineteen-year-old who will use it once at 2am.
 - **Bilingual EN/ES throughout**, structurally: `LocalizedText` is `{ en, es }`
-  and every catalog label, summary and guidance string carries both.
+  and every catalog label, summary and guidance string carries both. Since the
+  locale change the *page* serves one language at a time — English unprefixed,
+  Spanish at `/es` — so a student is handed a document in their own language
+  rather than one containing both, with a switcher that is a real link. The
+  bilingual *data* is unchanged; see [ADR 0007](adr/0007-url-locale-segments.md).
 
 ### What they would pay for
 
@@ -417,8 +444,14 @@ deadline.
   gate.
 - **Two languages.** EN and ES. An international office serves students in
   neither, routinely.
-- **Canada and Spain only**, against an office whose students come from
-  everywhere and go home to everywhere.
+- **Canada, Spain and the US only**, against an office whose students come from
+  everywhere and go home to everywhere. The US addition does reach this persona
+  directly — `us-f1-academic-student` is encoded — but with a warning attached:
+  that record **must be re-verified on 2026-09-15**, when 91 FR 44976 replaces
+  duration of status with a fixed admission period for F, J and I admissions.
+  Duration of status is what stops unlawful presence accruing before a formal
+  violation finding, so this is the kind of change an international office cannot
+  afford to learn about late.
 
 ---
 
@@ -465,7 +498,14 @@ representative is attached to their matter.
   no signing key — not stored, not proxied, not held in memory for the duration
   of a request. It is unrepresentable at the type level, backed by a runtime
   guard and a CI check. See [ADR 0003](adr/0003-no-credential-custody.md).
-- **Both languages, everywhere**, not an afterthought translation layer.
+- **Their language, not both at once.** Every surface is published in English at
+  its own address and Spanish at `/es`, both statically prerendered, with
+  `hreflang` alternates and an `x-default`. A frightened reader is not made to
+  scan past a language they do not read to find the one they do, and a
+  screen-reader user does not hear every sentence twice. The switch is an anchor
+  with a real `href` pointing at *this* page in the other language, so it works
+  with JavaScript off and does not lose what they typed.
+  See [ADR 0007](adr/0007-url-locale-segments.md).
 
 ### What they would pay for
 
@@ -487,9 +527,12 @@ a multi-year residence clock.
 - **The portal's matters are not theirs.** Every matter, document and stay in
   `apps/web` is a worked example under a banner that says "not a real person and
   not your data". The *computation* is real; the inputs are invented.
-- **Three tools, two jurisdictions.** If their question is about Germany,
-  Portugal, the US or anywhere else among the 249 jurisdictions the atlas lists,
-  there is nothing here for them.
+- **Three tools, three jurisdictions.** The catalog now covers the US as well as
+  ES and CA, but none of the three free tools does: the Schengen calculator, the
+  Spanish nationality check and MRZ validation are what they were. If their
+  question is about Germany, Portugal, or anywhere else among the 249
+  jurisdictions the atlas lists, there is nothing here for them. Structural
+  coverage is **1.20% — 3 of 249**.
 - **No route to a human.** There is no representative directory, no referral,
   no marketplace. When the gate says "this needs a licensed person", it does not
   say where to find one.
@@ -528,8 +571,10 @@ and institutional infrastructure.
   not contain them.
 - **Closed routes stay in the catalog** with a closure note, because a person
   who already holds status under a repealed route still needs an answer. Five
-  records are `closed` and two `suspended` of 49, and they are retained
-  deliberately.
+  records are `closed` and two `suspended` of 84, and they are retained
+  deliberately. All seven are Spanish or Canadian: **no United States route has
+  been traced back through a repeal**, which is work not done rather than a fact
+  about that system.
 - **A source they can audit.** AGPL-3.0, public repository, every rule readable.
   A clinic that cannot afford software also cannot afford to trust a black box.
 

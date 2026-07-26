@@ -319,7 +319,7 @@ Meridian cannot do for them today.
 
 This is the section to read if you read nothing else.
 
-**Zero of 49 pathways in the shipped catalog are counsel-reviewed.** Every record
+**Zero of 84 pathways in the shipped catalog are counsel-reviewed.** Every record
 carries `reviewStatus: 'unreviewed'`. Verify it yourself:
 
 ```
@@ -327,8 +327,16 @@ $ node -e "import('./packages/pathways/dist/index.js').then(m => {
     const c = m.MERIDIAN_PATHWAY_CATALOG;
     console.log(c.length, c.filter(p => p.reviewStatus === 'counsel_reviewed').length);
   })"
-49 0
+84 0
 ```
+
+**On 2026-07-26 that first number went from 49 to 84 and the second stayed at
+zero.** A third jurisdiction was added — 35 United States records, a 71% larger
+catalog — and the revenue gate did not move an inch. That is the whole argument
+of this section in one event, and it is worth stating plainly because the
+temptation runs the other way: a catalog that grew by 71% *looks* like progress
+toward a sellable product, and it is progress toward nothing of the sort. It
+added 35 exclusions.
 
 `recommend()` in `packages/pathways/src/recommend.ts` applies **two** gates, and
 they are independent:
@@ -340,7 +348,7 @@ they are independent:
   `advice`-class value may reach the audience.
 
 Today gate one empties the ranking before gate two is ever consulted. `recommend()`
-returns an empty `ranked` array and 49 exclusions — **for every audience,
+returns an empty `ranked` array and 84 exclusions — **for every audience,
 including a licensed practitioner.** A firm that bought a Professional tier this
 afternoon would receive nothing from the ranking function that the anonymous
 visitor does not already get for free.
@@ -354,8 +362,13 @@ Consider what does *not* move it:
 
 - Shipping features does not move it. The Professional tier is undeliverable
   with a perfect product.
-- Adding pathways does not move it — a fiftieth unreviewed record adds a
-  fiftieth exclusion.
+- Adding pathways does not move it — an eighty-fifth unreviewed record adds an
+  eighty-fifth exclusion. **This has now been demonstrated rather than argued:**
+  the 2026-07-26 United States expansion added 35 records and 35 exclusions.
+- **Adding a jurisdiction moves it backwards**, which is the counter-intuitive
+  one. A new jurisdiction needs a reviewer licensed in that jurisdiction, and
+  until one exists the catalog is larger, the reviewable surface is larger, and
+  the reviewed surface is unchanged at zero.
 - Engineering cannot move it. There is no constant to flip; sign-off is a
   workflow step with a named licensed human attached to each record.
 - Selling harder does not move it. The thing being sold does not function.
@@ -377,17 +390,40 @@ sitting directly on the revenue line, not a one-time unlock that can be
 amortised away.
 
 **Its cost scales with jurisdictional coverage, and coverage is where the market
-is.** The atlas lists 249 jurisdictions; two are encoded (ES, CA) and zero are
-counsel-reviewed (`node scripts/atlas-coverage.mjs`). Every new jurisdiction
-needs its own reviewer with its own licence. Whether that cost stays below the
-revenue it unlocks is an open question and section 7 treats it as a live failure
-mode.
+is.** The atlas lists 249 jurisdictions; **three** are encoded (ES, CA, US) and
+zero are counsel-reviewed (`node scripts/atlas-coverage.mjs`, 2026-07-26). That
+is 1.20% structural coverage. Every new jurisdiction needs its own reviewer with
+its own licence. Whether that cost stays below the revenue it unlocks is an open
+question and section 7 treats it as a live failure mode.
+
+**A caution about the weighted coverage figure, which moved for the first time on
+2026-07-26.** Adding the United States took weighted coverage from 0% to
+**0.6076%** of world migrant stock. Read what that is before quoting it:
+"covered" means *both* ends of a corridor are encoded, and the whole of that
+figure is two rows — Canada to the United States (950,000 people) and the United
+States to Canada (257,000). **Mexico to the United States, 11,280,000 people and
+the largest bilateral corridor in the world, is still uncovered**, because Mexico
+remains `researched` rather than encoded. The corridor this platform was built
+around becomes covered when somebody encodes the *Mexican* system, not when
+somebody adds more United States records. Anyone reasoning about market reach
+from the coverage number should reason from that sentence.
 
 Nothing in this repository is counsel-reviewed either — including
 [REGULATORY_POSTURE.md](REGULATORY_POSTURE.md), which says so about itself in its
 first paragraphs. The reading of IRPA s.91 and of Spanish reserved-activity rules
 that this entire model is built on is *our* reading, by engineers, from public
 sources.
+
+**And that reading covers two of the three jurisdictions in the catalog.** There
+is no United States reserved-activity analysis anywhere in this repository — no
+treatment of state unauthorized-practice-of-law rules, of 8 CFR 292 and 1292, or
+of the EOIR accredited-representative regime. Section 1 of this document draws
+the commercial line and the legal line in the same place; for the United States,
+**the legal line has not been drawn at all**, so the commercial line there rests
+on an assumption that the Spanish and Canadian analysis transfers. It may not.
+Until that gap is closed, no United States record should be treated as being on a
+path to revenue, and the honest statement of the United States position is that
+we do not yet know what we may lawfully sell there.
 
 ---
 
@@ -535,7 +571,7 @@ node -e "import('./packages/pathways/dist/index.js').then(m => {
               'counsel_reviewed', c.filter(p => p.reviewStatus === 'counsel_reviewed').length);
 })"
 
-# Jurisdictional coverage — section 6's 249 / 2 / 0
+# Jurisdictional coverage — section 6's 249 / 3 / 0, and the 0.6076%
 node scripts/atlas-coverage.mjs
 
 # The free tools make no network calls — section 2
@@ -548,12 +584,23 @@ grep -rnwiE "cron|scheduler|setInterval|notify|sendEmail" \
 # The gate itself
 sed -n '144,183p' packages/core/src/disclosure.ts
 
-# The policy guards
+# The policy guards — all four pass as of 2026-07-26
 node scripts/check-advice-boundary.mjs
 node scripts/check-no-credential-custody.mjs
 node scripts/check-pathway-citations.mjs
 node scripts/check-workspace-manifests.mjs
 ```
+
+One caveat on a command this document does not list but a reader will try:
+**`pnpm test` at the repository root can exit non-zero without any engine having
+failed.** Vitest exits 1 when a project has no test files at all, which is how an
+empty application suite reads. The eight packages and `apps/api` pass —
+**1,533 tests across 60 files**, of which `apps/api` contributes 115 across 7.
+The three Next.js applications began 2026-07-26 with no tests and were acquiring
+them as this revision was written, so check which task failed rather than
+assuming. [PERSONAS.md](PERSONAS.md) records the absence of application tests as
+the reason no accessibility claim is made anywhere; that reasoning holds until a
+suite actually measures it.
 
 If a claim in this document stops matching what those commands print, the
 document is wrong and should be corrected rather than explained.

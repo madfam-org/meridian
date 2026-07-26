@@ -6,7 +6,7 @@
 > [`madfam-org/internal-devops`](https://github.com/madfam-org/internal-devops)
 > (RFC 0036 and the decisions ledger), per the repo-boundary contract.
 
-Last updated: 2026-07-25.
+Last updated: 2026-07-26.
 
 ---
 
@@ -22,13 +22,45 @@ Nothing here may be relied on as a statement of what the law requires.
 
 - No pathway in the catalog may be used for advice-class output until counsel
   has reviewed it and moved its `reviewStatus` to `counsel_reviewed`. See
-  [LEGAL_CATALOG_REVIEW.md](LEGAL_CATALOG_REVIEW.md). **As of 2026-07-25, zero
-  pathways have been reviewed.**
+  [LEGAL_CATALOG_REVIEW.md](LEGAL_CATALOG_REVIEW.md). **As of 2026-07-26, zero of
+  84 pathways have been reviewed.**
 - The characterisations of Canadian and Spanish law below must be confirmed by
   qualified counsel in each jurisdiction before any commercial offering is made
   in that jurisdiction.
 - Where this document expresses a degree of confidence, that is the *authors'*
   confidence in their reading of a public source, not a legal conclusion.
+
+> ### ⚠ This document covers two of the three jurisdictions in the catalog
+>
+> **There is no United States analysis here, and 35 United States pathways were
+> added to the catalog on 2026-07-26 without one.**
+>
+> Sections 2 and 3 below analyse Canada (IRPA s. 91) and Spain. Nothing in this
+> repository analyses:
+>
+> - state-level **unauthorized practice of law** rules, which are the operative
+>   restriction in the United States and vary by state;
+> - the federal practitioner rules at **8 CFR 292** and **8 CFR 1292**;
+> - the **EOIR accredited-representative** regime, which is the closest United
+>   States analogue to the licensed non-lawyer categories that sections 2 and 3
+>   turn on, and which has no equivalent in either analysed jurisdiction;
+> - whether the `assessment` class — the user's own facts measured against a
+>   cited rule — sits on the safe side of any of the above. Section 1's table
+>   answers "No, on our reading" for that row, and **that reading was formed
+>   about Canada and Spain**.
+>
+> This is recorded rather than assumed away, because the assumption that the
+> Spanish and Canadian analysis transfers is doing real work if it is not stated.
+> It may not transfer: the United States has no single reserved-activity
+> provision to read, the restriction is state-by-state, and it reaches conduct
+> that IRPA s. 91 does not.
+>
+> **Operative consequence.** Until this gap is closed, the United States records
+> are catalog content and nothing more. No United States record should be moved to
+> `counsel_reviewed`, and no commercial offering should be made in the United
+> States, on the strength of anything in this document. Section 7 carries it as an
+> open question; [COUNSEL_REVIEW_PACKET.md](COUNSEL_REVIEW_PACKET.md) §11 warns
+> any United States reviewer directly.
 
 ---
 
@@ -361,3 +393,20 @@ Recorded so they are not mistaken for settled.
    itineraries as the primary evidence.
 4. **Jurisdictions beyond ES and CA.** Each new jurisdiction reopens sections 2
    and 3 from scratch. The engine is generic; the regulatory analysis is not.
+
+   **This stopped being hypothetical on 2026-07-26.** The catalog now encodes a
+   third jurisdiction — 35 United States pathways — and sections 2 and 3 were
+   *not* reopened. See the boxed warning at the top of this document. The gap is
+   the largest open regulatory item in the repository, and it is a gap in the
+   analysis rather than in the code: the disclosure gate behaves identically
+   whatever the target jurisdiction, which is precisely the problem, because it
+   means a United States output is classified by a rule derived from Canadian and
+   Spanish law.
+
+   Closing it needs a United States practitioner and would answer, at minimum:
+   whether `assessment`-class output is unauthorized practice in any state where
+   Meridian would have users; whether the `practitioner` audience should
+   distinguish an attorney from an EOIR-accredited representative the way
+   `RepresentativeCredential` already distinguishes `spanish_gestor` from
+   `spanish_abogado`; and whether `canRelease`'s jurisdiction-match rule is even
+   the right shape where the licence is state-level and the proceeding is federal.
