@@ -77,6 +77,7 @@ import {
 
 import { bi, type Bi } from '@/lib/i18n';
 import { AS_OF } from '@/lib/sample/common';
+import type { ToolEntry } from '@/lib/tools/registry';
 import { collect, issue, readDateField, readIntegerField, type FieldIssue } from '@/lib/tools/validation';
 
 /**
@@ -793,6 +794,13 @@ function viewCriteria(pathway: Pathway, report: EligibilityReport): CriterionVie
  * produces the same paragraph twice. The text is identical, so it is shown once
  * with both criteria named — repeating a caveat verbatim trains people to skim
  * past it, which is the opposite of what the caveat is for.
+ *
+ * The criteria are de-duplicated **by their text, not by object identity**. The
+ * two regimes carry the same requirements under different ids —
+ * `es-nat-red-ccse` and `es-nat-gen-ccse` are distinct criteria whose labels are
+ * distinct objects with identical wording — so an identity check lets the same
+ * sentence through twice, and a list keyed on that sentence then renders two
+ * children with the same key.
  */
 function viewNotes(routes: readonly RouteAssessment[]): readonly NoteView[] {
   interface Grouped {
@@ -821,7 +829,7 @@ function viewNotes(routes: readonly RouteAssessment[]): readonly NoteView[] {
           citationId: note.citationId,
           criteria: label === undefined ? [] : [label],
         });
-      } else if (label !== undefined && !existing.criteria.includes(label)) {
+      } else if (label !== undefined && !existing.criteria.some((c) => c.en === label.en)) {
         existing.criteria.push(label);
       }
     }
@@ -934,22 +942,15 @@ export const UNKNOWN_CAVEAT: Bi = bi(
 /**
  * The registry entry for this tool.
  *
- * `lib/tools/registry.ts` is the one place that enumerates the tools and it
- * belongs to another author, so the entry is declared here and imported there.
- * Keeping it beside the tool means the description cannot drift from what the
- * tool actually does.
+ * `lib/tools/registry.ts` is the one place that enumerates the tools, and it
+ * belongs to another author — so the entry is declared here, beside the tool it
+ * describes, and imported there. Two properties follow from that arrangement
+ * and both are the reason for it: the description cannot drift from what the
+ * tool actually does, and `ToolEntry` is imported as a **type only**, so
+ * `verbatimModuleSyntax` erases it and no runtime import cycle exists even once
+ * the registry imports this constant back.
  */
-export interface NationalityToolEntry {
-  readonly id: string;
-  readonly href: string;
-  readonly name: Bi;
-  readonly summary: Bi;
-  readonly input: Bi;
-  readonly notThis: Bi;
-  readonly rule: Bi;
-}
-
-export const NATIONALITY_ES_TOOL_ENTRY: NationalityToolEntry = {
+export const NATIONALITY_ES_TOOL_ENTRY: ToolEntry = {
   id: 'nationality-es',
   href: '/tools/nationality-es',
   name: bi(

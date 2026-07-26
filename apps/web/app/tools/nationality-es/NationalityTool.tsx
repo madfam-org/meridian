@@ -571,9 +571,29 @@ function RouteBlock({ route }: { readonly route: RouteAssessment }) {
   );
 }
 
+/**
+ * One note the engine attached to a report.
+ *
+ * The source is named **first**, before the text, and that ordering is the
+ * point. `NOTE_TITLE` is keyed by the note's `code`, so every discretionary
+ * source produces the same heading — and both regimes lean on two different
+ * discretionary sources, which puts two identically-titled boxes on the page.
+ * Leading with the citation id makes them tell themselves apart at a glance;
+ * two boxes that look identical until you read the third paragraph are two
+ * boxes a reader skips, which is the opposite of what a caveat is for.
+ */
 function NoteCallout({ note }: { readonly note: NoteView }) {
   return (
     <Callout tone="warn" icon="!" title={NOTE_TITLE[note.code]}>
+      {note.citationId !== undefined ? (
+        <p className={styles.noteSource}>
+          <span className={styles.noteSourceLabel}>
+            <TInline text={bi('The source', 'La fuente')} />
+          </span>{' '}
+          <CitationRefs ids={[note.citationId]} />
+        </p>
+      ) : null}
+
       {/* The note is `@meridian/pathways`' own text and is shown verbatim. */}
       <p className={styles.noteText} lang="en">
         {note.text}
@@ -592,7 +612,6 @@ function NoteCallout({ note }: { readonly note: NoteView }) {
           </ul>
         </div>
       ) : null}
-      {note.citationId !== undefined ? <CitationRefs ids={[note.citationId]} /> : null}
     </Callout>
   );
 }

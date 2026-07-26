@@ -709,6 +709,27 @@ export const SCHENGEN_EXAMPLES: readonly SchengenExample[] = [
     proposedFrom: '2026-08-25',
   },
   {
+    id: 'worst-day',
+    label: bi(
+      'The day you fly home is not the day that decides',
+      'El día de regreso no es el día que decide',
+    ),
+    note: bi(
+      'An earlier stay, then a two-leg trip with a short gap between the legs. Usage is at its highest at the start of the trip and falls as the older days age out of the window, so reading the day of departure understates it.',
+      'Una estancia anterior y después un viaje de dos tramos con un breve intervalo entre ellos. El consumo es máximo al principio del viaje y baja a medida que los días antiguos salen de la ventana, de modo que leer el día de salida lo subestima.',
+    ),
+    referenceDate: '2026-07-25',
+    stays: [
+      { country: 'ES', start: '2026-02-01', end: '2026-04-01' },
+      { country: 'IT', start: '2026-08-01', end: '2026-08-20' },
+      { country: 'GR', start: '2026-08-25', end: '2026-09-05' },
+    ],
+    plannedStart: '2026-08-01',
+    plannedEnd: '2026-09-05',
+    proposedDays: '30',
+    proposedFrom: '2026-09-06',
+  },
+  {
     id: 'ninety',
     label: bi('Exactly ninety days', 'Exactamente noventa días'),
     note: bi(
