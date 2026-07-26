@@ -24,6 +24,7 @@ COPY apps/api/package.json ./apps/api/
 COPY apps/web/package.json ./apps/web/
 COPY apps/admin/package.json ./apps/admin/
 COPY apps/landing/package.json ./apps/landing/
+COPY packages/atlas/package.json ./packages/atlas/
 COPY packages/core/package.json ./packages/core/
 COPY packages/mrtd/package.json ./packages/mrtd/
 COPY packages/presence/package.json ./packages/presence/

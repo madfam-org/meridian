@@ -52,6 +52,16 @@ jobs:
       - name: Pathway citations
         run: node scripts/check-pathway-citations.mjs
 
+      # Adding one workspace package breaks the image build of every other
+      # service until its manifest is copied into each Dockerfile, because
+      # --frozen-lockfile validates against the whole workspace. That failure
+      # names the lockfile rather than the missing COPY, and it has cost this
+      # repository two separate debugging sessions. Runs in the policy job so it
+      # fails before any install is attempted — which is the point, since the
+      # install is the thing it predicts.
+      - name: Workspace manifests
+        run: node scripts/check-workspace-manifests.mjs
+
   typecheck:
     name: Type check
     runs-on: ${{ vars.ARC_BOOTSTRAP_COMPLETE == 'true' && 'madfam-runners-blue' || 'ubuntu-latest' }}
