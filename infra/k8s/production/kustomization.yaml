@@ -7,13 +7,13 @@ namespace: meridian
 # CI rewrites this file on every push to main, and if the checked-in form
 # differed the first commit would reindent everything and bury the one line that
 # actually changed.
+# web-*.yaml carry the workload named `meridian-app`: the file name follows the
+# source directory (apps/web), the workload name follows the public surface
+# (meridian-app.madfam.io). See web-deployment.yaml.
 resources:
 - namespace.yaml
 - api-deployment.yaml
 - api-service.yaml
-# web-*.yaml carry the workload named `meridian-app`: the file name follows the
-# source directory (apps/web), the workload name follows the public surface
-# (meridian-app.madfam.io). See web-deployment.yaml.
 - web-deployment.yaml
 - web-service.yaml
 - admin-deployment.yaml
@@ -47,11 +47,15 @@ resources:
 # anywhere else means the first CI run moves it, and that reordering commit
 # lands on top of the digest change it was supposed to be.
 images:
-- name: ghcr.io/madfam-org/meridian-admin
-  newTag: main
-- name: ghcr.io/madfam-org/meridian-api
-  newTag: main
-- name: ghcr.io/madfam-org/meridian-web
-  newTag: main
-- name: ghcr.io/madfam-org/meridian/landing
-  newTag: main
+- digest: sha256:5eaa87c6c3b3bc76356e30a5c872d15037b375631054d51d93a62e08dd78a6a4
+  name: ghcr.io/madfam-org/meridian-admin
+  newName: ghcr.io/madfam-org/meridian-admin
+- digest: sha256:9a9547aec9093b09280610e903ca344095d191ecf95d0f86900d7433e70f359f
+  name: ghcr.io/madfam-org/meridian-api
+  newName: ghcr.io/madfam-org/meridian-api
+- digest: sha256:cc162375f75b18bcb37589e9409122e79b8a39335a75689f9b643a196c38922e
+  name: ghcr.io/madfam-org/meridian-web
+  newName: ghcr.io/madfam-org/meridian-web
+- digest: sha256:f03f72247c8f859caedeadf92edccff3224e72450bd8cf3c45a8a9b99ed75312
+  name: ghcr.io/madfam-org/meridian/landing
+  newName: ghcr.io/madfam-org/meridian/landing
