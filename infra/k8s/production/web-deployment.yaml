@@ -46,7 +46,7 @@ spec:
           # Immutable digest, rewritten in place by the `Pin image digests` step
           # of .github/workflows/build-deploy.yml. See api-deployment.yaml for
           # why the digest is written here and not only in kustomization.yaml.
-          image: ghcr.io/madfam-org/meridian-web@sha256:43be442075c45526fa95c46011e5e4ed572299410de8e59bb884cf92d787c82f
+          image: ghcr.io/madfam-org/meridian-web@sha256:6db05b27af2d0a6d3f6902d41c48c8a299275fa35c28047e47f98f6e5f5c65ad
           ports:
             - name: http
               containerPort: 3000
