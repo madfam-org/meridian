@@ -17,6 +17,7 @@ import Link from 'next/link';
 
 import { bi } from '@/lib/i18n';
 import { TInline, TProse } from '@/components/Bilingual';
+import { CoverageBoundary } from '@/components/CoverageBoundary';
 import { Page, PageHeader, Section } from '@/components/Layout';
 
 import { SchengenTool } from './SchengenTool';
@@ -66,6 +67,16 @@ export default function SchengenToolPage() {
           )}
         />
       </Section>
+
+      {/*
+        A day count that comes back over the allowance is the moment a reader
+        starts asking what else there is — and what else there is, in this
+        product, is a short catalog with large and specific holes in it. The
+        result panel already states what a day count cannot decide; this states
+        what the catalog behind the rest of the site does not contain, so the two
+        limits are both visible from the page a person actually landed on.
+      */}
+      <CoverageBoundary />
 
       <SchengenTool />
     </Page>

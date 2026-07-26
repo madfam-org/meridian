@@ -15,6 +15,29 @@
   font-size: 0.9375rem;
 }
 
+/*
+ * The coverage gaps.
+ *
+ * Not `.list`: a bulleted run-on is what a reader skims, and each of these is a
+ * distinct route somebody may need to carry to a lawyer one at a time. A rule on
+ * the leading edge separates them, and the jurisdiction chip sits on the same
+ * baseline as the first line of the route name.
+ */
+.gaps {
+  list-style: none;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  font-size: 0.9375rem;
+}
+
+.gaps > li {
+  border-left: 3px solid var(--warn-border);
+  padding-left: var(--space-3);
+}
+
 .factBadge {
   margin-top: var(--space-2);
 }

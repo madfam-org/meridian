@@ -47,26 +47,33 @@ None of the three Next.js applications has a test suite. That is the largest
 remaining gap in the repository, and it is why those three rows claim only that
 they build.
 
-All three repository guard scripts pass. Each prints what it examined rather
-than only its verdict, because a guard that has quietly stopped matching
-anything passes just as silently as one that is working:
+Each repository guard script prints what it examined rather than only its
+verdict, because a guard that has quietly stopped matching anything passes just
+as silently as one that is working:
 
 ```
 $ node scripts/check-advice-boundary.mjs
 check-advice-boundary: OK — gate and producer anchors verified,
-123 application files read, 16 routes examined.
+155 application files read, 16 routes examined.
 
 $ node scripts/check-no-credential-custody.mjs
-check-no-credential-custody: OK — 273 files scanned, 3 rules,
+check-no-credential-custody: OK — 340 files scanned, 3 rules,
 3 path exemptions, 2 structural anchors verified.
 
 $ node scripts/check-pathway-citations.mjs
-check-pathway-citations: OK — as of <run date>: 4 catalog files, 8 pathways,
-20 citations, 64 criterion references resolved
+check-pathway-citations: OK — as of <run date>: 11 catalog files, 49 pathways,
+201 citations, 511 criterion references resolved
 ```
 
 The citations check prints the UTC date it ran on, because staleness is measured
 against it; the counts are what is fixed.
+
+**The citations check is currently failing**, and the output above is its last
+passing run. `catalog/index.ts` now assembles `MERIDIAN_PATHWAY_CATALOG` from a
+list of modules rather than from a literal array, and the script locates the
+shipped set by pattern, so its anti-vacuity check refuses to confirm a set it
+cannot read. That refusal is the feature. The script needs re-anchoring on the
+new shape; the check must not be relaxed.
 
 Two of them were additionally proven able to fail: a deliberate violation was
 written into `apps/api/src/`, each script caught it, and the file was removed.
@@ -127,11 +134,19 @@ architecture documents describe:
 
 - **Nothing is deployed.** No namespace, no DNS, no tunnel routes. The manifests
   and the Enclii service definitions exist; the operator gates have not been run.
-- **No pathway has been reviewed by counsel.** All 8 ship
+- **No pathway has been reviewed by counsel.** All 49 carry
   `reviewStatus: 'unreviewed'`, so `recommend()` ranks nothing and lists every
   pathway as excluded with code `not_counsel_reviewed`. This is the intended
   live state, not a placeholder — see
-  [docs/LEGAL_CATALOG_REVIEW.md](docs/LEGAL_CATALOG_REVIEW.md).
+  [docs/LEGAL_CATALOG_REVIEW.md](docs/LEGAL_CATALOG_REVIEW.md) and the packet
+  written for the reviewer,
+  [docs/COUNSEL_REVIEW_PACKET.md](docs/COUNSEL_REVIEW_PACKET.md).
+- **`scripts/check-pathway-citations.mjs` is failing and needs re-anchoring.**
+  The catalog index now assembles `MERIDIAN_PATHWAY_CATALOG` from a list of
+  modules rather than a literal array, and the guard locates the shipped set by
+  pattern. It is the anti-vacuity check refusing to confirm a set it cannot
+  read — which is what it exists to do — so the fix belongs in the script, not
+  in the check.
 - **No government integration is live.** Of 15 declared adapter capabilities, 6
   are `available` and every one of those is local computation. Zero
   `government_system` capabilities are available: 2 are `not_provisioned`
@@ -326,26 +341,46 @@ Full detail, including where the disclosure gate sits in the request path:
 
 | | |
 |---|---|
-| Pathways | 8 — six Spain, two Canada |
+| Pathway records | 49 — 26 Spain, 23 Canada, across nine source files |
 | Counsel-reviewed | **0** |
-| Open on 2026-07-25 | 7 of 8 — the Spanish investor route is recorded as closed |
-| Eligibility criteria | 43 |
-| Distinct citations in the pathway catalog | 20, of which 5 are `discretionary` and 7 carry a URL |
+| Status as recorded | 42 open, 5 closed, 2 suspended |
+| Eligibility criteria | 261 — 183 `blocking`, 50 `material`, 28 `informational` |
+| Criteria that escalate to a human | 65 unconditionally, 22 conditionally |
+| Pathways that can only return `requires_human_review` | 32 of 49 |
+| Distinct citations in the pathway catalog | 196, of which 47 are `discretionary` and 178 carry a URL |
 | Presence-engine citations | 6, of which 3 are `discretionary` |
 | Document-engine citations | 23, of which 15 are `discretionary` |
 | Govtech citations | 16, of which 9 are `discretionary` |
+| Pathways publishing a processing-time estimate | 0 |
 | Jurisdictions | ES, CA (plus MX and US translation profiles in `documents`) |
 | Catalog `verifiedOn` | 2026-07-25 — `fresh` until 2026-10-23 |
 
 Because no pathway is counsel-reviewed, `recommend()` returns an empty ranking
-and lists all 8 as excluded with code `not_counsel_reviewed`. That is the system
-working. The gating item between this engine and a sellable product is legal
-review, not engineering.
+and lists every pathway as excluded with code `not_counsel_reviewed`. That is the
+system working. The gating item between this engine and a sellable product is
+legal review, not engineering.
+
+**Read the coverage limits as carefully as the coverage.** 32 of the 49 records
+carry a criterion that can never be decided by software — a sponsor's status, a
+family relationship, physical presence as distinct from lawful residence, a
+provincial nomination — so those routes return `requires_human_review` for every
+applicant, by design, and each escalation names the fact it is waiting for.
+**Asylum, refugee protection and humanitarian/compassionate claims are
+deliberately out of scope and will not be added**: they turn on credibility
+assessment rather than criteria, they concern people at risk, and a self-serve
+eligibility checker is the wrong instrument. Other named absences — Spain's route
+for family members of Spanish nationals, every IRCC operational figure that lives
+only in program delivery instructions, and all admissibility grounds beyond a
+self-declared criminal record — are listed in
+[docs/LEGAL_CATALOG_REVIEW.md](docs/LEGAL_CATALOG_REVIEW.md).
 
 Two foundational corridors seed the catalog: **Mexico → Spain** (nationality by
-residence on the reduced two-year period) and **Mexico → Canada** (CUSMA
-Chapter 16 professional entry, bridging to the Canadian Experience Class). The
-engine is jurisdiction-generic; the corridors are data in
+residence on the reduced two-year period, now alongside the *arraigo* figures,
+work and study authorisations, family reunification and long-term residence) and
+**Mexico → Canada** (CUSMA Chapter 16 professional entry bridging to the Canadian
+Experience Class, now alongside the federal economic classes, the provincial and
+Quebec systems, temporary residence and the family class). The engine is
+jurisdiction-generic; the corridors are data in
 `packages/pathways/src/catalog/`.
 
 ---

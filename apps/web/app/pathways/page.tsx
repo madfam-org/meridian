@@ -12,6 +12,7 @@ import { pathwayKindLabel, pathwayStatusView, reviewStatusView } from '@/lib/sta
 import { Badge, Chip } from '@/components/Badge';
 import { T, TInline, TProse } from '@/components/Bilingual';
 import { Callout } from '@/components/Callout';
+import { CoverageBoundary } from '@/components/CoverageBoundary';
 import { DisclosureNotice } from '@/components/DisclosureNotice';
 import { Card, Empty, Page, PageHeader, Section, Stack } from '@/components/Layout';
 
@@ -86,6 +87,15 @@ export default async function PathwaysPage({
           )}
         />
       </Callout>
+
+      {/*
+        A complete-looking list is a claim of completeness whether or not anybody
+        wrote one down. This page shows every route Meridian encodes, filterable
+        by jurisdiction, and a reader who finds nothing that fits them has no way
+        to tell "no such route exists" from "this catalog is a sample". So the
+        sample says which significant routes it is a sample of.
+      */}
+      <CoverageBoundary />
 
       <Section
         id="filter"

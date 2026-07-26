@@ -17,6 +17,175 @@ Dates are ISO 8601. Times, where they appear, are `America/Mexico_City`.
 
 Nothing released yet. Meridian has never been deployed and has no users.
 
+### Added — 2026-07-25, later the same day: pathway catalog expansion
+
+Six new catalog files under `packages/pathways/src/catalog/`, adding **41
+pathway records** to the eight from the initial build. Nothing outside the
+catalog directory and `docs/` was touched: no change to `evaluate.ts`,
+`schema.ts`, `facts.ts`, `integrity.ts` or any other package. The figures in the
+`@meridian/pathways` entry below describe the initial build and are superseded by
+these.
+
+| | Initial build | After expansion |
+|---|---|---|
+| Catalog files holding pathway records | 4 | 9 |
+| Pathway records | 8 | **49** (26 ES, 23 CA) |
+| Criteria | 43 | **261** |
+| Distinct citations | 20 | **196** |
+| Citations marked `discretionary` | 5 | **47** |
+| Citations carrying a URL | 7 | **178** |
+| Counsel-reviewed | 0 | **0** |
+
+New files, each with a module doc comment recording its sources, its judgement
+calls and its omissions:
+
+- **`es-arraigo.ts`** — Spain's five open *arraigo* figures under RD 1155/2024
+  arts. 127.a–e as amended by RD 316/2026, plus the DA 21ª extraordinary window
+  recorded as closed on 2026-07-01. 6 records, 41 criteria.
+- **`es-work-study.ts`** — employed and self-employed work authorisations, the
+  study stay, the study-to-work modification, the Ley 14/2013 entrepreneur route,
+  and long-term residence in both its EU and national forms, which are encoded as
+  two records because arts. 176 and 183 impose different requirements.
+  7 records, 35 criteria.
+- **`es-family-nationality.ts`** — *reagrupación familiar*, the EU family-member
+  card and its permanent form, and four nationality routes including the
+  Sephardic limb of Código Civil art. 22.1 that `es.ts` recorded as a gap.
+  7 records, 31 criteria.
+- **`ca-federal-economic.ts`** — the Federal Skilled Worker and Federal Skilled
+  Trades classes. Express Entry is documented as the management system it is,
+  not encoded as a pathway. 2 records, 14 criteria.
+- **`ca-provincial-quebec.ts`** — the Provincial Nominee framework and Quebec's
+  separate selection system, including the PSTQ and the reactivated PEQ.
+  4 records, 18 criteria.
+- **`ca-work-study.ts`** — the LMIA-based work permit, CUSMA traders, investors
+  and intra-company transferees, and the study permit → post-graduation work
+  permit → Canadian Experience Class chain. 6 records, 34 criteria.
+- **`ca-family-pilots.ts`** — spousal and partner sponsorship inland and outland,
+  dependent children, parents and grandparents, the Start-up Visa, the Atlantic
+  program, and the rural, Rural and Northern, and Agri-Food pilots.
+  9 records, 45 criteria.
+
+Program-status findings that would have been wrong from memory, each verified
+against the responsible authority's own publication:
+
+- **IRPR s. 87 was amended on 2026-03-30** by `SOR/2026-63`, repealing the
+  officer's substituted-evaluation power and the second-officer concurrence
+  requirement for provincial nominees.
+- **Parents and grandparents: intake paused 2026-07-15.** Recorded `suspended`;
+  the class in IRPR s. 117(1)(c)/(d) is untouched.
+- **Start-up Visa: paused 2026-06-30.** Recorded `suspended`.
+- **Rural and Northern Immigration Pilot: closed 2024-09-01**, superseded by the
+  Rural Community Immigration Pilot, which is encoded as a live record.
+- **Agri-Food Pilot: closed 2025-05-14.**
+- **Quebec's PEQ was abolished 2025-11-19 and reactivated for a reception window
+  running 2026-07-02 to 2026-10-31**, encoded as a filing-date test rather than
+  as `openedOn`, because `statusOn()` cannot express "open, abolished, reopened".
+- **Spain's `arraigo` figures opened 2025-05-20** under the new Reglamento;
+  art. 126.h was added by RD 316/2026 and appears only in the version stamped
+  2026-04-16.
+
+Documentation:
+
+- **`docs/COUNSEL_REVIEW_PACKET.md`** (new) — the document a reviewing lawyer
+  opens: what they are and are not being asked to attest to, how to read a
+  pathway and a criterion, how `verifiedOn` and the staleness bands work, why the
+  `discretionary` flag carries legal weight, twenty-seven specific questions
+  across the two jurisdictions, and what actually changes when `reviewStatus`
+  moves to `counsel_reviewed`.
+- **`docs/LEGAL_CATALOG_REVIEW.md`** — refreshed for 49 records: full
+  per-jurisdiction inventory, the defined-versus-shipped distinction, the
+  escalation figures, the catalog-authoring pitfalls found this sweep, and the
+  list of facts the catalog needs and does not have.
+
+### Not covered — say it plainly
+
+- **Asylum, refugee protection and humanitarian/compassionate claims are
+  deliberately not encoded, and will not be.** They turn on credibility
+  assessment rather than on criteria; they concern people at risk; and a
+  self-serve eligibility checker is the wrong instrument for them. The exclusion
+  is named in the module header of every file added here, and again in the
+  guidance of the individual criteria where a reader most plausibly arrives with
+  a protection question — each pointing to a qualified immigration lawyer or a
+  specialised organisation rather than elsewhere in the product. **There is no
+  catalog-level, user-visible statement of this yet**; it lives in file comments
+  and individual guidance strings and needs an owner in `catalog/index.ts` or in
+  the applications.
+- **32 of the 49 records can only return `requires_human_review`.** They carry at
+  least one criterion marked `requiresHumanReview: true`, which escalates the
+  whole report. This is the deliberate answer to `ApplicantFacts` modelling one
+  person while sponsorship, family ties, physical presence, provincial
+  nominations, per-ability language scores and hours-based work thresholds all
+  need something it does not hold. Each escalation names the missing fact in its
+  `humanReviewReason` so it can be retired individually.
+- **No operational figure from IRCC's program delivery instructions appears
+  anywhere.** canada.ca refused automated access throughout this work, so the
+  post-graduation work permit field-of-study list and language thresholds, the
+  study-permit settlement-funds amount, LMIA exemption codes and the CUSMA
+  "substantial trade" percentage are all absent. The statutory and regulatory
+  frame is encoded from Justice Laws, which was reachable.
+- **No Comprehensive Ranking System number of any kind** — no cut-off, no
+  maximum, no factor value. A cut-off is a per-round outcome.
+- **The Spanish long-term-residence absence limits are stated in guidance, not
+  measured.** Arts. 176.a) and 183.2 are denominated in months and the fact model
+  carries days; six consecutive calendar months is between 181 and 184 days, so
+  any threshold would have been our arithmetic presented as Spain's.
+- **No processing-time estimate on any of the 49 records**, unchanged.
+- Other named absences: Spanish Título IV Cap. VII (family of Spanish
+  nationals — for a Mexican married to a Spaniard this is the actual answer),
+  art. 128 humanitarian grounds, Título VII Caps. II–V, DA 20ª; Canada's
+  Francophone Community Immigration Pilot, the super visa, intercountry adoption
+  and orphaned-relative sponsorship, the "lonely Canadian" provision, and stream
+  criteria for any individual province; and, in both jurisdictions, every
+  admissibility ground beyond a self-declared criminal record — medical, security
+  and misrepresentation are untouched.
+
+### Changed — catalog assembly
+
+`packages/pathways/src/catalog/index.ts` now builds `MERIDIAN_PATHWAY_CATALOG` by
+concatenating `MERIDIAN_CATALOG_MODULES` — the nine source modules written out in
+a fixed, append-stable order — instead of from a literal two-element array. All
+49 records are therefore shipped, and `catalogSourceOf(id)` reports which file a
+record lives in.
+
+The ordering rule is a legal constraint, not a style choice: `evaluateAll` and
+`assess` return reports in catalog order, so that order must say nothing about
+merit, likelihood or priority. Sorting by id was rejected because renaming a slug
+would re-shuffle what every reader sees first; sorting by anything substantive
+would be a claim about importance. Appending never renumbers an existing record.
+
+### Open after this change
+
+- **`scripts/check-pathway-citations.mjs` needs re-anchoring and is failing.**
+  It locates the shipped set by matching `MERIDIAN_PATHWAY_CATALOG … = [`, which
+  the new module-list assembly does not produce, so it reports "declares no
+  `MERIDIAN_PATHWAY_CATALOG` array" and exits 1. This is the guard's anti-vacuity
+  check working — it refuses to confirm a shipped set it cannot read, because a
+  check that reads nothing agrees with everything. **Fix the script to follow the
+  module list; do not relax the check.** Every other assertion it makes passed on
+  the same run: citation freshness, one-id-one-instrument, dangling references,
+  and parser-versus-raw record counts.
+- **Four probable defects in `es.ts` are unrepaired**, identified during research
+  and left alone because the file was being edited concurrently: citations to
+  RD 557/2011 that now point at repealed text; an over-stated insurer requirement
+  on `es-non-lucrative-visa`; IPREM stated annually where art. 62.1 states it
+  monthly; and the digital-nomad 20% cap. Separately,
+  `SPANISH_OFFICIAL_LANGUAGE_COUNTRIES` carries 19 entries where RD 1004/2015
+  art. 6.5 is a closed enumeration of 20 including Puerto Rico. These six records
+  should not go to counsel until this is addressed.
+- **One closing date is weakly sourced and flagged as such.**
+  `es-nationality-democratic-memory-option` carries `closedOn: '2025-10-23'` from
+  two official Spanish consular pages; the underlying Council of Ministers
+  agreement could not be located in the BOE. Its citation is `official_guidance`,
+  `discretionary: true`, and carries no URL.
+
+Verified on 2026-07-25: `pnpm build --filter "./packages/*"` — 7 tasks
+successful; `validateCatalog()` over all 49 records — 0 issues, 0 errors, 53
+`leadsTo` edges all resolving; `node scripts/check-pathway-citations.mjs` — OK
+before the index refactor (11 catalog files, 49 pathways, 201 citation
+constants, 511 criterion references resolved), failing after it for the reason
+above. The catalog figures in this entry were derived by loading the built
+catalog and counting the records, not from any summary.
+
 ### Added — 2026-07-25
 
 Initial build of the six domain packages, the API, and three Next.js

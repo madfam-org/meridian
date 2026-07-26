@@ -100,6 +100,59 @@ export const cusmaManagementConsultant: ApplicantFacts = {
   jobOffer: { ...cusmaEngineer.jobOffer, occupationCode: 'management_consultant' },
 };
 
+/**
+ * Somebody in Spain without authorisation — the population every *arraigo*
+ * route is written for.
+ *
+ * `currentStatus: 'irregular'` is never inferred anywhere in this engine; it is
+ * only ever recorded because a person said so. The residence periods a lawful
+ * applicant would carry are deliberately absent: an arraigo applicant's time in
+ * Spain is physical presence, which is not the same fact and which this engine
+ * does not hold.
+ */
+export const irregularInSpain: ApplicantFacts = {
+  applicantId: 'fixture-es-irregular',
+  nationalities: [MX],
+  claimedNationality: MX,
+  dateOfBirth: d('1992-02-29'),
+  targetJurisdiction: ES,
+  currentStatus: 'irregular',
+  absences: [],
+  criminalRecord: {
+    certificates: [{ jurisdiction: MX, clear: true, issuedOn: d('2026-05-01'), apostilled: true }],
+  },
+  referenceIndices: { ipremAnnualMinorUnits: 800_000, smiAnnualMinorUnits: 1_618_000, currency: 'EUR' },
+};
+
+/** A Mexican national with a written full-time offer from a Spanish employer. */
+export const spanishJobOffer: ApplicantFacts = {
+  applicantId: 'fixture-es-cuenta-ajena',
+  nationalities: [MX],
+  claimedNationality: MX,
+  dateOfBirth: d('1994-08-03'),
+  targetJurisdiction: ES,
+  currentStatus: 'none',
+  educationLevel: 'bachelor',
+  professionalExperienceYears: 6,
+  jobOffer: {
+    employerName: 'Fixture Employer',
+    employerCountry: ES,
+    writtenOffer: true,
+    selfEmployment: false,
+    fullTime: true,
+    durationMonths: 24,
+    annualSalaryMinorUnits: 2_400_000,
+    currency: 'EUR',
+  },
+  referenceIndices: { smiAnnualMinorUnits: 1_618_000, currency: 'EUR' },
+  criminalRecord: {
+    certificates: [
+      { jurisdiction: ES, clear: true },
+      { jurisdiction: MX, clear: true },
+    ],
+  },
+};
+
 /** A CEC candidate with just over a year of full-time TEER 1 work in Canada. */
 export const cecCandidate: ApplicantFacts = {
   applicantId: 'fixture-cec',

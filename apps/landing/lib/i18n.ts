@@ -40,6 +40,10 @@ export const UI = {
 
   navWhatItIs: bi('What it is', 'Qué es'),
   navCorridors: bi('Corridors', 'Corredores'),
+  /* Immediately after the corridors, because that is where a reader forms the
+     impression this corrects: the corridor cards are the most flattering part of
+     the page and say nothing about how small the sample is. */
+  navCoverage: bi('What it does not cover', 'Qué no cubre'),
   navBoundary: bi('The advice boundary', 'La frontera del asesoramiento'),
   navRefused: bi('What we refuse', 'Lo que rechazamos'),
   navStatus: bi('Status', 'Estado'),

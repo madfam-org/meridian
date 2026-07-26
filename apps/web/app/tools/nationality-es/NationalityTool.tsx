@@ -68,6 +68,7 @@ import { Badge, Chip } from '@/components/Badge';
 import { T, TInline, TProse } from '@/components/Bilingual';
 import { Callout } from '@/components/Callout';
 import { CitationList, CitationRefs } from '@/components/Citations';
+import { CoverageResultNotice } from '@/components/CoverageBoundary';
 import { DisclosureNotice } from '@/components/DisclosureNotice';
 import { Card, CivilDate, Fact, Facts, Section, Stack } from '@/components/Layout';
 import { ToolActionGroup, ToolActions, ToolButton } from '@/components/tools/Actions';
@@ -643,6 +644,19 @@ function NationalityResult({
         <TInline text={bi('Measured as at', 'Medido a fecha de')} />{' '}
         <CivilDate value={assessment.asOf} />
       </p>
+
+      {/*
+        First in the panel, before either regime is reported.
+
+        Both routes below can come back unmet or undecided on perfectly truthful
+        answers, and a reader who reads only their own verdict would take that as
+        "no route" when what it really means is that two records out of a small
+        catalog did not fit. The notice names the missing ones
+        rather than gesturing at them, and it is placed where the verdict is
+        rather than at the foot of the panel — a correction nobody scrolls to is
+        not a correction.
+      */}
+      <CoverageResultNotice jurisdictions={['ES']} />
 
       <Callout
         tone="warn"

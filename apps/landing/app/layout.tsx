@@ -124,6 +124,9 @@ export default function RootLayout({ children }: { readonly children: ReactNode 
               <a className={styles.navLink} href="#corridors">
                 <T text={UI.navCorridors} />
               </a>
+              <a className={styles.navLink} href="#coverage">
+                <T text={UI.navCoverage} />
+              </a>
               <a className={styles.navLink} href="#advice-boundary">
                 <T text={UI.navBoundary} />
               </a>

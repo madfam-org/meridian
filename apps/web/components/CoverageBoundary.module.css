@@ -1,0 +1,176 @@
+/*
+ * The coverage boundary reads as a limitation, so it takes the warn palette
+ * rather than the accent one the privacy note owns. Two tinted boxes in the same
+ * colour on one page merge into a single block a reader skims past, and this is
+ * the block that must not be skimmed past.
+ *
+ * The border is heavy on the leading edge and the heading is page-scale, because
+ * the statement is not a caveat attached to a result — it is a correction to the
+ * conclusion a reader is about to draw from one.
+ */
+
+.boundary {
+  border: 1px solid var(--warn-border);
+  border-left-width: 6px;
+  border-radius: var(--radius);
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.title {
+  font-size: 1.15rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.mark {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  flex: none;
+}
+
+.lead {
+  font-size: 1rem;
+  max-width: var(--measure);
+}
+
+.subheading {
+  font-size: 0.9375rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--space-2);
+}
+
+.covered,
+.missing,
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: var(--measure);
+}
+
+.jurisdictions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.jurisdictionHead {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.routes {
+  margin: var(--space-1) 0 0;
+  padding-left: 1.25rem;
+  font-size: 0.9375rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.gaps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/*
+ * A rule on the leading edge of each entry rather than a bullet: these are
+ * distinct routes a reader may need to carry to a lawyer one at a time, and a
+ * flat bulleted list runs them together.
+ */
+.gap {
+  border-left: 3px solid var(--warn-border);
+  padding-left: var(--space-3);
+}
+
+.gapName {
+  margin: 0;
+  font-weight: 600;
+}
+
+.gapSource {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+.unknown,
+.footnote {
+  font-size: 0.875rem;
+  opacity: 0.9;
+}
+
+/* ------------------------------------------------------------------------- */
+/* The result-panel variant                                                   */
+/* ------------------------------------------------------------------------- */
+
+.notice {
+  border: 1px solid var(--warn-border);
+  border-left-width: 6px;
+  border-radius: var(--radius);
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.noticeTitle {
+  font-size: 1.05rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.noticeLabel {
+  margin: 0;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.noticeGaps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 0.9375rem;
+}
+
+.noticeLink {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+/*
+ * Inside a tinted box the Spanish line would otherwise fall back to the global
+ * muted grey and lose contrast against the tint. Inheriting the box's own
+ * foreground at reduced opacity keeps the ratio while still reading as the
+ * secondary line. Same treatment as `Callout.module.css`.
+ */
+.boundary :global(span[lang='es']),
+.boundary :global(p[lang='es']),
+.notice :global(span[lang='es']),
+.notice :global(p[lang='es']) {
+  color: inherit;
+  opacity: 0.85;
+}

@@ -23,6 +23,7 @@ import { Badge, Chip } from '@/components/Badge';
 import { T, TInline, TProse } from '@/components/Bilingual';
 import { Callout } from '@/components/Callout';
 import { CitationList, CitationRefs, UnresolvedCitation } from '@/components/Citations';
+import { CoverageBoundary } from '@/components/CoverageBoundary';
 import { DisclosureNotice } from '@/components/DisclosureNotice';
 import {
   Card,
@@ -433,6 +434,18 @@ export default async function PathwayPage({
           </Stack>
         )}
       </Section>
+
+      {/*
+        Directly under the verdict, scoped to this record's own jurisdiction.
+
+        A reader who has just seen a route report "not met" against the worked
+        example — or who has just read that this route is closed — is at the
+        point of deciding there is nothing here for them. Naming the routes this
+        catalog leaves out of the same country is the only thing on the page that
+        can correct that, and listing the other jurisdiction's omissions here
+        would bury it in material that does not apply.
+      */}
+      <CoverageBoundary jurisdictions={[pathway.jurisdiction]} />
 
       <Section
         id="criteria"

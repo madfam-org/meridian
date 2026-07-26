@@ -25,6 +25,7 @@ import Link from 'next/link';
 import { bi } from '@/lib/i18n';
 import { T, TInline, TProse } from '@/components/Bilingual';
 import { Callout } from '@/components/Callout';
+import { CoverageBoundary } from '@/components/CoverageBoundary';
 import { Page, PageHeader, Section, Stack } from '@/components/Layout';
 
 import { NationalityTool } from './NationalityTool';
@@ -56,6 +57,20 @@ export default function NationalityEsToolPage() {
           'El art. 22 del Código Civil fija dos plazos de residencia: diez años como regla general y dos para los nacionales de los Estados que enumera. Cuál se aplica a una persona concreta depende de preguntas que un resumen del artículo no plantea, y equivocarse en una de ellas es la diferencia entre dos años y diez. Esta página las plantea, contrasta sus respuestas con ambos regímenes y muestra el precepto que respalda cada criterio.',
         )}
       />
+
+      {/*
+        Above the questions, not below the answer.
+
+        This page asks about one route to one status in one country. A reader who
+        does not qualify under it, or whose answers leave it undecided, has been
+        told nothing whatsoever about the routes they might actually have — and
+        the routes most people in Spain without status use are not in this
+        catalog at all. Putting that after the form would mean the reader meets
+        it only if they scroll past their own result, and the result is the
+        moment the wrong conclusion gets drawn. `NationalityTool` carries the
+        same statement inside the result panel for the same reason.
+      */}
+      <CoverageBoundary jurisdictions={['ES']} />
 
       <Section
         id="what-this-asks"

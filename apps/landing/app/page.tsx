@@ -3,6 +3,15 @@ import type { Metadata } from 'next';
 import { bi } from '@/lib/i18n';
 import { plural } from '@/lib/ui';
 import { CATALOG, NOTHING_IS_COUNSEL_REVIEWED } from '@/lib/catalog-facts';
+import {
+  COVERAGE_LEAD,
+  COVERAGE_NOT_EXHAUSTIVE,
+  COVERAGE_OUT_OF_SCOPE,
+  COVERAGE_TITLE,
+  COVERAGE_WHERE_TO_ASK,
+  JURISDICTIONS_WITHOUT_REGISTER,
+  UNCOVERED_ROUTES,
+} from '@/lib/coverage';
 import { PORTAL_URL, REPO_URL } from '@/lib/links';
 import { Badge, Chip } from '@/components/Badge';
 import { T, TProse } from '@/components/Bilingual';
@@ -124,9 +133,27 @@ export default function HomePage() {
             `El catálogo incluye ${CATALOG.pathways} vías, de las cuales ${CATALOG.counselReviewed} ${CATALOG.counselReviewed === 1 ? 'cuenta' : 'cuentan'} con validación de letrado. ${NOTHING_IS_COUNSEL_REVIEWED ? 'Por eso hoy todo resultado de clase recomendación está bloqueado' : 'Solo los registros validados pueden formar parte de una recomendación'}: por diseño, no por descuido. No hay ninguna integración pública aprovisionada, y ninguna aplicación de este producto tiene cuenta, inicio de sesión ni base de datos.`,
           )}
         />
+        {/*
+          The counted figures say how much of the catalog a lawyer has read. They
+          say nothing about how much of either country's law the catalog reaches,
+          and a reader who takes eight records for a map will draw a conclusion
+          about their own case that nothing on this page contradicts. So the
+          coverage boundary is signposted from the first screen, beside the
+          status link, rather than left for whoever scrolls far enough.
+        */}
         <p className={styles.calloutLink}>
           <a href="#status">
             <T text={bi('The full status, with counts', 'El estado completo, con cifras')} />
+          </a>
+        </p>
+        <p className={styles.calloutLink}>
+          <a href="#coverage">
+            <T
+              text={bi(
+                'What the catalog does not cover, named route by route',
+                'Qué no cubre el catálogo, vía por vía',
+              )}
+            />
           </a>
         </p>
       </Callout>
@@ -259,6 +286,79 @@ export default function HomePage() {
             </Fact>
           </Facts>
         </Card>
+      </Section>
+
+      {/*
+        Immediately after the corridors, because the corridors section is where
+        this page is at its most flattering: two country cards, a count of
+        pathways, a count of criteria, a count of sources. Everything in it is
+        true and none of it says how small the sample is. A reader who stops
+        there leaves believing Meridian has something to say about their case,
+        and for most people arriving from either corridor it does not.
+
+        The list is not decoration and not a roadmap — nothing here is promised.
+        It is the set of routes a person could reasonably expect to find and will
+        not, named specifically enough to take to somebody qualified. Each entry
+        retires itself from `lib/coverage.ts` once the catalog answers it, so this
+        section cannot go on claiming a hole that has been filled, and cannot
+        quietly stop mentioning one that has not.
+      */}
+      <Section
+        id="coverage"
+        title={bi('What the catalog does not cover', 'Qué no cubre el catálogo')}
+        description={bi(
+          'The counts above are real and they are small. This is the other half of that sentence: the significant routes in the same two countries that Meridian does not encode at all.',
+          'Las cifras anteriores son reales y son pequeñas. Esta es la otra mitad de la frase: las vías importantes de esos mismos dos países que Meridian no codifica en absoluto.',
+        )}
+      >
+        <Stack gap="md">
+          <Callout tone="warn" icon="⚑" title={COVERAGE_TITLE}>
+            <TProse text={COVERAGE_LEAD} />
+          </Callout>
+
+          <Card>
+            <h3 className={styles.cardTitle}>
+              <T text={bi('Not encoded', 'Sin codificar')} />
+            </h3>
+            <ul className={styles.gaps}>
+              {UNCOVERED_ROUTES.map((route) => (
+                <li key={route.key}>
+                  <Chip>{route.jurisdiction}</Chip> <T text={route.name} />
+                </li>
+              ))}
+            </ul>
+
+            {JURISDICTIONS_WITHOUT_REGISTER.length > 0 ? (
+              <TProse
+                text={bi(
+                  `The catalog also encodes routes for ${JURISDICTIONS_WITHOUT_REGISTER.join(', ')}, and nobody has recorded what is missing there. Treat coverage for ${JURISDICTIONS_WITHOUT_REGISTER.length === 1 ? 'that jurisdiction' : 'those jurisdictions'} as unknown rather than complete.`,
+                  `El catálogo también codifica vías para ${JURISDICTIONS_WITHOUT_REGISTER.join(', ')}, y nadie ha dejado constancia de qué falta allí. Considere la cobertura de ${JURISDICTIONS_WITHOUT_REGISTER.length === 1 ? 'esa jurisdicción' : 'esas jurisdicciones'} como desconocida y no como completa.`,
+                )}
+              />
+            ) : null}
+
+            <TProse text={COVERAGE_NOT_EXHAUSTIVE} />
+          </Card>
+
+          <Callout
+            tone="neutral"
+            icon="◆"
+            title={bi(
+              'Permanently out of scope: protection claims',
+              'Fuera de alcance de forma permanente: la protección internacional',
+            )}
+          >
+            <TProse text={COVERAGE_OUT_OF_SCOPE} />
+          </Callout>
+
+          <Callout
+            tone="accent"
+            icon="§"
+            title={bi('Who to ask instead', 'A quién preguntar en su lugar')}
+          >
+            <TProse text={COVERAGE_WHERE_TO_ASK} />
+          </Callout>
+        </Stack>
       </Section>
 
       <Section

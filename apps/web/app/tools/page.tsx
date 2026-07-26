@@ -25,6 +25,7 @@ import { BOUNDARY_BODY, BOUNDARY_EXCLUSIONS, BOUNDARY_TITLE } from '@/lib/tools/
 import { TOOLS } from '@/lib/tools/registry';
 import { T, TInline, TProse } from '@/components/Bilingual';
 import { Callout } from '@/components/Callout';
+import { CoverageBoundary } from '@/components/CoverageBoundary';
 import { Grid, Page, PageHeader, Section, Stack } from '@/components/Layout';
 import { PrivacyNote } from '@/components/tools/PrivacyNote';
 
@@ -64,6 +65,16 @@ export default function ToolsIndexPage() {
           ))}
         </ul>
       </Callout>
+
+      {/*
+        The callout above says these tools will not recommend. This one says
+        something different and equally load-bearing: what they measure against
+        is a small catalog, and a route missing from it produces the same silence
+        as a route the reader does not qualify for. The two are indistinguishable
+        from a result screen unless the missing routes are named, so they are
+        named — derived from the catalog, so the claim cannot outlive the code.
+      */}
+      <CoverageBoundary />
 
       <Section
         id="available"
