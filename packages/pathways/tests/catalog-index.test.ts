@@ -148,6 +148,93 @@ describe('catalog assembly', () => {
   });
 });
 
+describe('the United States block, across its four source files', () => {
+  const US_MODULES = ['us-family', 'us-employment', 'us-nonimmigrant', 'us-status-bars'];
+  const usPathways = pathwaysForJurisdiction('US');
+
+  it('is the last four modules, in the order they were added', () => {
+    // The block went on the end because appending never renumbers what came
+    // before, not because of anything about the corridor — which is the largest
+    // in the world.
+    const sources = MERIDIAN_CATALOG_MODULES.map((m) => m.source);
+    expect(sources.slice(-4)).toEqual(US_MODULES);
+  });
+
+  it('keeps every bridge inside the file that declares it', () => {
+    // The four files were written in parallel and none of them names an id
+    // belonging to another, so no ordering of the wiring step can break a
+    // `leadsTo`. Worth pinning: the failure mode of the alternative is an
+    // `unknown_leads_to` error that only appears once both files are present.
+    for (const module of MERIDIAN_CATALOG_MODULES) {
+      if (!US_MODULES.includes(module.source)) continue;
+      const own = new Set(module.pathways.map((p) => p.id));
+      for (const pathway of module.pathways) {
+        for (const target of pathway.leadsTo) {
+          expect(own.has(target), `${module.source}: ${pathway.id} -> ${target}`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('publishes no processing time on any of the 35 records', () => {
+    expect(usPathways).toHaveLength(35);
+    for (const pathway of usPathways) {
+      expect(pathway.durations.publishedProcessingDays, pathway.id).toBeUndefined();
+    }
+  });
+
+  it('quotes no Visa Bulletin cut-off date anywhere in the corridor', () => {
+    // Preference categories are numerically limited and the bulletin moves every
+    // month; per-country limits mean a Mexican applicant's position differs from
+    // another nationality's by years. Any date copied out of it would be wrong
+    // within weeks, so the structure of the limit is encoded and no figure is.
+    // The bulletin's own format is what this looks for: `15MAR05`.
+    const cutOff = /\b\d{2}(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\d{2}\b/;
+    for (const pathway of usPathways) {
+      const text = [
+        pathway.name.en,
+        pathway.name.es,
+        pathway.summary.en,
+        pathway.summary.es,
+        pathway.durations.note?.en,
+        pathway.durations.note?.es,
+        ...pathway.criteria.flatMap((c) => [
+          c.label.en,
+          c.label.es,
+          c.guidance?.en,
+          c.guidance?.es,
+          c.humanReviewReason?.en,
+          c.humanReviewReason?.es,
+        ]),
+        ...pathway.citations.flatMap((c) => [c.instrument, c.provision, c.note]),
+      ].filter((s): s is string => typeof s === 'string');
+      for (const value of text) {
+        expect(value, `${pathway.id} quotes a Visa Bulletin cut-off`).not.toMatch(cutOff);
+      }
+    }
+  });
+
+  it('ships a URL on a citation only where one was fetched', () => {
+    // The sweep could not retrieve travel.state.gov, fam.state.gov,
+    // federalregister.gov HTML or uscis.gov. Those citations carry no `url` and
+    // say why in their note. A dead or guessed link teaches the reader to stop
+    // checking, so the absence is the correct state and the note is the
+    // replacement.
+    for (const pathway of usPathways) {
+      for (const citation of pathway.citations) {
+        if (citation.url !== undefined) {
+          expect(citation.url, `${pathway.id}/${citation.id}`).toMatch(/^https:\/\//);
+          continue;
+        }
+        expect(
+          citation.note?.trim().length ?? 0,
+          `${pathway.id}/${citation.id} has neither a url nor a note explaining its absence`,
+        ).toBeGreaterThan(0);
+      }
+    }
+  });
+});
+
 describe('catalog order is not a ranking', () => {
   it('returns the same order for two applicants with nothing in common', () => {
     const spanish = assess(mexicanTwoYearResident, MERIDIAN_PATHWAY_CATALOG, TODAY);
@@ -213,6 +300,10 @@ describe('catalog lookups', () => {
     expect(catalogSourceOf('ca-quebec-experience-peq')).toBe('ca-provincial-quebec');
     expect(catalogSourceOf('ca-study-permit')).toBe('ca-work-study');
     expect(catalogSourceOf('ca-agri-food-pilot')).toBe('ca-family-pilots');
+    expect(catalogSourceOf('us-immediate-relative-spouse')).toBe('us-family');
+    expect(catalogSourceOf('us-eb5-immigrant-investor')).toBe('us-employment');
+    expect(catalogSourceOf('us-tn-usmca-professional')).toBe('us-nonimmigrant');
+    expect(catalogSourceOf('us-permanent-bar-screening')).toBe('us-status-bars');
     expect(catalogSourceOf('xx-not-a-pathway')).toBeNull();
   });
 

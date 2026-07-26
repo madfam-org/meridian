@@ -66,6 +66,18 @@ type VerifiedOn = NonNullable<Jurisdiction["verifiedOn"]>;
 /** The date on which every source cited below was consulted. */
 const VERIFIED = "2026-07-25" as VerifiedOn;
 
+/**
+ * The date the United States entry was last checked, which is one day later
+ * than the rest of this registry.
+ *
+ * It has its own constant rather than moving {@link VERIFIED}, because moving
+ * the shared constant would relabel 56 other entries as re-verified when nobody
+ * re-read them. Two of the categories on that entry — `study` and
+ * `naturalisation_by_residence` — rest on provisions read on this date for
+ * `packages/pathways/src/catalog/`, and the entry says which.
+ */
+const VERIFIED_US = "2026-07-26" as VerifiedOn;
+
 // --- Sources actually fetched on 2026-07-25 -------------------------------
 // Every `sourceUrl` below is one of these. Nothing is cited from a search
 // snippet, and nothing is cited that was not retrieved.
@@ -176,7 +188,7 @@ export const AMERICAS_JURISDICTIONS: readonly Jurisdiction[] = [
     outboundConstraints: [],
     sourceUrl: SRC_IRPA,
     verifiedOn: VERIFIED,
-    note: "One of two systems whose pathways are encoded in the Meridian catalog (the other is Spain, in the Europe registry). Classes are those of s. 12 of the Immigration and Refugee Protection Act: family class (12(1)), economic class (12(2)) and Convention refugees and persons in similar circumstances (12(3)). `work_employed` and `highly_skilled` both derive from the single economic-class head, which s. 12(2) frames as the ability to become economically established. Temporary residence — study and work permits — is not enumerated from s. 12. Under CUSMA chapter 16 Canada also grants facilitated temporary entry to business visitors, traders and investors, intra-company transferees and listed professionals from Mexico and the United States.",
+    note: "One of three systems whose pathways are encoded in the Meridian catalog, with the United States below and Spain in the Europe registry. Classes are those of s. 12 of the Immigration and Refugee Protection Act: family class (12(1)), economic class (12(2)) and Convention refugees and persons in similar circumstances (12(3)). `work_employed` and `highly_skilled` both derive from the single economic-class head, which s. 12(2) frames as the ability to become economically established. Temporary residence — study and work permits — is not enumerated from s. 12. Under CUSMA chapter 16 Canada also grants facilitated temporary entry to business visitors, traders and investors, intra-company transferees and listed professionals from Mexico and the United States.",
   },
   {
     code: jurisdictionCode("GL"),
@@ -207,12 +219,14 @@ export const AMERICAS_JURISDICTIONS: readonly Jurisdiction[] = [
       "highly_skilled",
       "intra_company_transfer",
       "investment_or_entrepreneur",
+      "study",
+      "naturalisation_by_residence",
       "humanitarian_or_protection",
     ],
     outboundConstraints: [],
     sourceUrl: SRC_USC_1153,
-    verifiedOn: VERIFIED,
-    note: "Categories are taken from 8 U.S.C. 1153 — the four family-sponsored preferences and the five employment-based preferences, which include multinational executives (intra-company transfer) and employment creation for investors — together with refugee admissions under 8 U.S.C. 1157, which are set annually by presidential determination. Deliberately NOT claimed here: study and other non-immigrant classes, and naturalisation, which are governed by sections not consulted in this sweep; and the diversity immigrant programme of 8 U.S.C. 1153(c), which has no corresponding `InboundCategory`. The inbound list is therefore incomplete by design. Under CUSMA chapter 16 the United States also grants facilitated temporary entry to business persons from Canada and Mexico.",
+    verifiedOn: VERIFIED_US,
+    note: "The third system whose pathways are encoded in the Meridian catalog, and the only entry in this registry whose inbound list was extended by that catalog rather than by this sweep. The immigrant categories are taken from 8 U.S.C. 1153 — the four family-sponsored preferences and the five employment-based preferences, which include multinational executives (intra-company transfer) and employment creation for investors. `study` and `naturalisation_by_residence` are claimed on provisions read on 2026-07-26 for the pathway catalog rather than for this file: the F academic-student class of 8 U.S.C. 1101(a)(15)(F) with 8 CFR 214.2(f), and naturalisation by residence under 8 U.S.C. 1427 and 1430. Each carries its own fetched citation in `packages/pathways/src/catalog/us-nonimmigrant.ts` and `us-status-bars.ts`; `sourceUrl` here still points at 1153 because this registry records one source per entry. `humanitarian_or_protection` is refugee admissions under 8 U.S.C. 1157, set annually by presidential determination — a category the system offers and the catalog deliberately does not encode, along with asylum, withholding of removal, protection under the Convention Against Torture, U and T classification and VAWA self-petitions. Deliberately NOT claimed: `work_self_employed`, because every employment route encoded requires a United States employer and the TN class expressly excludes self-employment, so the E-2 treaty investor is recorded under `investment_or_entrepreneur` alone; `regularisation`, because nothing in the catalog regularises unlawful presence and 8 U.S.C. 1182(a)(9) is its opposite; and the diversity immigrant programme of 8 U.S.C. 1153(c), which has no corresponding `InboundCategory`. The inbound list is therefore still incomplete by design, and in the same direction as the rest of this file. Under CUSMA chapter 16 the United States also grants facilitated temporary entry to business persons from Canada and Mexico; the professional route of Annex 16-A is encoded from 8 CFR 214.6, which reproduces Appendix 2 verbatim in United States regulation.",
   },
 
   // ===========================================================================

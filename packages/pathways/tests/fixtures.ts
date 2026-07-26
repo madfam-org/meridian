@@ -174,3 +174,122 @@ export const cecCandidate: ApplicantFacts = {
   languageCertifications: [{ language: 'en', framework: 'clb', level: '8' }],
   intent: { intendsToResideOutsideQuebec: true },
 };
+
+// ---------------------------------------------------------------------------
+// United States
+//
+// The Mexico-to-United States corridor is the largest bilateral corridor in the
+// world, and the US block of the catalog is the first one where most records
+// cannot reach a verdict at all: the facts model holds nothing about a
+// petitioner, a sponsor, a labor certification, or the manner of somebody's
+// last entry, so those criteria escalate to a person rather than guessing. The
+// fixtures below are therefore built to exercise the routes that *can* decide —
+// TN, B-1/B-2, the naturalisation residence arithmetic — and to prove that the
+// ones that cannot say so out loud.
+// ---------------------------------------------------------------------------
+
+/**
+ * A Mexican engineer with a written full-time offer from a United States
+ * employer, under a profession listed in USMCA Appendix 2.
+ *
+ * Deliberately the mirror of {@link cusmaEngineer}: the substantive test is the
+ * same on both sides of the treaty and 8 CFR 214.6(c) reproduces Appendix 2
+ * verbatim, so a fixture that differed in anything but the destination would be
+ * testing the fixture rather than the rule.
+ */
+export const usTnEngineer: ApplicantFacts = {
+  applicantId: 'fixture-us-tn-engineer',
+  nationalities: [MX],
+  claimedNationality: MX,
+  targetJurisdiction: US,
+  educationLevel: 'bachelor',
+  educationField: 'mechanical engineering',
+  jobOffer: {
+    employerName: 'Fixture Employer',
+    employerCountry: US,
+    occupationTaxonomy: 'cusma_appendix_2',
+    occupationCode: 'engineer',
+    writtenOffer: true,
+    selfEmployment: false,
+    fullTime: true,
+  },
+  intent: { temporary: true },
+};
+
+/**
+ * A lawful permanent resident with an unbroken five-and-a-half-year residence
+ * run and no absences at all.
+ *
+ * `absences: []` is a positive assertion that there were none, which is what
+ * makes the physical-presence and continuity criteria decidable; leaving it
+ * absent would make them `unknown`, and one of the tests below relies on
+ * exactly that difference.
+ */
+export const usLawfulPermanentResident: ApplicantFacts = {
+  applicantId: 'fixture-us-lpr',
+  nationalities: [MX],
+  claimedNationality: MX,
+  targetJurisdiction: US,
+  currentStatus: 'permanent_resident',
+  dateOfBirth: d('1985-03-10'),
+  residencePeriods: [dateRange(d('2019-01-01'), TODAY)],
+  absences: [],
+  criminalRecord: { selfDeclaredClear: true },
+};
+
+/**
+ * Somebody present in the United States without authorisation, with one
+ * recorded overstay and no removal.
+ *
+ * `currentStatus: 'irregular'` is never inferred anywhere in this engine — it
+ * is only ever recorded because a person said so. Note what this fixture still
+ * does *not* say: how they last entered, when they entered, and how long the
+ * unlawful presence has run. Those are the facts the § 1182(a)(9) bars turn on,
+ * and their absence is the reason the screening records escalate.
+ */
+export const usUnlawfullyPresent: ApplicantFacts = {
+  applicantId: 'fixture-us-unlawful-presence',
+  nationalities: [MX],
+  claimedNationality: MX,
+  targetJurisdiction: US,
+  currentStatus: 'irregular',
+  dateOfBirth: d('1992-02-29'),
+  travelHistory: { priorOverstays: 1, priorRemovals: 0, priorRefusals: 0 },
+  criminalRecord: { selfDeclaredClear: true },
+};
+
+/**
+ * A Mexican national seeking permanent residence through a relative, with
+ * everything Meridian can hold about *them* recorded and nothing about the
+ * petitioner — because there is nowhere to put it.
+ */
+export const usSponsoredRelative: ApplicantFacts = {
+  applicantId: 'fixture-us-sponsored-relative',
+  nationalities: [MX],
+  claimedNationality: MX,
+  targetJurisdiction: US,
+  dateOfBirth: d('1990-05-14'),
+  currentStatus: 'none',
+  criminalRecord: { selfDeclaredClear: true },
+};
+
+/**
+ * A Mexican national with a written full-time offer from a United States
+ * employer and six years in the field — the most an employment-based record can
+ * currently be told.
+ */
+export const usEmploymentSponsored: ApplicantFacts = {
+  applicantId: 'fixture-us-employment-sponsored',
+  nationalities: [MX],
+  claimedNationality: MX,
+  targetJurisdiction: US,
+  educationLevel: 'bachelor',
+  professionalExperienceYears: 6,
+  jobOffer: {
+    employerName: 'Fixture Employer',
+    employerCountry: US,
+    writtenOffer: true,
+    fullTime: true,
+    selfEmployment: false,
+  },
+};

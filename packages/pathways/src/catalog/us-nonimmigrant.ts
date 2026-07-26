@@ -413,14 +413,17 @@ const temporaryIntentWithAdverseHistory: EvaluatorSpec = {
  * narrows the same branch to Canadian licences because that is where the work
  * will be done and where the regulator sits.
  *
- * KNOWN GAP, recorded rather than fixed here: 8 CFR 214.6(c) lists 63
- * professions and the shared table holds 61. The two absentees are Range
+ * GAP CLOSED 2026-07-26: this comment previously recorded that 8 CFR 214.6(c)
+ * lists 63 professions while the shared table held 61, the absentees being Range
  * Manager/Range Conservationist and Sylviculturist (including Forestry
- * Specialist), both "Baccalaureate or Licenciatura Degree" in the General group.
- * `cusma-professions.ts` is shared with the Canadian pathway, so adding them
- * belongs to whoever owns that file. Until then an applicant in either
- * profession falls into the unrecognised-occupation branch and is routed to a
- * person, which is the safe direction.
+ * Specialist). Both were verified against the regulation and added to
+ * `cusma-professions.ts`, which now matches Appendix 2 at 63. The gap mattered
+ * on both sides of the treaty: that file feeds the Canadian CUSMA route as well,
+ * so two real professions were being routed to a person on both corridors.
+ *
+ * The unrecognised-occupation branch remains, and still escalates rather than
+ * returning "unmet". A code outside Appendix 2 altogether is a question about
+ * what the job actually is, not a finding that the person does not qualify.
  */
 function tnCredentialBranches(): EvaluatorSpec[] {
   return CUSMA_PROFESSIONS.map((profession): EvaluatorSpec => {
@@ -592,10 +595,11 @@ export const usTnUsmcaProfessional: Pathway = {
       },
       humanReviewReason: {
         en:
-          'Either the profession is one officers examine closely, or it is not in Meridian’s subset of Appendix 2. ' +
-          'The regulation lists 63 professions and this catalog encodes 61, so an unrecognised occupation must be ' +
-          'read against 8 CFR 214.6(c) itself before anything is said about it. In both cases the Appendix entry ' +
-          'and the actual job description have to be compared by a person.',
+          'Either the profession is one officers examine closely, or the occupation given is not in Appendix 2 at ' +
+          'all. This catalog encodes all 63 entries of 8 CFR 214.6(c), so an unrecognised code is a question about ' +
+          'what the job actually is — job titles and Appendix entries do not map one to one — and not a finding ' +
+          'that the person fails the test. In both cases the Appendix entry and the actual job description have to ' +
+          'be compared by a person.',
         es:
           'O bien la profesión es de las que los oficiales examinan con detalle, o bien no figura en el ' +
           'subconjunto del Apéndice 2 que Meridian codifica. El reglamento enumera 63 profesiones y este catálogo ' +

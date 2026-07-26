@@ -53,13 +53,23 @@ describe('the shipped catalog', () => {
     // A checker that silently scans zero records reports zero problems. These
     // are the read-proofs: the catalog is non-trivially large, and the parse
     // consumed all of it.
+    //
+    // The floors are raised whenever the catalog grows, and that maintenance is
+    // the point. Left at their old values — 49 pathways, 261 criteria, 311
+    // citations — they would still pass with the entire 35-record United States
+    // block silently dropped from the spread, which is exactly the failure a
+    // read-proof exists to catch.
     const result = validateCatalog(MERIDIAN_PATHWAY_CATALOG, TODAY);
-    expect(MERIDIAN_PATHWAY_CATALOG.length).toBeGreaterThanOrEqual(49);
+    expect(MERIDIAN_PATHWAY_CATALOG.length).toBeGreaterThanOrEqual(84);
     expect(result.pathways).toHaveLength(MERIDIAN_PATHWAY_CATALOG.length);
     const criteria = MERIDIAN_PATHWAY_CATALOG.reduce((n, p) => n + p.criteria.length, 0);
     const citations = MERIDIAN_PATHWAY_CATALOG.reduce((n, p) => n + p.citations.length, 0);
-    expect(criteria).toBeGreaterThanOrEqual(261);
-    expect(citations).toBeGreaterThanOrEqual(311);
+    expect(criteria).toBeGreaterThanOrEqual(449);
+    expect(citations).toBeGreaterThanOrEqual(737);
+    // Three jurisdictions, and the United States is now the largest block by
+    // every measure — which is what a catalog weighted by migrant stock should
+    // look like.
+    expect(pathwaysForJurisdiction('US')).toHaveLength(35);
   });
 
   it('goes red once the citations pass the staleness boundary', () => {

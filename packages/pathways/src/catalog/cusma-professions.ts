@@ -229,6 +229,13 @@ export const CUSMA_PROFESSIONS: readonly CusmaProfession[] = [
     minimumEducationLevel: 'bachelor',
   },
   {
+    id: 'range_manager',
+    title: { en: 'Range Manager/Range Conservationist', es: 'Gestor de pastizales/Conservacionista de pastizales' },
+    category: 'general',
+    minimumEducationLevel: 'bachelor',
+    licenceAlternative: false,
+  },
+  {
     id: 'research_assistant',
     title: { en: 'Research Assistant', es: 'Asistente de investigación' },
     category: 'general',
@@ -264,6 +271,19 @@ export const CUSMA_PROFESSIONS: readonly CusmaProfession[] = [
     title: { en: 'Social Worker', es: 'Trabajador social' },
     category: 'general',
     minimumEducationLevel: 'bachelor',
+  },
+  {
+    id: 'sylviculturist',
+    title: { en: 'Sylviculturist (including Forestry Specialist)', es: 'Silvicultor (incluye especialista forestal)' },
+    category: 'general',
+    minimumEducationLevel: 'bachelor',
+    licenceAlternative: false,
+    note: {
+      en:
+        'Listed separately from Forester in Appendix 2, and the parenthetical is part of the listed title rather than a gloss: a Forestry Specialist qualifies under this entry.',
+      es:
+        'Figura por separado de Ingeniero forestal en el Apéndice 2, y el parentesis forma parte del titulo listado: un especialista forestal califica por esta via.',
+    },
   },
   {
     id: 'technical_publications_writer',
