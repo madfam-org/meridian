@@ -7,7 +7,26 @@ metadata:
     app: meridian-api
     app.kubernetes.io/part-of: madfam-platform
 spec:
-  replicas: 2
+  # 0 UNTIL THE DATABASE EXISTS. Restore to 2 in the same change that provisions it.
+  #
+  # meridian-api cannot start: it needs `database-url` from Secret meridian-secrets,
+  # that Secret has never existed, and neither has the database behind it. Verified
+  # 2026-08-08: no ExternalSecret in the meridian namespace (14 other namespaces
+  # have one), no CNPG cluster, no meridian Postgres pod, and no `meridian` database
+  # among the 25 on the shared instance. secrets-template.yaml is explicit that a
+  # shared one would not be acceptable anyway -- this store holds travel-document
+  # numbers, dates of birth and day-by-day presence histories.
+  #
+  # Running 2 replicas that CANNOT start is not a no-op. Each pod schedules, holds
+  # its 250m CPU request, and fails at container creation, so 3 pods held 750m for
+  # 12 days on a cluster whose two untainted nodes are at 99.97% of requested CPU.
+  # That starved real rollouts: dhanam's #735 fix sat Pending behind it.
+  # `replicas: 0` releases the reservation and keeps the deployment declared, so the
+  # only change needed once the database is provisioned is this number.
+  #
+  # This does NOT reduce meridian's availability -- the API has served zero requests
+  # since it was first deployed. meridian-app, -admin and -landing are unaffected.
+  replicas: 0
   selector:
     matchLabels:
       app: meridian-api
