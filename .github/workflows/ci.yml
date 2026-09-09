@@ -62,6 +62,16 @@ jobs:
       - name: Workspace manifests
         run: node scripts/check-workspace-manifests.mjs
 
+      # Next copies its internal `x-middleware-rewrite` onto the client response
+      # for every rewrite, so all three applications publish the route the
+      # middleware chose. The fix is a process entry per app, and three copies of
+      # a file that must not differ is exactly the arrangement that rots. This
+      # asserts every app has one, that they filter the same names, and that each
+      # Dockerfile actually starts it — the last being the step that deploys the
+      # fix at all. See apps/landing/server-entry.mjs for the defect itself.
+      - name: Response header filter
+        run: node scripts/check-response-header-filter.mjs
+
   typecheck:
     name: Type check
     runs-on: ${{ vars.ARC_BOOTSTRAP_COMPLETE == 'true' && 'madfam-runners-blue' || 'ubuntu-latest' }}
@@ -173,3 +183,17 @@ jobs:
 
       - name: Build all apps and packages
         run: pnpm build
+
+      # The only assertion that can answer "does a visitor see the header?".
+      # A middleware unit test cannot: the middleware's own response MUST carry
+      # x-middleware-rewrite, because that is where Next reads the rewrite from —
+      # asserting its absence there would assert the rewrite does not happen.
+      #
+      # This boots each built standalone tree on 0.0.0.0, the hostname every
+      # Dockerfile sets, and checks four things: the rewritten address still
+      # serves a non-empty body, the header is absent, the entry announced the
+      # filter, and the log says nothing about failing to proxy. Booting
+      # 127.0.0.1 instead would test a different configuration in which the bug
+      # is still live, so the hostname is part of the test rather than setup.
+      - name: Standalone response header smoke
+        run: node scripts/standalone-header-smoke.mjs
