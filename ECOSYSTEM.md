@@ -328,11 +328,10 @@ event tracking and service-scoped context.
 ### Install
 
 ```bash
-# macOS
-brew install enclii/tap/enclii
-
-# Linux
-curl -sSL https://get.enclii.dev | bash
+# No one-line install is published today: there is no MADFAM Homebrew tap, and the
+# hosted installer (get.enclii.dev) answered HTTP 525 when checked on 2026-10-05.
+# Build from source (in the enclii repo):
+make build-cli && ./bin/enclii --version
 ```
 
 ### Auth
