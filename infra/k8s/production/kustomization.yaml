@@ -47,15 +47,15 @@ resources:
 # anywhere else means the first CI run moves it, and that reordering commit
 # lands on top of the digest change it was supposed to be.
 images:
-- digest: sha256:ed2221b755a5cb4d0bf8d4267787cc0a901d106eca53622685e6342b986b2c3f
+- digest: sha256:17e54b9c148904f4b808117a4430645fa6950e51cdfd24cb862ce2e859355bd7
   name: ghcr.io/madfam-org/meridian-admin
   newName: ghcr.io/madfam-org/meridian-admin
-- digest: sha256:0ac922df502bba5ac270b1cf90a589cf4704a8a0dff98b3d6de529e614db5a46
+- digest: sha256:d5cb5eefe5a3d084fba8962d1c2a220ac24ab34c00fe6076ddcdcea41d2c98bb
   name: ghcr.io/madfam-org/meridian-api
   newName: ghcr.io/madfam-org/meridian-api
-- digest: sha256:28233e9106c4604f08e52a7319bd086b46ddbaf7c77dc6af760851ad880e08a0
+- digest: sha256:79ebb1f7f01c9a9417dafc4aaece473a7a84d6f298b41e3d2cd07d9a0edb2d78
   name: ghcr.io/madfam-org/meridian-web
   newName: ghcr.io/madfam-org/meridian-web
-- digest: sha256:731261498bf1b7a70b3fdba241be933c1a3c43296b92082ac66fefecd2a858f8
+- digest: sha256:7e0b0f8750079532b91356e745dad6d68f4b312f0649d196c0d2fc01e16ac0f6
   name: ghcr.io/madfam-org/meridian/landing
   newName: ghcr.io/madfam-org/meridian/landing
