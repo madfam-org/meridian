@@ -6,11 +6,10 @@ on:
   pull_request:
     branches: [main]
 
-# One run per ref. A superseded push is cancelled rather than left to finish,
-# because the only result anyone acts on is the newest one.
+# Superseded PR checks share a group; each non-PR run retains its own group.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # This repository is public and its dependency graph is public too: no private
 # registry, no org token, nothing beyond the read the checkout needs.
@@ -23,7 +22,7 @@ jobs:
   # not that a build is red.
   policy:
     name: Policy checks
-    runs-on: ${{ vars.ARC_BOOTSTRAP_COMPLETE == 'true' && 'madfam-runners-blue' || 'ubuntu-latest' }}
+    runs-on: ${{ github.event_name == 'pull_request' && 'ubuntu-24.04' || (vars.ARC_BOOTSTRAP_COMPLETE == 'true' && 'madfam-runners-blue' || 'ubuntu-latest') }}
     timeout-minutes: 5
 
     steps:
@@ -74,7 +73,7 @@ jobs:
 
   typecheck:
     name: Type check
-    runs-on: ${{ vars.ARC_BOOTSTRAP_COMPLETE == 'true' && 'madfam-runners-blue' || 'ubuntu-latest' }}
+    runs-on: ${{ github.event_name == 'pull_request' && 'ubuntu-24.04' || (vars.ARC_BOOTSTRAP_COMPLETE == 'true' && 'madfam-runners-blue' || 'ubuntu-latest') }}
     timeout-minutes: 10
 
     steps:
@@ -91,7 +90,7 @@ jobs:
 
       - name: Get pnpm store directory
         shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
 
       - name: Setup pnpm cache
         uses: actions/cache@v6
@@ -113,7 +112,7 @@ jobs:
 
   test:
     name: Test
-    runs-on: ${{ vars.ARC_BOOTSTRAP_COMPLETE == 'true' && 'madfam-runners-blue' || 'ubuntu-latest' }}
+    runs-on: ${{ github.event_name == 'pull_request' && 'ubuntu-24.04' || (vars.ARC_BOOTSTRAP_COMPLETE == 'true' && 'madfam-runners-blue' || 'ubuntu-latest') }}
     timeout-minutes: 15
 
     steps:
@@ -130,7 +129,7 @@ jobs:
 
       - name: Get pnpm store directory
         shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
 
       - name: Setup pnpm cache
         uses: actions/cache@v6
@@ -151,7 +150,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: ${{ vars.ARC_BOOTSTRAP_COMPLETE == 'true' && 'madfam-runners-blue' || 'ubuntu-latest' }}
+    runs-on: ${{ github.event_name == 'pull_request' && 'ubuntu-24.04' || (vars.ARC_BOOTSTRAP_COMPLETE == 'true' && 'madfam-runners-blue' || 'ubuntu-latest') }}
     timeout-minutes: 15
 
     steps:
@@ -168,7 +167,7 @@ jobs:
 
       - name: Get pnpm store directory
         shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
 
       - name: Setup pnpm cache
         uses: actions/cache@v6
@@ -180,6 +179,18 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Restore incremental build caches
+        uses: actions/cache@v6
+        with:
+          path: |
+            .turbo/cache
+            apps/landing/.next/cache
+            apps/web/.next/cache
+            apps/admin/.next/cache
+          key: meridian-${{ runner.os }}-node22-build-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: |
+            meridian-${{ runner.os }}-node22-build-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build all apps and packages
         run: pnpm build
