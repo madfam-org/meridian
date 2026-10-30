@@ -6,9 +6,9 @@ on:
   pull_request:
     branches: [main]
 
-# Superseded PR checks are cancelled; main checks retain complete evidence.
+# Superseded PR checks share a group; each non-PR run retains its own group.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # This repository is public and its dependency graph is public too: no private
