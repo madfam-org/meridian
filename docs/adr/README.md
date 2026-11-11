@@ -29,6 +29,7 @@ move; the **Implemented?** column is a measurement and does.
 | [0006](0006-ports-and-adapters-repositories.md) | Ports and adapters for repositories | Accepted 2026-07-25 | Yes — ports + both adapters. Still no contract test suite. |
 | [0007](0007-url-locale-segments.md) | One language per page, addressed by URL | Accepted 2026-07-26 | Yes — `@meridian/i18n` + all three apps. **Apps have no tests.** |
 | [0008](0008-atlas-coverage-measurement.md) | Corridors are derived, and coverage is reported twice | Accepted 2026-07-26 | Yes — `@meridian/atlas` + `scripts/atlas-coverage.mjs`. One stale prose defect, named in the ADR. |
+| [0009](0009-legal-sources-and-drift.md) | Meridian cites the publisher; Tezca and BOE keep the text | Proposed 2026-11-10 | Yes — `@meridian/sources` + `scripts/source-drift.mjs` (report). Not wired into any app or CI job. |
 
 **A note on the older records.** ADRs 0001 and 0004 quote "901 tests" and "six
 packages", which were true when they were written and are not now — there are

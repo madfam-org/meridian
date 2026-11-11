@@ -20,6 +20,26 @@ Nothing tagged yet. Three of the four surfaces are deployed and answering as of
 `meridian-admin.madfam.io` — while `meridian-api.madfam.io` returns `502` and is
 not serving. Meridian has no users.
 
+### Added — 2026-11-10: legal sources and drift (`@meridian/sources`, ADR 0009)
+
+A citation's `verifiedOn` says when a person last read the provision; it cannot
+say whether the law has moved since. `@meridian/sources` asks the publisher:
+
+- `locateCitation()` derives the instrument and articles from a citation's
+  `url` and `provision` alone, so the catalog keeps citing BOE and the Cámara
+  de Diputados rather than any service's record ids.
+- `createBoeSource()` reads BOE's consolidated-legislation index, which dates
+  every article.
+- `createTezcaSource()` reads MADFAM's Mexican-law corpus and refuses a record
+  whose `source_url` is not the cited URL. Where Tezca holds a law without a
+  reform history, the reading says so and drift is `undeterminable`.
+- `assessDrift()` reports `changed_since_verification`,
+  `unchanged_since_verification` or `undeterminable`. It never writes
+  `verifiedOn`.
+
+`scripts/source-drift.mjs` runs it over the shipped catalog. It is a report,
+not a CI guard: it needs the network.
+
 ### Added — 2026-07-26: tests for the three Next.js applications
 
 `apps/landing`, `apps/web` and `apps/admin` had **no test file at all**, in any

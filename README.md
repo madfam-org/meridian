@@ -298,8 +298,10 @@ meridian/
 │   ├── govtech/       adapters that tell the truth about themselves.
 │   ├── atlas/         249 jurisdictions, 22 blocs, 280 weighted corridors,
 │   │                  and the arithmetic that says what "covered" is a fraction of.
-│   └── i18n/          Locale, text selection, Accept-Language, locale paths,
-│                      instrumentLang(). Depends on nothing.
+│   ├── i18n/          Locale, text selection, Accept-Language, locale paths,
+│   │                  instrumentLang(). Depends on nothing.
+│   └── sources/       where a cited rule's text lives (BOE, Tezca) and whether it has
+│                      changed since verifiedOn. Report only; never moves verifiedOn.
 │   Each builds to dist/ with tsconfig.build.json; consumers import the emitted JS.
 ├── apps/
 │   ├── api/           Fastify. auth · disclosure gate · repositories · audit · routes
