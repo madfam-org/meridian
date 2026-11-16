@@ -42,7 +42,7 @@ import {
 import { z } from 'zod';
 
 import { unauthenticated, type ApiError } from '../http/errors.js';
-import { isRole, type AuthContext, type Role } from './context.js';
+import { resolveRoles, type AuthContext } from './context.js';
 
 /**
  * The only signature algorithm Meridian accepts.
@@ -168,16 +168,13 @@ export function createVerifier(
       const claims = claimsSchema.safeParse(payload);
       if (!claims.success) return err(refuse('malformed_claims'));
 
-      const raw = splitRoles(claims.data.roles);
-      const roles: Role[] = [];
-      const unrecognisedRoles: string[] = [];
-      for (const r of raw) {
-        if (isRole(r)) {
-          if (!roles.includes(r)) roles.push(r);
-        } else if (!unrecognisedRoles.includes(r)) {
-          unrecognisedRoles.push(r);
-        }
-      }
+      // Read from the verified payload only. `is_admin` is deliberately not in
+      // the schema: anything but the boolean `true` simply confers nothing,
+      // rather than failing the whole token.
+      const { roles, unrecognisedRoles } = resolveRoles(
+        splitRoles(claims.data.roles),
+        payload['is_admin'],
+      );
 
       const tenantId = claims.data.tenant_id ?? claims.data.tenantId;
       if (tenantId === undefined) return err(refuse('malformed_claims'));

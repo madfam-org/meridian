@@ -83,7 +83,13 @@ export async function testKeys(): Promise<{
 export interface TokenClaims {
   readonly tenantId?: string;
   readonly sub?: string;
+  /**
+   * The `roles` claim. Product roles arrive as Janua application roles
+   * (`meridian:<role>`); bare strings are organization membership roles.
+   */
   readonly roles?: readonly string[];
+  /** The `is_admin` claim, set as given (any JSON value) when present. */
+  readonly isAdmin?: unknown;
   readonly issuer?: string;
   readonly audience?: string;
   /** Seconds from now. Negative produces an already-expired token. */
@@ -97,8 +103,9 @@ export async function signToken(claims: TokenClaims = {}): Promise<string> {
   const { privateKey } = await testKeys();
   const nowSeconds = Math.floor(Date.now() / 1000);
   const payload: Record<string, unknown> = {
-    roles: [...(claims.roles ?? ['tenant_admin', 'caseworker'])],
+    roles: [...(claims.roles ?? ['meridian:tenant_admin', 'meridian:caseworker'])],
   };
+  if (claims.isAdmin !== undefined) payload['is_admin'] = claims.isAdmin;
   if (claims.omitTenant !== true) payload['tenant_id'] = claims.tenantId ?? 'tenant-firm';
 
   let jwt = new SignJWT(payload)

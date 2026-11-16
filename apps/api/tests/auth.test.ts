@@ -63,7 +63,7 @@ describe('authentication', () => {
     const forged = unsignedToken({
       sub: 'attacker',
       tenant_id: TENANTS.firm,
-      roles: ['platform_admin'],
+      is_admin: true,
       iss: ISSUER,
       aud: AUDIENCE,
       exp: Math.floor(Date.now() / 1000) + 3600,
@@ -85,7 +85,7 @@ describe('authentication', () => {
     const publicMaterial = JSON.stringify(jwks.keys[0]);
     const forged = await new SignJWT({
       tenant_id: TENANTS.firm,
-      roles: ['platform_admin'],
+      is_admin: true,
     })
       .setProtectedHeader({ alg: 'HS256', kid: KEY_ID })
       .setSubject('attacker')
@@ -156,7 +156,7 @@ describe('authentication', () => {
   it('keeps unrecognised roles out of the role set but records them', async () => {
     const token = await signToken({
       tenantId: TENANTS.firm,
-      roles: ['caseworker', 'wizard', 'tenant_admin'],
+      roles: ['meridian:caseworker', 'wizard', 'meridian:tenant_admin'],
     });
     const response = await harness.app.inject({
       method: 'POST',
@@ -178,10 +178,11 @@ describe('authentication', () => {
     // nothing, because authorisation only ever consults the known set.
     expect(events[0]?.actorRoles).toContain('wizard');
     expect(events[0]?.actorRoles).toContain('caseworker');
+    expect(events[0]?.actorRoles).not.toContain('meridian:caseworker');
   });
 
   it('refuses an operation the caller has no role for, and records the refusal', async () => {
-    const token = await signToken({ tenantId: TENANTS.firm, roles: ['applicant'] });
+    const token = await signToken({ tenantId: TENANTS.firm, roles: ['meridian:applicant'] });
     const response = await harness.app.inject({
       method: 'POST',
       url: '/v1/applicants',
@@ -207,7 +208,7 @@ describe('authentication', () => {
 
   it('accepts the tenantId claim spelling as well as tenant_id', async () => {
     const { privateKey } = await testKeys();
-    const token = await new SignJWT({ tenantId: TENANTS.firm, roles: ['caseworker'] })
+    const token = await new SignJWT({ tenantId: TENANTS.firm, roles: ['meridian:caseworker'] })
       .setProtectedHeader({ alg: 'RS256', kid: KEY_ID })
       .setSubject('user-alias')
       .setIssuer(ISSUER)

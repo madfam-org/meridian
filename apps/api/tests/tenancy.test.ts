@@ -25,7 +25,7 @@ afterEach(async () => {
   await harness.close();
 });
 
-async function token(tenantId: string, roles: readonly string[] = ['tenant_admin', 'caseworker']) {
+async function token(tenantId: string, roles: readonly string[] = ['meridian:tenant_admin', 'meridian:caseworker']) {
   return signToken({ tenantId, roles });
 }
 

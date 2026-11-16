@@ -61,7 +61,7 @@ function td3Fixture(): string {
 }
 
 async function token(): Promise<string> {
-  return signToken({ tenantId: TENANTS.firm, roles: ['caseworker'] });
+  return signToken({ tenantId: TENANTS.firm, roles: ['meridian:caseworker'] });
 }
 
 describe('POST /v1/identity/mrz', () => {
