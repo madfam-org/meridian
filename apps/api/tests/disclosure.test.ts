@@ -40,7 +40,7 @@ afterEach(async () => {
 });
 
 async function authed(tenantId: string, roles?: readonly string[]): Promise<string> {
-  return signToken({ tenantId, roles: roles ?? ['tenant_admin', 'caseworker'] });
+  return signToken({ tenantId, roles: roles ?? ['meridian:tenant_admin', 'meridian:caseworker'] });
 }
 
 const FACTS = { applicantId: 'applicant-1', claimedNationality: 'MX' } as const;

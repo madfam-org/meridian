@@ -16,7 +16,7 @@ let token: string;
 
 beforeEach(async () => {
   harness = await createHarness();
-  token = await signToken({ tenantId: TENANTS.firm, roles: ['tenant_admin', 'caseworker'] });
+  token = await signToken({ tenantId: TENANTS.firm, roles: ['meridian:tenant_admin', 'meridian:caseworker'] });
 });
 
 afterEach(async () => {
@@ -239,7 +239,7 @@ describe('presence', () => {
     expect(okStatus.compliant).toBe(true);
 
     const breaching = await seedMatter(harness, TENANTS.other);
-    const otherToken = await signToken({ tenantId: TENANTS.other, roles: ['caseworker'] });
+    const otherToken = await signToken({ tenantId: TENANTS.other, roles: ['meridian:caseworker'] });
     await harness.app.inject({
       method: 'POST',
       url: `/v1/matters/${breaching.matterId}/presence/stays`,
@@ -307,7 +307,7 @@ describe('presence', () => {
     for (const [start, end] of chunks) await recordStay(forward.matterId, start, end);
 
     const reverse = await seedMatter(harness, TENANTS.other);
-    const otherToken = await signToken({ tenantId: TENANTS.other, roles: ['caseworker'] });
+    const otherToken = await signToken({ tenantId: TENANTS.other, roles: ['meridian:caseworker'] });
     for (const [start, end] of [...chunks].reverse()) {
       await harness.app.inject({
         method: 'POST',
@@ -353,7 +353,7 @@ describe('presence', () => {
     expect(value.evaluations[0]?.daysPresent).toBe(181);
 
     const nowhere = await seedMatter(harness, TENANTS.other, { targetJurisdiction: 'PT' });
-    const otherToken = await signToken({ tenantId: TENANTS.other, roles: ['caseworker'] });
+    const otherToken = await signToken({ tenantId: TENANTS.other, roles: ['meridian:caseworker'] });
     const empty = await harness.app.inject({
       method: 'GET',
       url: `/v1/matters/${nowhere.matterId}/presence/tax-residency`,
